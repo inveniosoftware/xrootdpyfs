@@ -1,1 +1,0 @@
-[PyFilesystem](https://github.com/PyFilesystem/pyfilesystem) implementation/wrapper for the [pyxrootd python bindings](http://xrootd.org/doc/python/xrootd-python-0.1.0/) for [XRootD](https://github.com/xrootd/xrootd).

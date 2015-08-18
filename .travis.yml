@@ -1,0 +1,53 @@
+# This file is part of xrootdfs
+# Copyright (C) 2015 CERN.
+#
+# xrootdfs is free software; you can redistribute it and/or modify it under the
+# terms of the Revised BSD License; see LICENSE file for more details.
+
+
+sudo: false
+
+language: python
+
+python:
+  - "2.7"
+  - "3.3"
+  - "3.4"
+
+env:
+  - REQUIREMENTS=devel
+  - REQUIREMENTS=latest
+  - REQUIREMENTS=lowest
+
+cache:
+  - pip
+
+install:
+  # Install test dependencies
+  - "travis_retry pip install coveralls pep257 Sphinx twine wheel"
+  - "travis_retry pip install pytest pytest-pep8 pytest-cov pytest-cache"
+  - "travis_retry pip install -r requirements.${REQUIREMENTS}.txt"
+  - "travis_retry pip install -e ."
+
+script:
+  - pep257 xrootdfs
+  - "sphinx-build -qnNW docs docs/_build/html"
+  - python setup.py test
+  - "sphinx-build -qnNW -b doctest docs docs/_build/doctest"
+
+after_success:
+  - coveralls
+
+notifications:
+  email: false
+
+deploy:
+  provider: pypi
+  user: lnielsen
+  password:
+    secure:
+  distributions: "sdist bdist_wheel"
+  on:
+    tags: true
+    python: "2.7"
+    condition: $REQUIREMENTS = latest

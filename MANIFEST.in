@@ -1,0 +1,13 @@
+# This file is part of xrootdfs
+# Copyright (C) 2015 CERN.
+#
+# xrootdfs is free software; you can redistribute it and/or modify it under the
+# terms of the Revised BSD License; see LICENSE file for more details.
+
+include LICENSE AUTHORS CHANGES README.rst
+include .coveragerc run-tests.sh
+include docs/*.rst docs/*.py docs/Makefile
+include tests/*.py
+include examples/*.py
+recursive-include docs/_themes *.py *.css *.css_t *.conf *.html README
+recursive-include docs/_templates *.html

@@ -1,26 +1,74 @@
-# I guess this is how python projects work?
+# -*- coding: utf-8 -*-
+#
+# This file is part of xrootdfs
+# Copyright (C) 2015 CERN.
+#
+# xrootdfs is free software; you can redistribute it and/or modify it under the
+# terms of the Revised BSD License; see LICENSE file for more details.
 
-import fs.base
-from XRootD import client as xclient
-from XRootD.client.flags import OpenFlags
-from xrootdfs.xrdfile import *
+"""XRootDFS is a PyFilesystem interface for XRootD.
 
-class XRootDFS(fs.base.FS):
-    def __init__(self, addr, path='/'):
-        self.fs = xclient.FileSystem(addr)
-        self.base_path = path
-        self._addr = addr
-        self._url = self.base_path + '/' + self._addr
+XRootD protocol aims at giving high performance, scalable fault tolerant access
+to data repositories of many kinds. CERN's currently provide
 
-    def listdir(self, path='./'):
-        status, res = self.fs.dirlist(self.base_path + path)
-        return [unicode(e.name) for e in res]
+Installation
+============
 
-    def open(self, path, mode='r', buffering=-1, encoding=None, errors=None,
-            newline=None, line_buffering=False, **kwargs):
-        # path must be full-on address with the server and everything, yo.
-        flags = 0
-        if 'r' in mode:
-            flags += OpenFlags.READ
+The XRootDFS package is on PyPI so all you need is:
 
-        return XRootDFile(self._url + path, flags, mode=0)
+.. code-block:: console
+
+    $ pip install XRootDFS
+
+XRootDFS depends on `PyFilesystem <http://docs.pyfilesystem.org>`_ and
+`XRootD Python bindings <http://xrootd.org/doc/python/xrootd-python-0.1.0/>`_.
+
+Getting started
+===============
+
+The easiest way to run the examples is using the provided docker container.
+This way you don't need to have access to an XRootD server plus all the
+dependencies installed:
+
+.. code-block:: console
+
+   $ docker build -t xrootd .
+   $ docker run -h xrootdfs -it xrootd bash
+
+Next, start a XRootD server in the container and fire up an ipython shell:
+
+.. code-block:: console
+
+   [xrootdfs@xrootdfs code]$ xrootd -b -l /dev/null
+   [xrootdfs@xrootdfs code]$ ipython
+
+Quick example
+-------------
+
+Here is a quick example of a file listing with the xrootd PyFilesystem
+integration:
+
+    >>> from xrootdfs import XRootDFS
+    >>> fs = XRootDFS("root://localhost/tmp/")
+    >>> fs.listdir("xrootdfs")
+    ['test.txt']
+
+Or, alternatively using the PyFilesystem opener:
+
+    >>> import xrootdfs
+    >>> from fs.opener import opener
+    >>> fs, path = opener.parse("root://localhost/tmp/")
+    >>> fs.listdir("xrootdfs")
+    [u'test.txt']
+
+Usage
+=====
+"""
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+from .fs import XRootDFS
+from .opener import XRootDOpener
+from .version import __version__
+
+__all__ = ('__version__', 'XRootDFS', 'XRootDOpener')

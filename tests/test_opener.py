@@ -12,7 +12,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 from fixture import mkurl, tmppath
 from fs.opener import opener
-from xrootdfs import XRootDOpener
+from xrootdfs import XRootDFile, XRootDFS, XRootDOpener
 
 
 def test_parse(tmppath):

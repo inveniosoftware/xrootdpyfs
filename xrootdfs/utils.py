@@ -10,10 +10,11 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+import re
 from urlparse import urlparse
 
-from fs.errors import FSError
 from XRootD.client import URL
+from XRootD.client.flags import OpenFlags
 
 
 def is_valid_url(fs_url):
@@ -22,23 +23,42 @@ def is_valid_url(fs_url):
     return URL(fs_url).is_valid() and scheme in ['root', 'roots']
 
 
+def is_valid_path(fs_path):
+    """Check if path is a valid XRootD compatible path.
+
+    Valid paths start with two slashes ('/'), i.e. '//';
+    and do not contain any other two adjacent slashes.
+    """
+    if len(fs_path) > 1:
+        if not re.search(r'^//', fs_path) or re.search(r'//', fs_path[1:]):
+            return False
+        else:
+            return True
+    else:
+        return False
+
+
 def spliturl(fs_url):
     """Split XRootD URL in a host and path part."""
-    if not is_valid_url(fs_url):
-        raise FSError("Invalid XRootD URL: %s" % fs_url)
-
     scheme, netloc, path, params, query, fragment = urlparse(fs_url)
 
-    if query:
-        pattern = "{scheme}://{netloc}/?{query}"
-    else:
-        pattern = "{scheme}://{netloc}/"
+    pattern = "{scheme}://{netloc}"
 
     root_url = pattern.format(
-        scheme=scheme, netloc=netloc, query=query
+        scheme=scheme, netloc=netloc
     )
 
-    if path == "/":
-        path = ""
+    return root_url, path, query
 
-    return root_url, path
+
+def translate_file_mode_to_flags(mode='r'):
+    """Translate a PyFS mode string to a combination of XRootD OpenFlags."""
+    flags = 0
+    if 'r+' in mode or 'a' in mode:
+        return OpenFlags.UPDATE
+    if 'w' in mode:
+        return OpenFlags.DELETE
+    if 'r' in mode:
+        return OpenFlags.READ
+
+    return flags

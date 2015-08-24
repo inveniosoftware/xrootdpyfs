@@ -17,7 +17,7 @@ import pytest
 
 def mkurl(p):
     """Generate test root URL."""
-    return "root://localhost{0}".format(p)
+    return "root://localhost/{0}".format(p)
 
 
 @pytest.fixture

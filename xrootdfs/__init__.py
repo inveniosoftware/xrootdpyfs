@@ -69,6 +69,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 from .fs import XRootDFS
 from .opener import XRootDOpener
+from .xrdfile import XRootDFile
 from .version import __version__
 
-__all__ = ('__version__', 'XRootDFS', 'XRootDOpener')
+__all__ = ('__version__', 'XRootDFS', 'XRootDOpener', 'XRootDFile')

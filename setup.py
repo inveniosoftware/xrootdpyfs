@@ -65,7 +65,7 @@ tests_require = [
 ]
 
 setup(
-    name='XRootDFS',
+    name='xrootdfs',
     version=version,
     description=__doc__,
     url='http://github.com/inveniosoftware/xrootdfs/',

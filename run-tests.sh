@@ -5,6 +5,6 @@
 # terms of the Revised BSD License; see LICENSE file for more details.
 
 pep257 xrootdfs && \
-sphinx-build -qnNW docs docs/_build/html && \
+sphinx-build -qnN docs docs/_build/html && \
 python setup.py test && \
 sphinx-build -qnNW -b doctest docs docs/_build/doctest

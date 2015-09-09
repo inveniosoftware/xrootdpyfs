@@ -51,7 +51,7 @@ def test_init_writemode_basic(tmppath):
     xfile = XRootDFile(mkurl(full_path), mode='w+')
     assert xfile
     assert xfile.read() == ''
-    assert xfile._get_size() == 0
+    assert xfile.size == 0
     assert xfile.tell() == 0
 
 
@@ -94,9 +94,9 @@ def test_open_close(tmppath):
     full_path = fd['full_path']
     xfile = XRootDFile(mkurl(full_path))
     assert xfile
+    assert not xfile.closed
     xfile.close()
     assert xfile.closed
-    assert not xfile._file.is_open()
 
 
 def test_read_existing(tmppath):
@@ -124,9 +124,9 @@ def test__is_open(tmppath):
     fd = get_tsta_file(tmppath)
     full_path = fd['full_path']
     xfile = XRootDFile(mkurl(full_path))
-    assert xfile._is_open()
+    assert not xfile.closed
     xfile.close()
-    assert not xfile._is_open()
+    assert xfile.closed
 
 
 def test__get_size(tmppath):
@@ -135,17 +135,17 @@ def test__get_size(tmppath):
     full_path, fc = fd['full_path'], fd['contents']
     xfile = XRootDFile(mkurl(full_path))
 
-    assert xfile._get_size() == len(fc)
+    assert xfile.size == len(fc)
 
     # Length of empty file
     xfile = XRootDFile(mkurl(join(tmppath, fd['dir'], 'whut')), 'w+')
-    assert xfile._get_size() == len('')
+    assert xfile.size == len('')
 
     # Length of multiline file
     fd = get_mltl_file(tmppath)
     fpp, fc = fd['full_path'], fd['contents']
     xfile = XRootDFile(mkurl(fpp))
-    assert xfile._get_size() == len(fc)
+    assert xfile.size == len(fc)
 
 
 def test_seek_and_tell(tmppath):
@@ -171,7 +171,7 @@ def test_seek_and_tell(tmppath):
     assert conts2 == conts[newpos:]
     assert xfile.tell() == len(fc)
 
-    # Now with a multiline file!
+    # # Now with a multiline file!
     fd = get_mltl_file(tmppath)
     full_path, fc = fd['full_path'], fd['contents']
     xfile = XRootDFile(mkurl(full_path))
@@ -192,38 +192,43 @@ def test_truncate1(tmppath):
     xfile = XRootDFile(mkurl(full_path), 'r+')
     # r+ opens for r/w, and won't truncate the file automatically.
     assert xfile.read() == fc
+    assert xfile.tell() == len(fc)
     xfile.seek(0)  # Reset ipp.
+    assert xfile.tell() == 0
 
     # Truncate it to size 0.
     xfile.truncate(0)
-    assert xfile._get_size() == 0
+    assert xfile.size == 0
+    assert xfile.tell() == 0
     assert xfile.read() == ''
     assert xfile.tell() == 0
     xfile.close()
 
     # Re-open same file.
     xfile = XRootDFile(mkurl(full_path), 'r+')
-    assert xfile._get_size() == 0
+    assert xfile.size == 0
     assert xfile.read() == ''
 
     # Truncate it again!
     xfile.truncate(0)
-    assert xfile._get_size() == 0
+    assert xfile.size == 0
     assert xfile.read() == ''
 
     # Truncate it twice.
     xfile.truncate(0)
-    assert xfile._get_size() == 0
+    assert xfile.size == 0
     assert xfile.read() == ''
 
-    # Truncate to 1. Not really sure what the expected behaviour is here.
+    # Truncate to 1.
     xfile.truncate(1)
-    assert xfile._get_size() == 1
-    assert xfile.read() == ''
+    assert xfile.tell() == 0
+    assert xfile.size == 1
+    assert xfile.read() == '\x00'
+    assert xfile.tell() == 1
     xfile.close()
 
     xfile = XRootDFile(mkurl(full_path), 'r+')
-    assert xfile._get_size() == 1
+    assert xfile.size == 1
     assert xfile.read() == '\x00'
 
 
@@ -235,10 +240,9 @@ def test_truncate2(tmppath):
     conts = xfile.read()
     assert conts == fc
 
-    xfile.truncate(xfile._get_size())
-    assert xfile.tell() == len(fc)
-    assert xfile._get_size() == len(fc)
-    xfile.seek(0)
+    xfile.truncate(xfile.size)
+    assert xfile.tell() == 0
+    assert xfile.size == len(fc)
     assert xfile.read() == conts
 
 
@@ -250,8 +254,7 @@ def test_truncate3(tmppath):
 
     newsiz = len(fc)//2
     xfile.truncate(newsiz)
-    assert xfile.tell() == newsiz
-    xfile.seek(0)
+    assert xfile.tell() == 0
     assert xfile.read() == fc[:-newsiz]
 
 
@@ -259,22 +262,22 @@ def test_write(tmppath):
     """Test write()."""
     # With a new file.
     xfile = XRootDFile(mkurl(join(tmppath, 'data/nuts')), 'w+')
-    assert xfile._get_size() == 0
+    assert xfile.size == 0
     conts = xfile.read()
     assert not conts
 
     nconts = 'Write.'
     xfile.write(nconts)
     assert xfile.tell() == len(nconts)
-    assert xfile._is_open()
+    assert not xfile.closed
     xfile.seek(0)
-    assert xfile._get_size() == len(nconts)
+    assert xfile.size == len(nconts)
     assert xfile.read() == nconts
     xfile.close()
 
     # Verify persistence after closing.
     xfile = XRootDFile(mkurl(join(tmppath, 'data/nuts')), 'r+')
-    assert xfile._get_size() == len(nconts)
+    assert xfile.size == len(nconts)
     assert xfile.read() == nconts
 
     # Seek(x>0) followed by a write
@@ -335,7 +338,7 @@ def test_init_append(tmppath):
     xfile = XRootDFile(mkurl(fp), 'a')
     xfile.write(fc)
     xfile.seek(0)
-    xfile.read() == fc + newcont + fc
+    pytest.raises(IOError, xfile.read)
 
 
 def test_init_append(tmppath):
@@ -371,7 +374,7 @@ def test_init_writemode(tmppath):
     conts = 'what'
     xfile.write(conts)
     assert xfile.tell() == 1 + len(conts)
-    assert xfile._size == 1 + len(conts)
+    assert xfile.size == 1 + len(conts)
     xfile.close()
     xfile = XRootDFile(mkurl(fp), 'r')
     fc = xfile.read()
@@ -384,7 +387,7 @@ def test_init_streammodes(tmppath):
     fp, fc = fd['full_path'], fd['contents']
     xfile = XRootDFile(mkurl(fp), 'r-')
     pytest.raises(IOError, xfile.seek, 3)
-    assert xfile._get_size() == len(fc)
+    assert xfile.size == len(fc)
     assert xfile.tell() == 0
     assert xfile.read() == fc
     assert xfile.tell() == len(fc)
@@ -394,7 +397,7 @@ def test_init_streammodes(tmppath):
     pytest.raises(IOError, xfile.read)
     pytest.raises(IOError, xfile.seek, 3)
     assert xfile.tell() == 0
-    assert xfile._get_size() == 0
+    assert xfile.size == 0
     conts = 'hugs are delightful'
     xfile.write(conts)
     assert xfile.tell() == len(conts)

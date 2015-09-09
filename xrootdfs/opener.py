@@ -6,7 +6,7 @@
 # xrootdfs is free software; you can redistribute it and/or modify it under the
 # terms of the Revised BSD License; see LICENSE file for more details.
 
-"""."""
+"""PyFilesystem opener for XRootD."""
 
 from __future__ import absolute_import, print_function, unicode_literals
 

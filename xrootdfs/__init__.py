@@ -9,7 +9,25 @@
 """XRootDFS is a PyFilesystem interface for XRootD.
 
 XRootD protocol aims at giving high performance, scalable fault tolerant access
-to data repositories of many kinds. CERN's currently provide
+to data repositories of many kinds.
+
+.. testsetup::
+
+   from os.path import dirname, join, exists
+   import os
+   import shutil
+   import tempfile
+
+   if exists("/tmp/xrootdfs"):
+       shutil.rmtree("/tmp/xrootdfs")
+   os.makedirs("/tmp/xrootdfs")
+   f = open("/tmp/xrootdfs/test.txt", "w")
+   f.write("Welcome to xrootdfs!")
+   f.close()
+
+.. testcleanup::
+
+   shutil.rmtree("/tmp/xrootdfs")
 
 Installation
 ============
@@ -49,7 +67,7 @@ Here is a quick example of a file listing with the xrootd PyFilesystem
 integration:
 
     >>> from xrootdfs import XRootDFS
-    >>> fs = XRootDFS("root://localhost/tmp/")
+    >>> fs = XRootDFS("root://localhost//tmp/")
     >>> fs.listdir("xrootdfs")
     ['test.txt']
 
@@ -57,7 +75,7 @@ Or, alternatively using the PyFilesystem opener:
 
     >>> import xrootdfs
     >>> from fs.opener import opener
-    >>> fs, path = opener.parse("root://localhost/tmp/")
+    >>> fs, path = opener.parse("root://localhost//tmp/")
     >>> fs.listdir("xrootdfs")
     [u'test.txt']
 

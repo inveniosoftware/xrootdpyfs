@@ -29,7 +29,7 @@ You will however need to start a local XRootD server, e.g.:
 
 .. code-block:: console
 
-    $ xrootd -b -l /dev/null <tmpfolder>
+    $ xrootd -b -l /dev/null /tmp <tmpfolder>
 
 where, ``<tmpfolder>`` is dependent on your system (e.g. on OS X it is
 ``/var/folders``, while on Linux it can be left empty).
@@ -57,7 +57,8 @@ RedHat based distributions/versions.
 Ubuntu
 ~~~~~~
 
-TODO
+Unfortunately there is no official support for XRootD on Ubuntu. You will have
+to install XRootD from the source distribution.
 
 OS X
 ~~~~

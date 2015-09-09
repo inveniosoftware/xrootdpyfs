@@ -23,6 +23,15 @@ def test_parse(tmppath):
     assert path == "data"
 
 
+def test_parse_create(tmppath):
+    """Test opendir."""
+    rooturl = mkurl(tmppath)
+    fs, path = opener.parse(rooturl + "/non-existing")
+    assert not fs.exists(path)
+    fs, path = opener.parse(rooturl + "/non-existing", create_dir=True)
+    assert fs.exists(path)
+
+
 def test_opendir(tmppath):
     """Test opendir."""
     rooturl = mkurl(tmppath)

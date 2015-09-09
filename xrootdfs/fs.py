@@ -6,7 +6,7 @@
 # xrootdfs is free software; you can redistribute it and/or modify it under the
 # terms of the Revised BSD License; see LICENSE file for more details.
 
-"""Filesystem class."""
+"""PyFilesystem implementation of XRootD protocol."""
 
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -19,7 +19,7 @@ from fs.errors import DestinationExistsError, DirectoryNotEmptyError, \
 from fs.path import normpath, pathcombine, pathjoin
 from XRootD.client import FileSystem
 from XRootD.client.flags import AccessMode, DirListFlags, MkDirFlags, \
-    OpenFlags, StatInfoFlags
+    StatInfoFlags
 
 from .utils import is_valid_path, is_valid_url, spliturl
 from .xrdfile import XRootDFile
@@ -27,7 +27,7 @@ from .xrdfile import XRootDFile
 
 class XRootDFS(FS):
 
-    """."""
+    """XRootD PyFilesystem interface."""
 
     _meta = {
         'thread_safe': True,
@@ -44,7 +44,7 @@ class XRootDFS(FS):
     }
 
     def __init__(self, url, query=None, timeout=0, thread_synchronize=True):
-        """."""
+        """Initialize file system object."""
         if not is_valid_url(url):
             raise InvalidPathError(path=url)
 
@@ -68,7 +68,7 @@ class XRootDFS(FS):
 
     def open(self, path, mode='r', buffering=-1, encoding=None, errors=None,
              newline=None, line_buffering=False, **kwargs):
-        """Open a the given path as a file-like object.
+        """Open the given path as a file-like object.
 
         :param path: a path to file that should be opened
         :type path: string
@@ -87,10 +87,20 @@ class XRootDFS(FS):
             is an file
         :raises `fs.errors.ResourceNotFoundError`: if the path is not found
         """
-        # path must be full-on address with the server and everything, yo.
-        fpath = self.root_url + self._p(path)
-        return XRootDFile(fpath, mode, buffering, encoding, errors, newline,
-                          line_buffering, **kwargs)
+        # Set default timeout if not overwritten.
+        kwargs.setdefault("timeout", self.timeout)
+
+        return XRootDFile(
+            # Path must be full-on address with the server and everything.
+            self.root_url + self._p(path),
+            mode=mode,
+            buffering=buffering,
+            encoding=encoding,
+            errors=errors,
+            newline=newline,
+            line_buffering=line_buffering,
+            **kwargs
+        )
 
     def listdir(self,
                 path="./",
@@ -166,8 +176,8 @@ class XRootDFS(FS):
         """Check if a path references a valid resource.
 
         :param path: A path in the filesystem.
-        :type path: string
-        :rtype: bool
+        :type path: `string`
+        :rtype: `bool`
         """
         status, stat = self.client.stat(self._p(path))
         return status.ok
@@ -179,10 +189,10 @@ class XRootDFS(FS):
         :type path: string
         :param recursive: if True, any intermediate directories will also be
             created
-        :type recursive: bool
+        :type recursive: `bool`
         :param allow_recreate: if True, re-creating a directory wont be an
             error
-        :type allow_create: bool
+        :type allow_create: `bool`
 
         :raises `fs.errors.DestinationExistsError`: if the path is already a
             existing, and allow_recreate is False
@@ -273,23 +283,16 @@ class XRootDFS(FS):
     def getinfo(self, path):
         """Return information for a path as a dictionary.
 
-        The exact content of this dictionary will vary depending on the
-        implementation, but will likely include a few common values. The
-        following values will be found in info dictionaries for most
-        implementations:
+        The following values can be found in the info dictionary:
 
-         * "size" - Number of bytes used to store the file or directory
-         * "created_time" - A datetime object containing the time the resource
-            was created
-         * "accessed_time" - A datetime object containing the time the resource
-            was last accessed
-         * "modified_time" - A datetime object containing the time the resource
-            was modified
+         * ``size`` - Number of bytes used to store the file or directory
+         * ``modified_time`` - A datetime object containing the time the
+           resource was modified
 
         :param path: a path to retrieve information for
-        :type path: string
+        :type path: `string`
 
-        :rtype: dict
+        :rtype: `dict`
 
         :raises `fs.errors.ParentDirectoryMissingError`: if an intermediate
             directory is missing

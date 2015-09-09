@@ -23,10 +23,22 @@
 API
 ===
 
+Filesystem interface
+--------------------
+
 .. automodule:: xrootdfs.fs
    :members:
    :undoc-members:
 
+File interface
+--------------
+
+.. automodule:: xrootdfs.xrdfile
+   :members:
+   :undoc-members:
+
+Opener
+------
 .. automodule:: xrootdfs.opener
    :members:
    :undoc-members:

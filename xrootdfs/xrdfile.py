@@ -6,47 +6,42 @@
 # xrootdfs is free software; you can redistribute it and/or modify it under the
 # terms of the Revised BSD License; see LICENSE file for more details.
 
-"""."""
+"""Wrapper for XRootD files."""
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-import fs
-import fs.filelike
 from fs import SEEK_CUR, SEEK_END, SEEK_SET
 from fs.errors import InvalidPathError, PathError, ResourceNotFoundError
-from XRootD.client import File as XFile
+from XRootD.client import File
 
 from .utils import is_valid_path, is_valid_url, spliturl, \
     translate_file_mode_to_flags
 
 
-class XRootDFile(fs.filelike.FileLikeBase):
+class XRootDFile(object):
+
     """Wrapper-like class for XRootD file objects.
 
     This class understands and will accept the following mode strings,
     with any additional characters being ignored:
 
-        * r    - open the file for reading only.
-        * r+   - open the file for reading and writing.
-        * r-   - open the file for streamed reading; do not allow seek/tell.
-        * w    - open the file for writing only; create the file if
-                 it doesn't exist; truncate it to zero length.
-        * w+   - open the file for reading and writing; create the file
-                 if it doesn't exist; truncate it to zero length.
-        * w-   - open the file for streamed writing; do not allow seek/tell.
-        * a    - open the file for writing only; create the file if it
-                 doesn't exist; place pointer at end of file.
-        * a+   - open the file for reading and writing; create the file
-                 if it doesn't exist; place pointer at end of file.
-
-    These are mostly standard except for the "-" indicator, which has
-    been added for efficiency purposes in cases where seeking can be
-    expensive to simulate (e.g. compressed files).  Note that any file
-    opened for both reading and writing must also support seeking.
+    * ``r`` - open the file for reading only.
+    * ``r+`` - open the file for reading and writing.
+    * ``r-`` - open the file for streamed reading; do not allow seek/tell.
+    * ``w`` - open the file for writing only; create the file if
+      it doesn't exist; truncate it to zero length.
+    * ``w+`` - open the file for reading and writing; create the file
+      if it doesn't exist; truncate it to zero length.
+    * ``w-`` - open the file for streamed writing; do not allow seek/tell.
+    * ``a`` - open the file for writing only; create the file if it
+      doesn't exist; place pointer at end of file.
+    * ``a+`` - open the file for reading and writing; create the file
+      if it doesn't exist; place pointer at end of file.
     """
 
     def __init__(self, path, mode='r', buffering=-1, encoding=None,
-                 errors=None, newline=None, line_buffering=False, **kwargs):
+                 errors=None, newline=None, line_buffering=False, timeout=0,
+                 **kwargs):
         """XRootDFile constructor.
 
         Raises PathError if the given path isn't a valid XRootD URL,
@@ -60,45 +55,46 @@ class XRootDFile(fs.filelike.FileLikeBase):
         if not is_valid_path(xpath):
             raise InvalidPathError(xpath)
 
-        super(XRootDFile, self).__init__()
-
         # PyFS attributes
         self.mode = mode
 
         # XRootD attributes & internals
-        self._file = XFile()
+        self._file = File()
         self._ipp = 0
-        self._timeout = 0
-        self._callback = None
-        self._fullpath = path
-
-        self._size = 0
+        self._size = -1
+        self._iterator = None
+        self.timeout = timeout
 
         # flag translation
         self._flags = translate_file_mode_to_flags(mode)
 
-        status, response = self._file.open(self._fullpath, self._flags)
+        status, response = self._file.open(path, flags=self._flags,
+                                           timeout=self.timeout)
         if not status.ok:
             if status.errno == 3011:
-                raise ResourceNotFoundError(self._fullpath)
+                raise ResourceNotFoundError(path)
             else:
-                raise IOError("Error returned by XRootD server while trying to \
-                               instantiate file.", {'message': status.message,
-                                                    'file': self._fullpath})
-        else:
-            self._size = self._file.stat()[1].size
+                raise IOError(
+                    "Error returned by XRootD server while trying to"
+                    " instantiate file.", {'message': status.message,
+                                           'file': path})
 
         # Deal with the modes
         if self.mode == 'a':
-            self._seek(self._size, SEEK_SET)
+            self.seek(self.size, SEEK_SET)
 
-    def _read(self, sizehint=-1):
+    def __iter__(self):
+        """Initialize the internal iterator."""
+        if self._iterator is None:
+            self._iterator = self._file.readchunks()
+        return self
+
+    def next(self):
+        """Return next item."""
+        return self._iterator.next()
+
+    def read(self, sizehint=-1):
         """Read approximately <sizehint> bytes from the file-like object.
-
-        This method is to be implemented by subclasses that wish to be
-        readable.  It should read approximately <sizehint> bytes from the
-        file and return them as a string.  If <sizehint> is missing or
-        less than or equal to zero, try to read all the remaining contents.
 
         The method need not guarantee any particular number of bytes -
         it may return more bytes than requested, or fewer.  If needed the
@@ -110,125 +106,167 @@ class XRootDFile(fs.filelike.FileLikeBase):
         until None has been read from _read().  Once EOF is reached, it
         should be safe to call _read() again, immediately returning None.
         """
-        if self._tell() == self._size:
-            return None
+        self._assert_mode("r-")
 
-        statmsg, res = self._file.read(self._ipp)
-        self._seek(len(res), SEEK_CUR)
+        chunksize = sizehint if sizehint > 0 else self.size
+
+        # Read data
+        statmsg, res = self._file.read(
+            offset=self._ipp,
+            size=chunksize,
+            timeout=self.timeout,
+        )
+
+        # Increment internal file pointer.
+        self._ipp = min(self._ipp + chunksize, self.size)
+
         return res
 
-    def _write(self, string, flushing=False):
-        """Write the given string to the file-like object.
+    def readline(self, sizehint=None):
+        """Read one entire line from the file.
 
-        This method must be implemented by subclasses wishing to be writable.
-        It must attempt to write as much of the given data as possible to the
-        file, but need not guarantee that it is all written.  It may return
-        None to indicate that all data was written, or return as a string any
-        data that could not be written.
+        A trailing newline character is kept in the string (but may be absent
+        when a file ends with an incomplete line). [6] If the size argument
+        is present and non-negative, it is a maximum byte count (including the
+        trailing newline) and an incomplete line may be returned. When size is
+        not 0, an empty string is returned only when EOF is encountered
+        immediately.
+        """
+        self._assert_mode("r-")
+        return self._file.readline(chunksize=sizehint)
+
+    def readlines(self, sizehint=None):
+        """Read until EOF using readline().
+
+        Returns a list containing the lines thus read. If the optional
+        sizehint argument is present, instead of reading up to EOF, whole
+        lines totalling approximately sizehint bytes (possibly after rounding
+        up to an internal buffer size) are read.
+        """
+        self._assert_mode("r-")
+        return self._file.readlines(chunksize=sizehint)
+
+    def xreadlines(self):
+        """Get an iterator over number of lines."""
+        self._assert_mode("r-")
+        return iter(self)
+
+    def write(self, string, flushing=False):
+        """Write the given string to the file-like object.
 
         If the keyword argument 'flushing' is true, it indicates that the
         internal write buffers are being flushed, and *all* the given data
-        is expected to be written to the file. If unwritten data is returned
-        when 'flushing' is true, an IOError will be raised.
+        is expected to be written to the file.
         """
-        if 'a' in self.mode:
-            self._seek(0, SEEK_END)
+        self._assert_mode("w-")
 
-        statmsg, res = self._file.write(string, self._ipp)
-        if statmsg.ok and not statmsg.error:
-            self._seek(len(string), SEEK_CUR)
-            self._size = max(self._size, self._tell())
-            return None
-        else:
+        if 'a' in self.mode:
+            self.seek(0, SEEK_END)
+
+        statmsg, res = self._file.write(string, offset=self._ipp,
+                                        timeout=self.timeout)
+
+        if not statmsg.ok or statmsg.error:
             raise IOError(("Error writing to file: {0}".format(
                            statmsg.message), self))
 
-    def _seek(self, offset, whence):
+        self._ipp += len(string)
+        self._size = max(self.size, self.tell())
+        if flushing:
+            self.flush()
+
+    def seek(self, offset, whence=SEEK_SET):
         """Set the file's internal position pointer, approximately.
-
-        This method should set the file's position to approximately 'offset'
-        bytes relative to the position specified by 'whence'.  If it is
-        not possible to position the pointer exactly at the given offset,
-        it should be positioned at a convenient *smaller* offset and the
-        file data between the real and apparent position should be returned.
-
-        At minimum, this method must implement the ability to seek to
-        the start of the file, i.e. offset=0 and whence=0.  If more
-        complex seeks are difficult to implement then it may raise
-        NotImplementedError to have them simulated (inefficiently) by
-        the higher-level machinery of this class.
 
         The possible values of whence and their meaning are defined
         in the Linux man pages for `lseek()`:
         http://man7.org/linux/man-pages/man2/lseek.2.html
 
-        SEEK_SET
+        ``SEEK_SET``
             The internal position pointer is set to offset bytes.
-        SEEK_CUR
+        ``SEEK_CUR``
             The ipp is set to its current position plus offset bytes.
-        SEEK_END
+        ``SEEK_END``
             The ipp is set to the size of the file plus offset bytes.
         """
+        if "-" in self.mode:
+            raise IOError("File is not seekable.")
+
         if whence == SEEK_SET:
             self._ipp = offset
-            return
-
-        if whence == SEEK_CUR:
+        elif whence == SEEK_CUR:
             self._ipp += offset
-            return
+        elif whence == SEEK_END:
+            self._ipp = self.size + offset
+        else:
+            raise NotImplementedError(whence)
 
-        if whence == SEEK_END:
-            self._ipp = self._size + offset
-            return
-
-        raise NotImplementedError(whence)
-
-    def _tell(self):
-        """Get the location of the file's internal position pointer.
-
-        This method must be implemented by subclasses that wish to be
-        seekable, and must return the position of the file's internal
-        pointer.
-
-        Due to buffering, the position seen by users of this class
-        (the "apparent position") may be different to the position
-        returned by this method (the "actual position").
-        """
+    def tell(self):
+        """Get the location of the file's internal position pointer."""
         return self._ipp
 
-    def _truncate(self, size):
-        """Truncate the file's size to <size>.
+    def truncate(self, size):
+        """Truncate the file's size to ``size``.
 
-        This method must be implemented by subclasses that wish to be
-        truncatable.  It must truncate the file to exactly the given size
-        or fail with an IOError.
-
-        Note that <size> will never be None; if it was not specified by the
+        Note that ``size`` will never be None; if it was not specified by the
         user then it is calculated as the file's apparent position (which may
         be different to its actual position due to buffering).
         """
-        statmsg = self._file.truncate(size)[0]
+        if "-" in self.mode:
+            raise IOError("File is not seekable, can't truncate.")
+
+        statmsg = self._file.truncate(size, timeout=self.timeout)[0]
         if not statmsg.ok or statmsg.error:
             raise IOError((statmsg.message, self))
-        else:
-            self._seek(size, SEEK_SET)
-            self._size = size
 
-    def _get_size(self):
-        """Get current size of file as reported by the XRootD server it is
-        on."""
-        return self._size
-
-    def _is_open(self):
-        """Checks if the wrapped XRootD-File object is open."""
-        return self._file.is_open()
+        self._ipp = 0
+        self._size = size
 
     def close(self):
-        """Flush write buffers and close the file.
+        """Close the file, including flushing the write buffers.
 
         The file may not be accessed further once it is closed.
         """
         if not self.closed:
-            super(XRootDFile, self).close()
-            if self._file.is_open():
-                self._file.close()
+            self._file.close(timeout=self.timeout)
+
+    def flush(self):
+        """Flush write buffers."""
+        if not self.closed:
+            statmsg = self._file.sync(timeout=self.timeout)
+            if not statmsg.ok or statmsg.error:
+                raise IOError((statmsg.message, self))
+
+    @property
+    def closed(self):
+        """Check if file is closed."""
+        return not self._file.is_open()
+
+    @property
+    def size(self):
+        """Get file size."""
+        if self._size == -1:
+            statmsg, res = self._file.stat(timeout=self.timeout)
+            if not statmsg.ok or statmsg.error:
+                raise IOError((statmsg.message, self))
+            self._size = res.size
+        return self._size
+
+    def _assert_mode(self, mode, mstr=None):
+        """Check whether the file may be accessed in the given mode."""
+        if mstr is None:
+            try:
+                mstr = self.mode
+            except AttributeError:
+                mstr = "r+"
+        if "+" in mstr:
+            return True
+        if "-" in mstr and "-" not in mode:
+            raise IOError("File does not support seeking.")
+        if "r" in mode:
+            if "r" not in mstr:
+                raise IOError("File not opened for reading")
+        if "w" in mode:
+            if "w" not in mstr and "a" not in mstr:
+                raise IOError("File not opened for writing")
+        return True

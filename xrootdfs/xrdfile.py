@@ -68,16 +68,15 @@ class XRootDFile(object):
         # flag translation
         self._flags = translate_file_mode_to_flags(mode)
 
-        status, response = self._file.open(path, flags=self._flags,
-                                           timeout=self.timeout)
-        if not status.ok:
-            if status.errno == 3011:
+        statmsg, response = self._file.open(path, flags=self._flags,
+                                            timeout=self.timeout)
+        if not statmsg.ok or statmsg.error:
+            if statmsg.errno == 3011:
                 raise ResourceNotFoundError(path)
             else:
                 raise IOError(
-                    "Error returned by XRootD server while trying to"
-                    " instantiate file.", {'message': status.message,
-                                           'file': path})
+                    "XRootD error while instantiating file ({0}): {1}"
+                    .format(path, statmsg.message))
 
         # Deal with the modes
         if self.mode == 'a':
@@ -167,8 +166,8 @@ class XRootDFile(object):
                                         timeout=self.timeout)
 
         if not statmsg.ok or statmsg.error:
-            raise IOError(("Error writing to file: {0}".format(
-                           statmsg.message), self))
+            raise IOError("XRootD error writing to file: {0}".format(
+                          statmsg.message))
 
         self._ipp += len(string)
         self._size = max(self.size, self.tell())
@@ -213,11 +212,12 @@ class XRootDFile(object):
         be different to its actual position due to buffering).
         """
         if "-" in self.mode:
-            raise IOError("File is not seekable, can't truncate.")
+            raise IOError("File is not seekable; can't truncate.")
 
         statmsg = self._file.truncate(size, timeout=self.timeout)[0]
         if not statmsg.ok or statmsg.error:
-            raise IOError((statmsg.message, self))
+            raise IOError("XRootD error while truncating: {0}".format(
+                          statmsg.message))
 
         self._ipp = 0
         self._size = size
@@ -235,7 +235,8 @@ class XRootDFile(object):
         if not self.closed:
             statmsg = self._file.sync(timeout=self.timeout)
             if not statmsg.ok or statmsg.error:
-                raise IOError((statmsg.message, self))
+                raise IOError("XRootD error while flushing write buffer: {0}".
+                              format(statmsg.message))
 
     @property
     def closed(self):
@@ -248,7 +249,8 @@ class XRootDFile(object):
         if self._size == -1:
             statmsg, res = self._file.stat(timeout=self.timeout)
             if not statmsg.ok or statmsg.error:
-                raise IOError((statmsg.message, self))
+                raise IOError("XRootD error while retrieving size: {0}".format(
+                              statmsg.message))
             self._size = res.size
         return self._size
 

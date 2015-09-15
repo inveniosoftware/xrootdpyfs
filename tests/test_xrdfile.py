@@ -404,3 +404,11 @@ def test_init_streammodes(tmppath):
     xfile.close()
     xfile = XRootDFile(mkurl(fp), 'r')
     assert xfile.read() == conts
+
+
+def test_read_errors(tmppath):
+    fd = get_tsta_file(tmppath)
+    fp, fc = fd['full_path'], fd['contents']
+    xfile = XRootDFile(mkurl(fp), 'r')
+    xfile.close()
+    pytest.raises(ValueError, xfile.read)

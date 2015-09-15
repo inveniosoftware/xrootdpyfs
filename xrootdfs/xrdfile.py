@@ -105,6 +105,9 @@ class XRootDFile(object):
         until None has been read from _read().  Once EOF is reached, it
         should be safe to call _read() again, immediately returning None.
         """
+        if self.closed:
+            raise ValueError("I/O operation on closed file.")
+
         self._assert_mode("r-")
 
         chunksize = sizehint if sizehint > 0 else self.size
@@ -115,6 +118,10 @@ class XRootDFile(object):
             size=chunksize,
             timeout=self.timeout,
         )
+
+        if not statmsg.ok or statmsg.error:
+            raise IOError("XRootD error reading file: {0}".format(
+                          statmsg.message))
 
         # Increment internal file pointer.
         self._ipp = min(self._ipp + chunksize, self.size)

@@ -12,9 +12,11 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 from os.path import join
 
+import fs.path
 import pytest
 from fixture import mkurl, tmppath
 from fs.errors import InvalidPathError, PathError, ResourceNotFoundError
+from fs.opener import fsopendir, opener
 from xrootdfs import XRootDFile
 from xrootdfs.utils import is_valid_path, is_valid_url
 
@@ -83,9 +85,24 @@ def get_mltl_file(tmppath):
 
 def get_file(fn, fp, tmppath):
     fpp = join(tmppath, fp, fn)
-    with open(fpp) as f:
+    with opener.open(fpp) as f:
         fc = f.read()
     return {'filename': fn, 'dir': fp, 'contents': fc, 'full_path': fpp}
+
+
+def copy_file(fn, fp, tmppath):
+    path = join(tmppath, fp)
+    fn_new = fn + '_copy'
+    this_fs = fsopendir(path)
+    this_fs.copy(fn, fn_new)
+    return fn_new
+
+
+def get_copy_file(arg):
+    # Would get called with e.g. arg=get_tsta_file(...)
+    fp = fs.path.dirname(arg['full_path'])
+    fn_new = copy_file(arg['filename'], '', fp)
+    return get_file(fn_new, '', fp)
 
 
 def test_open_close(tmppath):
@@ -185,6 +202,40 @@ def test_seek_and_tell(tmppath):
     assert nconts == fc[newpos:]
 
 
+def test_tell_after_open(tmppath):
+    """Tests for tell's init values in the various file modes."""
+    fd = get_tsta_file(tmppath)
+    full_path, fc = fd['full_path'], fd['contents']
+
+    xfile = XRootDFile(mkurl(full_path), 'r')
+    assert xfile.tell() == 0
+    xfile.close()
+
+    xfile = XRootDFile(mkurl(full_path), 'r+')
+    assert xfile.tell() == 0
+    xfile.close()
+
+    xfile = XRootDFile(mkurl(full_path), 'r-')
+    assert xfile.tell() == 0
+    xfile.close()
+
+    xfile = XRootDFile(mkurl(full_path), 'a')
+    assert xfile.tell() == len(fc)
+    xfile.close()
+
+    xfile = XRootDFile(mkurl(full_path), 'a+')
+    assert xfile.tell() == len(fc)
+    xfile.close()
+
+    xfile = XRootDFile(mkurl(full_path), 'w')
+    assert xfile.tell() == 0
+    xfile.close()
+
+    xfile = XRootDFile(mkurl(full_path), 'w-')
+    assert xfile.tell() == 0
+    xfile.close()
+
+
 def test_truncate1(tmppath):
     """Test truncate(0)."""
     fd = get_tsta_file(tmppath)
@@ -223,6 +274,7 @@ def test_truncate1(tmppath):
     xfile.truncate(1)
     assert xfile.tell() == 0
     assert xfile.size == 1
+    xfile.seek(0)
     assert xfile.read() == '\x00'
     assert xfile.tell() == 1
     xfile.close()
@@ -240,9 +292,11 @@ def test_truncate2(tmppath):
     conts = xfile.read()
     assert conts == fc
 
-    xfile.truncate(xfile.size)
-    assert xfile.tell() == 0
+    newsize = xfile.size
+    xfile.truncate(newsize)
+    assert xfile.tell() == newsize
     assert xfile.size == len(fc)
+    xfile.seek(0)
     assert xfile.read() == conts
 
 
@@ -252,10 +306,114 @@ def test_truncate3(tmppath):
     full_path, fc = fd['full_path'], fd['contents']
     xfile = XRootDFile(mkurl(full_path), 'r+')
 
+    initcp = xfile.tell()
+
     newsiz = len(fc)//2
     xfile.truncate(newsiz)
-    assert xfile.tell() == 0
-    assert xfile.read() == fc[:-newsiz]
+    assert xfile.tell() == initcp
+    xfile.seek(0)  # reset the internal pointer before reading
+    assert xfile.read() == fc[:newsiz]
+
+
+def test_truncate4(tmppath):
+    """Verifies that truncate() raises errors on non-truncatable files."""
+    fd = get_mltl_file(tmppath)
+    full_path, fc = fd['full_path'], fd['contents']
+
+    xfile = XRootDFile(mkurl(full_path), 'r')
+    pytest.raises(IOError, xfile.truncate, 0)
+
+    xfile.close()
+    xfile = XRootDFile(mkurl(full_path), 'w-')
+    pytest.raises(IOError, xfile.truncate, 0)
+
+
+def test_truncate5(tmppath):
+    """Test truncate() (no arg)."""
+    fd = get_tsta_file(tmppath)
+    fb = get_copy_file(fd)
+    fp, fc = fd['full_path'], fd['contents']
+    fp2 = fb['full_path']
+
+    xfa = XRootDFile(mkurl(fp), 'r+')
+    xfb = XRootDFile(mkurl(fp2), 'r+')
+
+    acnts = xfa.read()
+    assert acnts == xfb.read()
+
+    # internal pointer starts at 0 in all 'r' modes.
+    xtell = xfa.tell()
+    assert xfa.tell() == xfb.tell()
+    # f.truncate() and f.truncate(self.tell()) should be equivalent
+    xfa.truncate(), xfb.truncate(xfb.tell())
+    assert xfa.size == xfb.size
+    assert xfa.tell() == xtell
+    assert xfb.tell() == xtell
+    assert xfb.read() == u''
+    assert xfa.read() == u''
+
+    xfa.seek(0), xfb.seek(0)
+    are = xfa.read()
+    assert are == fc
+    assert are == xfb.read()
+
+
+def test_truncate_read_write(tmppath):
+    """Tests behaviour of writing after reading after truncating."""
+    fd = get_tsta_file(tmppath)
+    fb = get_copy_file(fd)
+    fp, fc = fd['full_path'], fd['contents']
+    fp2 = fb['full_path']
+
+    sp = len(fc)//2
+    wstr = "I am the string"
+
+    pfile = open(fp2, 'r+')
+    xfile = XRootDFile(mkurl(fp), 'r+')
+
+    xfile.truncate(sp), pfile.truncate(sp)
+    assert xfile.tell() == pfile.tell()
+    assert xfile.read() == pfile.read()
+    assert xfile.tell() == pfile.tell()
+
+    xfile.write(wstr), pfile.write(wstr)
+    assert xfile.tell() == pfile.tell()
+    assert xfile.read() == pfile.read()
+
+    xfile.seek(0), pfile.seek(0)
+    assert xfile.tell() == pfile.tell()
+    assert xfile.read() == pfile.read()
+
+
+def test_truncate_read_write2(tmppath):
+    """Tests behaviour of writing after seek(0) after
+       reading after truncating."""
+    fd = get_tsta_file(tmppath)
+    fb = get_copy_file(fd)
+    fp, fc = fd['full_path'], fd['contents']
+    fp2 = fb['full_path']
+
+    sp = len(fc)//2
+    wstr = "I am the string"
+
+    pfile = open(fp2, 'r+')
+    xfile = XRootDFile(mkurl(fp), 'r+')
+
+    xfile.truncate(sp), pfile.truncate(sp)
+    assert xfile.tell() == pfile.tell()
+    assert xfile.read() == pfile.read()
+    assert xfile.tell() == pfile.tell()
+
+    xfile.seek(0), pfile.seek(0)
+    assert xfile.tell() == pfile.tell()
+    assert xfile.read() == pfile.read()
+    xfile.seek(0), pfile.seek(0)
+
+    xfile.write(wstr), pfile.write(wstr)
+    assert xfile.tell() == pfile.tell()
+    assert xfile.read() == pfile.read()
+    xfile.seek(0), pfile.seek(0)
+    assert xfile.read() == pfile.read()
 
 
 def test_write(tmppath):
@@ -341,14 +499,14 @@ def test_init_append(tmppath):
     pytest.raises(IOError, xfile.read)
 
 
-def test_init_append(tmppath):
+def test_init_appendread(tmppath):
     """Test for files opened in mode 'a+'."""
     fd = get_tsta_file(tmppath)
     fp, fc = fd['full_path'], fd['contents']
     xfile = XRootDFile(mkurl(fp), 'a+')
     assert xfile.mode == 'a+'
-    assert xfile.read() == fc
     assert xfile.tell() == len(fc)
+    assert xfile.read() == u''
 
     # Seeking is allowed, but writes still go on the end.
     xfile.seek(0)
@@ -412,3 +570,62 @@ def test_read_errors(tmppath):
     xfile = XRootDFile(mkurl(fp), 'r')
     xfile.close()
     pytest.raises(ValueError, xfile.read)
+
+
+def test_read_and_write(tmppath):
+    """Tests that the XRDFile behaves like a regular python file."""
+    fd = get_tsta_file(tmppath)
+    fb = get_copy_file(fd)
+    fp, fc = fd['full_path'], fd['contents']
+    fp2 = fb['full_path']
+
+    seekpoint = len(fc)//2
+    writestr = "Come what may in May this day says Ray all gay like Jay"
+
+    pfile = open(fp2, 'r+')
+    xfile = XRootDFile(mkurl(fp), 'r+')
+
+    assert xfile.tell() == pfile.tell()
+    assert xfile.read() == pfile.read()
+    assert xfile.tell() == pfile.tell()
+
+    xfile.seek(seekpoint), pfile.seek(seekpoint)
+    assert xfile.tell() == pfile.tell()
+    xfile.write(writestr), pfile.write(writestr)
+    assert xfile.tell() == pfile.tell()
+    assert xfile.read() == pfile.read()
+
+    xfile.seek(0), pfile.seek(0)
+    assert xfile.tell() == pfile.tell()
+    assert xfile.read() == pfile.read()
+
+
+def test_write_and_read(tmppath):
+    """Tests that the XRootDFile behaves like a regular python file in w+."""
+    fd = get_tsta_file(tmppath)
+    fb = get_copy_file(fd)
+    fp, fc = fd['full_path'], fd['contents']
+    fp2 = fb['full_path']
+
+    writestr = "Hello fair mare what fine stairs."
+    seekpoint = len(writestr)//2
+    # In 'w' (and variant modes) the file's contents are deleted upon opening.
+
+    pfile = open(fp2, 'w+')
+    xfile = XRootDFile(mkurl(fp), 'w+')
+
+    assert xfile.tell() == pfile.tell()
+    assert xfile.read() == pfile.read()
+    assert xfile.tell() == pfile.tell()
+
+    xfile.write(writestr), pfile.write(writestr)
+    assert xfile.tell() == pfile.tell()
+    assert xfile.read() == pfile.read()
+    xfile.seek(0), pfile.seek(0)
+    assert xfile.read() == pfile.read()
+    assert xfile.tell() == pfile.tell()
+
+    xfile.seek(seekpoint), pfile.seek(seekpoint)
+    assert xfile.tell() == pfile.tell()
+    assert xfile.read() == pfile.read()
+    assert xfile.tell() == pfile.tell()

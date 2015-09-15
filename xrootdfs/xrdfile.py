@@ -79,7 +79,7 @@ class XRootDFile(object):
                     .format(path, statmsg.message))
 
         # Deal with the modes
-        if self.mode == 'a':
+        if 'a' in self.mode:
             self.seek(self.size, SEEK_SET)
 
     def __iter__(self):
@@ -124,7 +124,10 @@ class XRootDFile(object):
                           statmsg.message))
 
         # Increment internal file pointer.
-        self._ipp = min(self._ipp + chunksize, self.size)
+        self._ipp = min(
+            self._ipp + chunksize,
+            self.size if self.size > self._ipp else self._ipp
+        )
 
         return res
 
@@ -211,22 +214,26 @@ class XRootDFile(object):
         """Get the location of the file's internal position pointer."""
         return self._ipp
 
-    def truncate(self, size):
+    def truncate(self, size=None):
         """Truncate the file's size to ``size``.
 
         Note that ``size`` will never be None; if it was not specified by the
         user then it is calculated as the file's apparent position (which may
         be different to its actual position due to buffering).
         """
+        self._assert_mode('+')
+
         if "-" in self.mode:
             raise IOError("File is not seekable; can't truncate.")
+
+        if size is None:
+            size = self.tell()
 
         statmsg = self._file.truncate(size, timeout=self.timeout)[0]
         if not statmsg.ok or statmsg.error:
             raise IOError("XRootD error while truncating: {0}".format(
                           statmsg.message))
 
-        self._ipp = 0
         self._size = size
 
     def close(self):

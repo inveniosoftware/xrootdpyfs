@@ -5,14 +5,12 @@
 # terms of the Revised BSD License; see LICENSE file for more details.
 
 
-sudo: false
+sudo: required
 
 language: python
 
-python:
-  - "2.7"
-  - "3.3"
-  - "3.4"
+services:
+  - docker
 
 env:
   - REQUIREMENTS=devel
@@ -20,34 +18,18 @@ env:
   - REQUIREMENTS=lowest
 
 cache:
-  - pip
+  - docker
 
 install:
-  # Install test dependencies
+  - "docker build -t xrootd ."
+  - "docker run -h xrootdfs -t -u root xrootd pip install -r requirements.${REQUIREMENTS}.txt"
   - "travis_retry pip install coveralls pep257 Sphinx twine wheel"
-  - "travis_retry pip install pytest pytest-pep8 pytest-cov pytest-cache"
-  - "travis_retry pip install -r requirements.${REQUIREMENTS}.txt"
-  - "travis_retry pip install -e ."
 
 script:
-  - pep257 xrootdfs
-  - "sphinx-build -qnNW docs docs/_build/html"
-  - python setup.py test
-  - "sphinx-build -qnNW -b doctest docs docs/_build/doctest"
+  - "docker run -h xrootdfs -t xrootd"
 
 after_success:
   - coveralls
 
 notifications:
   email: false
-
-deploy:
-  provider: pypi
-  user: lnielsen
-  password:
-    secure:
-  distributions: "sdist bdist_wheel"
-  on:
-    tags: true
-    python: "2.7"
-    condition: $REQUIREMENTS = latest

@@ -14,7 +14,7 @@ FROM centos:7
 # Install xrootd
 RUN rpm -Uvh http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 
-RUN yum install -y xrootd xrootd-server xrootd-client xrootd-client-devel xrootd-python
+RUN yum install -y xrootd xrootd-server xrootd-client xrootd-client-devel xrootd-python git
 
 RUN yum install -y python-pip
 

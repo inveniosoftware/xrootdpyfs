@@ -83,9 +83,21 @@ def get_mltl_file(tmppath):
     return get_file(fn, fp, tmppath)
 
 
+def get_bin_testfile(tmppath):
+    fn, fp = 'binary.dat', 'data'
+    return get_file_binary(fn, fp, tmppath)
+
+
 def get_file(fn, fp, tmppath):
     fpp = join(tmppath, fp, fn)
     with opener.open(fpp) as f:
+        fc = f.read()
+    return {'filename': fn, 'dir': fp, 'contents': fc, 'full_path': fpp}
+
+
+def get_file_binary(fn, fp, tmppath):
+    fpp = join(tmppath, fp, fn)
+    with opener.open(fpp, 'rb') as f:
         fc = f.read()
     return {'filename': fn, 'dir': fp, 'contents': fc, 'full_path': fpp}
 
@@ -98,11 +110,12 @@ def copy_file(fn, fp, tmppath):
     return fn_new
 
 
-def get_copy_file(arg):
+def get_copy_file(arg, binary=False):
     # Would get called with e.g. arg=get_tsta_file(...)
     fp = fs.path.dirname(arg['full_path'])
     fn_new = copy_file(arg['filename'], '', fp)
-    return get_file(fn_new, '', fp)
+    return get_file_binary(fn_new, '', fp) if binary else get_file(
+        fn_new, '', fp)
 
 
 def test_open_close(tmppath):
@@ -705,3 +718,50 @@ def test_seek_past_eof_wr(tmppath):
     expected = fc + '\x00'*(skpnt-eof+len(wstr)) + wstr
     xfile.seek(0), pfile.seek(0)
     assert xfile.read() == pfile.read() == expected
+
+
+def test_read_binary(tmppath):
+    """Tests reading binary data from an existing file."""
+    fd = get_bin_testfile(tmppath)
+    fb = get_copy_file(fd, binary=True)
+    fp, fc = fd['full_path'], fd['contents']
+    fp2 = fb['full_path']
+
+    pfile = open(fp2, 'rb')
+    xfile = XRootDFile(mkurl(fp), 'rb')
+
+    assert xfile.read() == pfile.read() == fc
+
+
+def test_write_binary(tmppath):
+    """Tests for writing binary data to file."""
+    fd = get_bin_testfile(tmppath)
+    fp, fc = fd['full_path'], fd['contents']
+
+    # Test w/ confirmed binary data read from a binary file
+    xf_new = XRootDFile(mkurl(join(tmppath, 'data/tmp_bin')), 'wb+')
+    xf_new.write(fc), xf_new.seek(0)
+    assert xf_new.read() == fc
+
+    xf_new.close()
+    # Verify persistence.
+    xf_new = XRootDFile(mkurl(join(tmppath, 'data/tmp_bin')), 'r+')
+    assert xf_new.read() == fc
+
+    # Test truncate
+    xf_new.truncate()
+    xf_new.seek(0)
+    assert xf_new.read() == fc
+    xf_new.close()
+
+    # Test with bytearray
+    xf_new = XRootDFile(mkurl(join(tmppath, 'data/tmp_bin')), 'wb+')
+    barr = str(bytearray(range(0, 5)))
+    xf_new.write(barr), xf_new.seek(0)
+    assert xf_new.read() == barr
+    xf_new.close()
+
+    # Verify persistence.
+    xf_new = XRootDFile(mkurl(join(tmppath, 'data/tmp_bin')), 'r')
+    assert xf_new.read() == barr
+    xf_new.close()

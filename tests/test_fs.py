@@ -72,7 +72,7 @@ def test_listdir(tmppath):
     assert 'data' in dirs
 
     dirs = XRootDFS(rooturl).listdir("data")
-    assert len(dirs) == 4
+    assert len(dirs) == 5
 
     dirs = XRootDFS(rooturl + "/data").listdir("afolder", full=True)
     assert 'afolder/afile.txt' in dirs

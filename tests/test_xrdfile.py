@@ -629,3 +629,79 @@ def test_write_and_read(tmppath):
     assert xfile.tell() == pfile.tell()
     assert xfile.read() == pfile.read()
     assert xfile.tell() == pfile.tell()
+
+
+def test_seek_past_eof_rw(tmppath):
+    """Tests read/write/truncate behaviour after seeking past the EOF, 'r+'."""
+    fd = get_tsta_file(tmppath)
+    fb = get_copy_file(fd)
+    fp, fc = fd['full_path'], fd['contents']
+    fp2 = fb['full_path']
+
+    wstr = "www"
+    eof = len(fc)
+    skpnt = len(fc)+4
+
+    pfile = open(fp2, 'r+')
+    xfile = XRootDFile(mkurl(fp), 'r+')
+
+    xfile.seek(skpnt), pfile.seek(skpnt)
+    assert xfile.tell() == pfile.tell()
+    assert xfile.read() == pfile.read()
+    assert xfile.tell() == pfile.tell()
+    assert xfile.tell() == skpnt
+
+    xfile.write(wstr), pfile.write(wstr)
+    assert xfile.tell() == pfile.tell()
+    xfile.seek(eof), pfile.seek(eof)
+    assert xfile.read() == pfile.read() == '\x00'*(skpnt-eof) + wstr
+    assert xfile.tell() == pfile.tell()
+
+    xfile.seek(0), pfile.seek(0)
+    assert xfile.read() == pfile.read()
+
+    xfile.truncate(skpnt), pfile.truncate(skpnt)
+    assert xfile.tell() == pfile.tell() == skpnt + len(wstr)
+
+    xfile.write(wstr), pfile.write(wstr)
+    expected = fc + '\x00'*(skpnt-eof+len(wstr)) + wstr
+    xfile.seek(0), pfile.seek(0)
+    assert xfile.read() == pfile.read() == expected
+
+
+def test_seek_past_eof_wr(tmppath):
+    """Tests read/write/truncate behaviour after seeking past the EOF, 'w+'"""
+    fd = get_tsta_file(tmppath)
+    fb = get_copy_file(fd)
+    fp, fc = fd['full_path'], u''
+    fp2 = fb['full_path']
+
+    wstr = "www"
+    eof = len(fc)
+    skpnt = len(fc)+4
+
+    pfile = open(fp2, 'w+')
+    xfile = XRootDFile(mkurl(fp), 'w+')
+
+    xfile.seek(skpnt), pfile.seek(skpnt)
+    assert xfile.tell() == pfile.tell()
+    assert xfile.read() == pfile.read()
+    assert xfile.tell() == pfile.tell()
+    assert xfile.tell() == skpnt
+
+    xfile.write(wstr), pfile.write(wstr)
+    assert xfile.tell() == pfile.tell()
+    xfile.seek(eof), pfile.seek(eof)
+    assert xfile.read() == pfile.read() == '\x00'*(skpnt-eof) + wstr
+    assert xfile.tell() == pfile.tell()
+
+    xfile.seek(0), pfile.seek(0)
+    assert xfile.read() == pfile.read()
+
+    xfile.truncate(skpnt), pfile.truncate(skpnt)
+    assert xfile.tell() == pfile.tell() == skpnt + len(wstr)
+
+    xfile.write(wstr), pfile.write(wstr)
+    expected = fc + '\x00'*(skpnt-eof+len(wstr)) + wstr
+    xfile.seek(0), pfile.seek(0)
+    assert xfile.read() == pfile.read() == expected

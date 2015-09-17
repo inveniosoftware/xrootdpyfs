@@ -221,7 +221,7 @@ class XRootDFile(object):
         user then it is calculated as the file's apparent position (which may
         be different to its actual position due to buffering).
         """
-        self._assert_mode('+')
+        self._assert_mode('w')
 
         if "-" in self.mode:
             raise IOError("File is not seekable; can't truncate.")

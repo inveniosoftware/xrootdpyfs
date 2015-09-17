@@ -35,7 +35,7 @@ where, ``<tmpfolder>`` is dependent on your system (e.g. on OS X it is
 ``/var/folders``, while on Linux it can be left empty).
 
 .. note::
-   XRootD have issues with Docker's default hostname, thus it's import to
+   XRootD have issues with Docker's default hostname, thus it is important to
    supply a host name to ``docker run`` via the ``-h`` option.
 
 Installing an XRootD server
@@ -57,8 +57,8 @@ RedHat based distributions/versions.
 Ubuntu
 ~~~~~~
 
-Unfortunately there is no official support for XRootD on Ubuntu. You will have
-to install XRootD from the source distribution.
+There is no official support for XRootD on Ubuntu, so you will have to install
+XRootD from the source distribution.
 
 OS X
 ~~~~

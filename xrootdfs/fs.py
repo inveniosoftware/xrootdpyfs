@@ -15,8 +15,9 @@ from glob import fnmatch
 
 from fs.base import FS
 from fs.errors import DestinationExistsError, DirectoryNotEmptyError, \
-    FSError, InvalidPathError, ResourceInvalidError, UnsupportedError
-from fs.path import normpath, pathcombine, pathjoin
+    FSError, InvalidPathError, ResourceInvalidError, ResourceNotFoundError, \
+    UnsupportedError
+from fs.path import dirname, normpath, pathcombine, pathjoin
 from XRootD.client import FileSystem
 from XRootD.client.flags import AccessMode, DirListFlags, MkDirFlags, \
     StatInfoFlags
@@ -66,6 +67,17 @@ class XRootDFS(FS):
         # It is resolved by adding on an additional '/' to its return value.
         return '/' + pathjoin(self.base_path, path)
 
+    def _raise_status(self, path, status):
+        """Raise error based on status."""
+        if status.errno == 3006:
+            raise DestinationExistsError(path=path, details=status)
+        elif status.errno == 3005:
+            raise DirectoryNotEmptyError(path=path, details=status)
+        elif status.errno == 3011:
+            raise ResourceNotFoundError(path=path, details=status)
+        else:
+            raise FSError(details=status)
+
     def open(self, path, mode='r', buffering=-1, encoding=None, errors=None,
              newline=None, line_buffering=False, **kwargs):
         """Open the given path as a file-like object.
@@ -81,8 +93,6 @@ class XRootDFS(FS):
 
         :rtype: a file-like object
 
-        :raises `fs.errors.ParentDirectoryMissingError`: if an intermediate
-            directory is missing
         :raises `fs.errors.ResourceInvalidError`: if an intermediate directory
             is an file
         :raises `fs.errors.ResourceNotFoundError`: if the path is not found
@@ -129,8 +139,6 @@ class XRootDFS(FS):
 
         :rtype: iterable of paths
 
-        :raises `fs.errors.ParentDirectoryMissingError`: if an intermediate
-            directory is missing
         :raises `fs.errors.ResourceInvalidError`: if the path exists, but is
             not a directory
         :raises `fs.errors.ResourceNotFoundError`: if the path is not found
@@ -145,7 +153,7 @@ class XRootDFS(FS):
         status, stat = self.client.stat(self._p(path))
 
         if not status.ok:
-            raise InvalidPathError(path=path, details=status)
+            raise self._raise_status(path, status)
         return stat.flags
 
     def isdir(self, path, _statobj=None):
@@ -157,7 +165,7 @@ class XRootDFS(FS):
         :rtype: bool
 
         """
-        flags = self._stat_flags(path) if _statobj is None else _statobj
+        flags = self._stat_flags(path) if _statobj is None else _statobj.flags
         return bool(flags & StatInfoFlags.IS_DIR)
 
     def isfile(self, path, _statobj=None):
@@ -169,7 +177,7 @@ class XRootDFS(FS):
         :rtype: bool
 
         """
-        flags = self._stat_flags(path) if _statobj is None else _statobj
+        flags = self._stat_flags(path) if _statobj is None else _statobj.flags
         return not bool(flags & (StatInfoFlags.IS_DIR | StatInfoFlags.OTHER))
 
     def exists(self, path):
@@ -196,7 +204,6 @@ class XRootDFS(FS):
 
         :raises `fs.errors.DestinationExistsError`: if the path is already a
             existing, and allow_recreate is False
-        :raises `fs.errors.ParentDirectoryMissingError`:
         :raises `fs.errors.ResourceInvalidError`: if a containing
             directory is missing and recursive is False or if a path is an
             existing file
@@ -206,21 +213,11 @@ class XRootDFS(FS):
 
         status, res = self.client.mkdir(self._p(path), flags=flags, mode=mode)
 
-        if status.ok or (allow_recreate and status.errno == 3006):
-            return True
-
-        self._raise_status(path, status)
-
-    def _raise_status(self, path, status):
-        """Raise error based on status."""
-        if status.errno == 3006:
-            raise DestinationExistsError(path=path, details=status)
-        elif status.errno == 3005:
-            raise DirectoryNotEmptyError(path=path, details=status)
-        elif status.errno == 3011:
-            raise ResourceInvalidError(path=path, details=status)
-        else:
-            raise FSError(details=status)
+        if not status.ok:
+            if allow_recreate and status.errno == 3006:
+                return True
+            self._raise_status(path, status)
+        return True
 
     def remove(self, path):
         """Remove a file from the filesystem.
@@ -234,51 +231,70 @@ class XRootDFS(FS):
         """
         status, res = self.client.rm(self._p(path))
 
-        if status.ok:
-            return True
-
-        self._raise_status(path, status)
+        if not status.ok:
+            self._raise_status(path, status)
+        return True
 
     def removedir(self, path, recursive=False, force=False):
         """Remove a directory from the filesystem.
 
-        :param path: path of the directory to remove
+        :param path: path of the directory to remove.
         :type path: string
-        :param recursive: if True, empty parent directories will be removed
+        :param recursive: Unsupported by XRootDFS implementation.
         :type recursive: bool
         :param force: if True, any directory contents will be removed
+            (recursively). Note that this can be very expensive as the xrootd
+            protocol does not support recursive deletes - i.e. the library
+            will do a full recursive listing of the directory and send a
+            network request per file/directory.
         :type force: bool
 
         :raises `fs.errors.DirectoryNotEmptyError`: if the directory is not
-            empty and force is False
-        :raises `fs.errors.ParentDirectoryMissingError`: if an intermediate
-            directory is missing
+            empty and force is `False`.
         :raises `fs.errors.ResourceInvalidError`: if the path is not a
-            directory
-        :raises `fs.errors.ResourceNotFoundError`: if the path does not exist
+            directory.
+        :raises `fs.errors.ResourceNotFoundError`: if the path does not exist.
         """
+        if recursive:
+            raise UnsupportedError("recursive parameter is not supported.")
+
         status, res = self.client.rmdir(self._p(path))
+
         if not status.ok:
-            raise FSError(details=status)
+            if force and status.errno == 3005:
+                # pyxrootd does not support recursive removal so do we have to
+                # do it ourselves.
+                for d, filenames in self.walk(path, search="depth"):
+                    for filename in filenames:
+                        path = pathjoin(d, filename)
+                        status, res = self.client.rm(
+                            path, timeout=self.timeout)
+                        if not status.ok:
+                            self._raise_status(path, status)
+                    status, res = self.client.rmdir(d, timeout=self.timeout)
+                    if not status.ok:
+                        self._raise_status(path, status)
+                return True
+            self._raise_status(path, status)
         return True
 
     def rename(self, src, dst):
         """Rename a file or directory.
 
-        :param src: path to rename
+        :param src: path to rename.
         :type src: string
-        :param dst: new name
+        :param dst: new name.
         :type dst: string
 
-        :raises ParentDirectoryMissingError: if a containing directory is
-            missing
-        :raises ResourceInvalidError: if the path or a parent path is not a
-            directory or src is a parent of dst or one of src or dst is a dir
-            and the other don't
-        :raises ResourceNotFoundError: if the src path does not exist
-
+        :raises DestinationExistsError: if destination already exists.
+        :raises ResourceNotFoundError: if source does not exists.
         """
-        raise UnsupportedError("rename resource")
+        src = self._p(src)
+        dst = self._p(pathjoin(dirname(src), dst))
+
+        if not self.exists(src):
+            raise ResourceNotFoundError(src)
+        return self._move(src, dst, overwrite=False)
 
     def getinfo(self, path):
         """Return information for a path as a dictionary.
@@ -372,3 +388,80 @@ class XRootDFS(FS):
             entries = (p.name for p in entries)
 
         return entries
+
+    def move(self, src, dst, overwrite=False, **kwargs):
+        """Move a file from one location to another.
+
+        :param src: source path
+        :type src: string
+        :param dst: destination path
+        :type dst: string
+        :param overwrite: When True the destination will be overwritten (if it
+            exists), otherwise a DestinationExistsError will be thrown.
+        :type overwrite: bool
+        :raise `fs.errors.DestinationExistsError`: if destination exists and
+            `overwrite` is False
+        :raise `fs.errors.ResourceInvalidError`: if source is not a file.
+        :raise `fs.errors.ResourceNotFoundError`: if source was not found.
+        """
+        src, dst = self._p(src), self._p(dst)
+
+        if not self.isfile(src):
+            if self.isdir(src):
+                raise ResourceInvalidError(
+                    src, msg="Source is not a file: %(path)s")
+            raise ResourceNotFoundError(src)
+        return self._move(src, dst, overwrite=overwrite)
+
+    def movedir(self, src, dst, overwrite=False, **kwargs):
+        """Move a directory from one location to another.
+
+        :param src: source directory path
+        :type src: string
+        :param dst: destination directory path
+        :type dst: string
+        :param overwrite: When True the destination will be overwritten (if it
+            exists), otherwise a DestinationExistsError will be thrown.
+        :type overwrite: bool
+        :raise `fs.errors.DestinationExistsError`: if destination exists and
+            `overwrite` is `False`.
+        :raise `fs.errors.ResourceInvalidError`: if source is not a directory.
+        :raise `fs.errors.ResourceNotFoundError`: if source was not found.
+        """
+        src, dst = self._p(src), self._p(dst)
+
+        if not self.isdir(src):
+            if self.isfile(src):
+                raise ResourceInvalidError(
+                    src, msg="Source is not a directory: %(path)s")
+            raise ResourceNotFoundError(src)
+        return self._move(src, dst, overwrite=overwrite)
+
+    def _move(self, src, dst, overwrite=False):
+        """Move source to destination with support for overwriting destination.
+
+        Used by ``XRootDFS.move()``, ``XRootDFS.movedir()`` and
+        ``XRootDFS.rename()``.
+
+        .. warning::
+
+           It is the responsibility of the caller of this method to check that
+           the source exists.
+
+           If ``overwrite`` is ``True``, this method will first remove any
+           destination directory/file if it exists, and then try to move the
+           source. Hence, if the source doesn't exists, it will remove the
+           destination and then fail.
+        """
+        if overwrite and self.exists(dst):
+            if self.isfile(dst):
+                self.remove(dst)
+            elif self.isdir(dst):
+                self.removedir(dst, force=True)
+
+        status, dummy = self.client.mv(src, dst, timeout=self.timeout)
+
+        if status.ok:
+            return True
+
+        self._raise_status(dst, status)

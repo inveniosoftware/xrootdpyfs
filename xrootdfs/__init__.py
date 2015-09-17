@@ -36,7 +36,7 @@ The XRootDFS package is on PyPI so all you need is:
 
 .. code-block:: console
 
-    $ pip install XRootDFS
+    $ pip install xrootdfs
 
 XRootDFS depends on `PyFilesystem <http://docs.pyfilesystem.org>`_ and
 `XRootD Python bindings <http://xrootd.org/doc/python/xrootd-python-0.1.0/>`_.
@@ -78,9 +78,6 @@ Or, alternatively using the PyFilesystem opener:
     >>> fs, path = opener.parse("root://localhost//tmp/")
     >>> fs.listdir("xrootdfs")
     [u'test.txt']
-
-Usage
-=====
 """
 
 from __future__ import absolute_import, print_function, unicode_literals

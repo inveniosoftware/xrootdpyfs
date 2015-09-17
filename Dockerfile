@@ -44,4 +44,7 @@ USER xrootdfs
 
 RUN mkdir /tmp/xrootdfs && touch /tmp/xrootdfs/test.txt
 
+# Print xrootd version
+RUN xrootd -v
+
 CMD ["bash", "/code/run-docker.sh"]

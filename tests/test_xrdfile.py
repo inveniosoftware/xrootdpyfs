@@ -14,6 +14,7 @@ from os.path import join
 
 import fs.path
 import pytest
+from fs import SEEK_CUR, SEEK_END, SEEK_SET
 from fs.errors import InvalidPathError, PathError, ResourceNotFoundError
 from fs.opener import fsopendir, opener
 
@@ -214,6 +215,46 @@ def test_seek_and_tell(tmppath):
     nconts = xfile.read()
     assert xfile.tell() == len(fc)
     assert nconts == fc[newpos:]
+
+    # Negative offsets raise an error
+    pytest.raises(IOError, xfile.seek, -1)
+
+    # floating point offsets are converted to integers
+    xfile.seek(1.1)
+    assert xfile.tell() == 1
+    xfile.seek(0.999999)
+    assert xfile.tell() == 0
+
+
+def test_seek_args(tmppath):
+    """Test seek() with a non-default whence argument."""
+    fd = get_tsta_file(tmppath)
+    fb = get_copy_file(fd)
+    full_path, fc = fd['full_path'], fd['contents']
+
+    xfile = XRootDFile(mkurl(full_path), 'r+')
+    pfile = open(fb['full_path'], 'r+')
+
+    xfile.truncate(3), pfile.truncate(3)
+    xfile.seek(2, SEEK_END), pfile.seek(2, SEEK_END)
+    assert xfile.tell() == pfile.tell()
+
+    xfile.seek(3, SEEK_CUR), pfile.seek(3, SEEK_CUR)
+    assert xfile.tell() == pfile.tell()
+
+    xfile.seek(8, SEEK_SET), pfile.seek(8, SEEK_SET)
+    assert xfile.tell() == pfile.tell()
+
+    xfile.truncate(3), pfile.truncate(3)
+    xfile.read(), pfile.read()
+    assert xfile.tell() == pfile.tell()
+    xfile.seek(8, SEEK_END), pfile.seek(8, SEEK_END)
+    assert xfile.tell() == pfile.tell()
+
+    xfile.seek(4, SEEK_CUR), pfile.seek(4, SEEK_CUR)
+    assert xfile.tell() == pfile.tell()
+
+    pytest.raises(NotImplementedError, xfile.seek, 0, 8)
 
 
 def test_tell_after_open(tmppath):
@@ -766,3 +807,43 @@ def test_write_binary(tmppath):
     xf_new = XRootDFile(mkurl(join(tmppath, 'data/tmp_bin')), 'r')
     assert xf_new.read() == barr
     xf_new.close()
+
+
+def test_readline(tmppath):
+    """Tests for readline()."""
+    fd = get_mltl_file(tmppath)
+    fb = get_copy_file(fd)
+    fp, fc = fd['full_path'], fd['contents']
+    fp2 = fb['full_path']
+
+    xfile, pfile = XRootDFile(mkurl(fp), 'r'), open(fp2, 'r')
+
+    assert xfile.readline() == pfile.readline()
+    assert xfile.readline() == pfile.readline()
+    assert xfile.readline() == pfile.readline()
+
+    xfile.close(), pfile.close()
+    xfile = XRootDFile(mkurl(fp), 'w+')
+
+    str1 = 'hello\n'
+    str2 = 'bye\n'
+
+    xfile.write(str1+str2)
+    xfile.seek(0)
+    assert xfile.readline() == str1
+    assert xfile.readline() == str2
+    assert xfile.readline() == ''
+    assert xfile.readline() == ''
+
+    xfile.seek(100)
+    assert xfile.readline() == ''
+
+    xfile.close()
+    xfile = XRootDFile(mkurl(fp), 'w+')
+
+    xfile.write(str2)
+    xfile.seek(len(str2)+1)
+    xfile.write(str2)
+    xfile.seek(0)
+    assert xfile.readline() == str2
+    assert xfile.readline() == u'\x00'+str2

@@ -14,9 +14,10 @@ from os.path import join
 
 import fs.path
 import pytest
-from fixture import mkurl, tmppath
 from fs.errors import InvalidPathError, PathError, ResourceNotFoundError
 from fs.opener import fsopendir, opener
+
+from fixture import mkurl, tmppath
 from xrootdfs import XRootDFile
 from xrootdfs.utils import is_valid_path, is_valid_url
 

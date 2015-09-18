@@ -12,10 +12,10 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 from os.path import join
 
-import pytest
-from fixture import mkurl, tmppath
 from XRootD import client as xclient
 from XRootD.client.flags import OpenFlags
+
+from fixture import mkurl, tmppath
 
 
 # If "test" is in its name then pytest picks it up.

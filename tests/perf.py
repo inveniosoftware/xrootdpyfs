@@ -26,6 +26,7 @@ from os.path import join
 
 from fs.opener import opener
 from XRootD import client
+
 from xrootdfs import XRootDOpener  # no-qa
 
 

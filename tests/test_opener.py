@@ -10,8 +10,9 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-from fixture import mkurl, tmppath
 from fs.opener import opener
+
+from fixture import mkurl, tmppath
 from xrootdfs import XRootDFile, XRootDFS, XRootDOpener
 
 

@@ -15,12 +15,13 @@ from datetime import datetime
 from os.path import exists, join
 
 import pytest
-from fixture import mkurl, tmppath
 from fs.errors import BackReferenceError, DestinationExistsError, \
     DirectoryNotEmptyError, FSError, InvalidPathError, RemoteConnectionError, \
     ResourceInvalidError, ResourceNotFoundError, UnsupportedError
 from mock import Mock
 from XRootD.client.responses import XRootDStatus
+
+from fixture import mkurl, tmppath
 from xrootdfs import XRootDFile, XRootDFS
 from xrootdfs.utils import spliturl
 

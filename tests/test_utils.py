@@ -10,8 +10,8 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-import pytest
 from XRootD.client.flags import OpenFlags
+
 from xrootdfs.utils import is_valid_path, spliturl, \
     translate_file_mode_to_flags
 

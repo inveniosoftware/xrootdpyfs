@@ -155,6 +155,19 @@ def test_makedir(tmppath):
                          "data/testa.txt")
 
 
+def test_unicode_paths(tmppath):
+    """Test creation of unicode paths."""
+    fs = XRootDFS(mkurl(tmppath))
+    d = u'\xe6\xf8\xe5'
+    assert not fs.exists(d)
+    assert fs.makedir(d)
+    assert fs.exists(d)
+    d = '\xc3\xb8\xc3\xa5\xc3\xa6'
+    assert not fs.exists(d)
+    assert fs.makedir(d)
+    assert fs.exists(d)
+
+
 def test_remove(tmppath):
     """Test remove."""
     rooturl = mkurl(tmppath)

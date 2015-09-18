@@ -42,11 +42,11 @@ class XRootDFS(FS):
         'atomic.move': True,
         'atomic.copy': True,
         'atomic.makedir': True,
-        'atomic.rename': False,
-        'atomic.setcontents': True
+        'atomic.rename': True,
+        'atomic.setcontents': False
     }
 
-    def __init__(self, url, query=None, timeout=0, thread_synchronize=True):
+    def __init__(self, url, query=None, timeout=0):
         """Initialize file system object."""
         if not is_valid_url(url):
             raise InvalidPathError(path=url)
@@ -61,7 +61,7 @@ class XRootDFS(FS):
         self.base_path = base_path
         self.query = queryargs or query
         self.client = FileSystem(root_url)
-        super(XRootDFS, self).__init__(thread_synchronize=thread_synchronize)
+        super(XRootDFS, self).__init__(thread_synchronize=False)
 
     def _p(self, path):
         """Join path to base path."""

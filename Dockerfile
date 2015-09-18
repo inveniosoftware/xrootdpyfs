@@ -22,13 +22,15 @@ RUN adduser --uid 1001 xrootdfs
 
 # Install some prerequisites ahead of `setup.py` in order to profit
 # from the docker build cache:
-RUN pip install coveralls \
-                ipython \
+RUN pip install --upgrade pip setuptools
+RUN pip install ipython \
                 pep257 \
                 pytest \
                 pytest-pep8 \
                 pytest-cache \
                 pytest-cov \
+                pytest-isort \
+                mock \
                 Sphinx
 RUN pip install fs
 

@@ -1,0 +1,16 @@
+.git
+*.gitignore
+
+*.pyc
+*.swp
+*.swo
+*.~
+
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+.tox
+.cache
+.coverage
+__pycache__

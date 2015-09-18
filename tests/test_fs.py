@@ -11,13 +11,16 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import os
+from datetime import datetime
 from os.path import exists, join
 
 import pytest
 from fixture import mkurl, tmppath
 from fs.errors import BackReferenceError, DestinationExistsError, \
-    DirectoryNotEmptyError, InvalidPathError, ResourceInvalidError, \
-    ResourceNotFoundError
+    DirectoryNotEmptyError, FSError, InvalidPathError, RemoteConnectionError, \
+    ResourceInvalidError, ResourceNotFoundError, UnsupportedError
+from mock import Mock
+from XRootD.client.responses import XRootDStatus
 from xrootdfs import XRootDFile, XRootDFS
 from xrootdfs.utils import spliturl
 
@@ -219,6 +222,96 @@ def test_rename(tmppath):
 
     fs.rename("data/cfolder/", "a/b/c/test")
     assert fs.exists("data/a/b/c/test/")
+
+
+def test_getinfo(tmppath):
+    """Test getinfo."""
+    fs = XRootDFS(mkurl(tmppath))
+
+    # Info for file
+    f = "data/testa.txt"
+    info = fs.getinfo(f)
+    assert info['size'] == os.stat(join(tmppath, f)).st_size
+    assert info['offline'] == False
+    assert info['writable'] == True
+    assert info['readable'] == True
+    assert info['executable'] == False
+    assert isinstance(info['created_time'], datetime)
+    assert isinstance(info['modified_time'], datetime)
+    assert isinstance(info['accessed_time'], datetime)
+
+    # Info for directory
+    f = "data/"
+    info = fs.getinfo(f)
+    assert info['size'] == os.stat(join(tmppath, f)).st_size
+    assert info['offline'] == False
+    assert info['writable'] == True
+    assert info['readable'] == True
+    assert info['executable'] == True
+    assert isinstance(info['created_time'], datetime)
+    assert isinstance(info['modified_time'], datetime)
+    assert isinstance(info['accessed_time'], datetime)
+
+    # Non existing path
+    pytest.raises(ResourceNotFoundError, fs.getinfo, "invalidpath/")
+
+
+def test_ping(tmppath):
+    """Test ping method."""
+    fs = XRootDFS(mkurl(tmppath))
+    assert fs.ping()
+    fake_status = {
+        "status": 3,
+        "code": 101,
+        "ok": False,
+        "errno": 0,
+        "error": True,
+        "message": '[FATAL] Invalid address',
+        "fatal": True,
+        "shellcode": 51
+    }
+    fs.client.ping = Mock(return_value=(XRootDStatus(fake_status), None))
+    pytest.raises(RemoteConnectionError, fs.ping)
+
+
+def test_checksum(tmppath):
+    """Test checksum method."""
+    fs = XRootDFS(mkurl(tmppath))
+
+    # Local xrootd server does not support checksum operation
+    pytest.raises(UnsupportedError, fs.checksum, "data/testa.txt")
+
+    # Let's fake a success response
+    fake_status = {
+        "status": 0,
+        "code": 0,
+        "ok": True,
+        "errno": 0,
+        "error": False,
+        "message": '[SUCCESS] ',
+        "fatal": False,
+        "shellcode": 0
+    }
+    fs.client.query = Mock(
+        return_value=(XRootDStatus(fake_status), 'adler32 3836a69a\x00'))
+    algo, val = fs.checksum("data/testa.txt")
+    assert algo == 'adler32' and val == "3836a69a"
+
+    # Fake a bad response (e.g. on directory)
+    fake_status = {
+        "status": 1,
+        "code": 400,
+        "ok": False,
+        "errno": 3011,
+        "error": True,
+        "message": '[ERROR] Server responded with an error: [3011] no such '
+                   'file or directory\n',
+        "fatal": False,
+        "shellcode": 54
+    }
+    fs.client.query = Mock(
+        return_value=(XRootDStatus(fake_status), None))
+    pytest.raises(FSError, fs.checksum, "data/")
 
 
 def test_move_good(tmppath):

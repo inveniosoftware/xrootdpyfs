@@ -11,16 +11,18 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import re
+from datetime import datetime
 from glob import fnmatch
+from urlparse import parse_qs
 
 from fs.base import FS
 from fs.errors import DestinationExistsError, DirectoryNotEmptyError, \
-    FSError, InvalidPathError, ResourceInvalidError, ResourceNotFoundError, \
-    UnsupportedError
+    FSError, InvalidPathError, RemoteConnectionError, ResourceInvalidError, \
+    ResourceNotFoundError, UnsupportedError
 from fs.path import dirname, normpath, pathcombine, pathjoin
 from XRootD.client import FileSystem
 from XRootD.client.flags import AccessMode, DirListFlags, MkDirFlags, \
-    StatInfoFlags
+    QueryCode, StatInfoFlags
 
 from .utils import is_valid_path, is_valid_url, spliturl
 from .xrdfile import XRootDFile
@@ -77,6 +79,17 @@ class XRootDFS(FS):
             raise ResourceNotFoundError(path=path, details=status)
         else:
             raise FSError(details=status)
+
+    def _query(self, flag, arg, parse=True):
+        """Query an xrootd server."""
+        status, res = self.client.query(flag, arg, timeout=self.timeout)
+
+        if not status.ok:
+            if status.errno == 3013:
+                raise UnsupportedError(opname="calcualte checksum",
+                                       details=status)
+            raise FSError(details=status)
+        return parse_qs(res) if parse else res
 
     def open(self, path, mode='r', buffering=-1, encoding=None, errors=None,
              newline=None, line_buffering=False, **kwargs):
@@ -301,22 +314,47 @@ class XRootDFS(FS):
 
         The following values can be found in the info dictionary:
 
-         * ``size`` - Number of bytes used to store the file or directory
-         * ``modified_time`` - A datetime object containing the time the
-           resource was modified
+        * ``size`` - Number of bytes used to store the file or directory
+        * ``created_time`` - A datetime object containing the time the
+           resource was created.
+        * ``modified_time`` - A datetime object containing the time the
+           resource was modified.
+        * ``accessed_time`` - A datetime object containing the time the
+           resource was accessed.
+        * ``offline`` - True if file/directory is offline.
+        * ``writable`` - True if file/directory is writable.
+        * ``readable`` - True if file/directory is readable.
+        * ``executable`` - True if file/directory is executable.
 
-        :param path: a path to retrieve information for
+        :param path: a path to retrieve information for.
         :type path: `string`
-
         :rtype: `dict`
-
-        :raises `fs.errors.ParentDirectoryMissingError`: if an intermediate
-            directory is missing
-        :raises `fs.errors.ResourceInvalidError`: if the path is not a
-            directory
-        :raises `fs.errors.ResourceNotFoundError`: if the path does not exist
         """
-        raise UnsupportedError("get resource info")
+        fullpath = self._p(path)
+        status, stat = self.client.stat(fullpath)
+
+        if not status.ok:
+            self._raise_status(path, status)
+
+        info = dict()
+        info['size'] = stat.size
+        info['offline'] = bool(stat.flags & StatInfoFlags.OFFLINE)
+        info['writable'] = bool(stat.flags & StatInfoFlags.IS_WRITABLE)
+        info['readable'] = bool(stat.flags & StatInfoFlags.IS_READABLE)
+        info['executable'] = bool(stat.flags & StatInfoFlags.X_BIT_SET)
+
+        res = self._query(QueryCode.XATTR, fullpath)
+        ct = res.get('oss.ct', [None])[0]
+        mt = res.get('oss.mt', [None])[0]
+        at = res.get('oss.at', [None])[0]
+
+        if ct:
+            info['created_time'] = datetime.fromtimestamp(int(ct))
+        if mt:
+            info['modified_time'] = datetime.fromtimestamp(int(mt))
+        if at:
+            info['accessed_time'] = datetime.fromtimestamp(int(at))
+        return info
 
     def ilistdir(self,
                  path="./",
@@ -465,3 +503,42 @@ class XRootDFS(FS):
             return True
 
         self._raise_status(dst, status)
+
+    #
+    # XRootD specific methods.
+    #
+    def checksum(self, path, _statobj=None):
+        """Get checksum of file from server (XRootD only).
+
+        Specific to ``XRootdFS``. Note not all XRootD server supports the
+        checksum operation (in particular the default local xrootd server).
+
+        :param src: path to calculate checksum for.
+        :type src: string
+        :raise `fs.errors.UnsupportedError`: if server does not support
+            checksum calculation.
+        :raise `fs.errors.FSError`: if you try to get the checksum of e.g. a
+            directory.
+        """
+        if not self.isfile(path, _statobj=_statobj):
+            raise ResourceInvalidError("Path is not a file: %s" % path)
+
+        value = self._query(QueryCode.CHECKSUM, self._p(path), parse=False)
+        algorithm, value = value.strip().split(" ")
+        if value[-1] == "\x00":
+            value = value[:-1]
+        return (algorithm, value)
+
+    def ping(self):
+        """Ping xrootd server (XRootD only).
+
+        Specific to ``XRootdFS``.
+
+        :raise `fs.errors.RemoteConnectionError`:
+        """
+        status, dummy = self.client.ping(timeout=self.timeout)
+
+        if not status.ok:
+            raise RemoteConnectionError(opname="ping", details=status)
+
+        return True

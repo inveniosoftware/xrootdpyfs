@@ -62,6 +62,7 @@ tests_require = [
     'pytest-pep8>=1.0.6',
     'pytest>=2.6.1',
     'coverage<4.0a1',
+    'mock>=1.3.0',
 ]
 
 setup(

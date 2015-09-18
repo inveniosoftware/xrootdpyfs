@@ -17,8 +17,8 @@ from urlparse import parse_qs
 
 from fs.base import FS
 from fs.errors import DestinationExistsError, DirectoryNotEmptyError, \
-    FSError, InvalidPathError, RemoteConnectionError, ResourceInvalidError, \
-    ResourceNotFoundError, UnsupportedError
+    FSError, InvalidPathError, RemoteConnectionError, ResourceError, \
+    ResourceInvalidError, ResourceNotFoundError, UnsupportedError
 from fs.path import dirname, normpath, pathcombine, pathjoin
 from XRootD.client import FileSystem
 from XRootD.client.flags import AccessMode, DirListFlags, MkDirFlags, \
@@ -74,11 +74,16 @@ class XRootDFS(FS):
         if status.errno == 3006:
             raise DestinationExistsError(path=path, details=status)
         elif status.errno == 3005:
-            raise DirectoryNotEmptyError(path=path, details=status)
+            # Unfortunately only way to determine if the error is due to a
+            # directory not being empty, or that a resource is not a directory:
+            if status.message.endswith("not a directory\n"):
+                raise ResourceInvalidError(path=path, details=status)
+            else:
+                raise DirectoryNotEmptyError(path=path, details=status)
         elif status.errno == 3011:
             raise ResourceNotFoundError(path=path, details=status)
         else:
-            raise FSError(details=status)
+            raise ResourceError(path=path, details=status)
 
     def _query(self, flag, arg, parse=True):
         """Query an xrootd server."""
@@ -271,20 +276,21 @@ class XRootDFS(FS):
         if recursive:
             raise UnsupportedError("recursive parameter is not supported.")
 
-        status, res = self.client.rmdir(self._p(path))
+        status, res = self.client.rmdir(self._p(path), timeout=self.timeout)
 
         if not status.ok:
             if force and status.errno == 3005:
-                # pyxrootd does not support recursive removal so do we have to
+                # xrootd does not support recursive removal so do we have to
                 # do it ourselves.
                 for d, filenames in self.walk(path, search="depth"):
                     for filename in filenames:
-                        path = pathjoin(d, filename)
+                        relpath = pathjoin(d, filename)
                         status, res = self.client.rm(
-                            path, timeout=self.timeout)
+                            self._p(relpath), timeout=self.timeout)
                         if not status.ok:
-                            self._raise_status(path, status)
-                    status, res = self.client.rmdir(d, timeout=self.timeout)
+                            self._raise_status(relpath, status)
+                    status, res = self.client.rmdir(
+                        self._p(d), timeout=self.timeout)
                     if not status.ok:
                         self._raise_status(path, status)
                 return True
@@ -378,7 +384,7 @@ class XRootDFS(FS):
             full_path, flag, timeout=self.timeout)
 
         if not status.ok:
-            raise InvalidPathError(path=path, details=status)
+            self._raise_status(path, status)
 
         return self._ilistdir_helper(
             path, entries, wildcard=wildcard, full=full,
@@ -397,7 +403,7 @@ class XRootDFS(FS):
         path = normpath(path)
 
         if dirs_only and files_only:
-            raise ValueError("dirs_only and files_only can not both be True")
+            raise ValueError("dirs_only and files_only cannot both be True")
 
         if wildcard is not None:
             if not callable(wildcard):
@@ -444,11 +450,11 @@ class XRootDFS(FS):
         """
         src, dst = self._p(src), self._p(dst)
 
+        # isdir/isfile throws an error if file/dir doesn't exists
         if not self.isfile(src):
             if self.isdir(src):
                 raise ResourceInvalidError(
                     src, msg="Source is not a file: %(path)s")
-            raise ResourceNotFoundError(src)
         return self._move(src, dst, overwrite=overwrite)
 
     def movedir(self, src, dst, overwrite=False, **kwargs):
@@ -468,11 +474,11 @@ class XRootDFS(FS):
         """
         src, dst = self._p(src), self._p(dst)
 
+        # isdir/isfile throws an error if file/dir doesn't exists
         if not self.isdir(src):
             if self.isfile(src):
                 raise ResourceInvalidError(
                     src, msg="Source is not a directory: %(path)s")
-            raise ResourceNotFoundError(src)
         return self._move(src, dst, overwrite=overwrite)
 
     def _move(self, src, dst, overwrite=False):

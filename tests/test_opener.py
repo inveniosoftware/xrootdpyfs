@@ -20,8 +20,11 @@ def test_parse(tmppath):
     """Test parse."""
     rooturl = mkurl(tmppath)
     fs, path = opener.parse(rooturl + "/data")
-    assert fs
     assert path == "data"
+    assert fs
+    fs, path = opener.parse(rooturl + "/data/")
+    assert path == ""
+    assert fs
 
 
 def test_parse_create(tmppath):

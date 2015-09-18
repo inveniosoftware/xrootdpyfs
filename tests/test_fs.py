@@ -11,13 +11,16 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import os
+import types
 from datetime import datetime
+from functools import wraps
 from os.path import exists, join
 
 import pytest
 from fs.errors import BackReferenceError, DestinationExistsError, \
     DirectoryNotEmptyError, FSError, InvalidPathError, RemoteConnectionError, \
-    ResourceInvalidError, ResourceNotFoundError, UnsupportedError
+    ResourceError, ResourceInvalidError, ResourceNotFoundError, \
+    UnsupportedError
 from mock import Mock
 from XRootD.client.responses import XRootDStatus
 
@@ -68,6 +71,29 @@ def test_p():
     pytest.raises(BackReferenceError, fs._p, "../../../test")
 
 
+def test_query_error(tmppath):
+    """Test unknown error from query."""
+    fs = XRootDFS(mkurl(tmppath))
+    fake_status = {
+        "status": 3,
+        "code": 101,
+        "ok": False,
+        "errno": 0,
+        "error": True,
+        "message": '[FATAL] Invalid address',
+        "fatal": True,
+        "shellcode": 51
+    }
+    fs.client.query = Mock(return_value=(XRootDStatus(fake_status), None))
+    pytest.raises(FSError, fs._query, 3, "data/testa.txt")
+
+
+def test_ilistdir(tmppath):
+    """Test the ilistdir returns a generator."""
+    rooturl = mkurl(tmppath)
+    assert isinstance(XRootDFS(rooturl).ilistdir(), types.GeneratorType)
+
+
 def test_listdir(tmppath):
     """Test listdir."""
     rooturl = mkurl(tmppath)
@@ -97,6 +123,14 @@ def test_listdir(tmppath):
     dirs = XRootDFS(rooturl).listdir("data", wildcard="*.txt")
     assert 'testa.txt' in dirs
     assert 'afolder' not in dirs
+
+    pytest.raises(
+        ValueError,
+        XRootDFS(rooturl).listdir,
+        "data", files_only=True, dirs_only=True
+    )
+
+    pytest.raises(ResourceNotFoundError, XRootDFS(rooturl).listdir, "invalid")
 
 
 def test_isfile(tmppath):
@@ -134,7 +168,6 @@ def test_makedir(tmppath):
     assert exists(join(tmppath, "somedir"))
 
     # if the path is already a directory, and allow_recreate is False
-    print("DestinationExistsError")
     assert pytest.raises(DestinationExistsError, XRootDFS(rooturl).makedir,
                          "data")
 
@@ -189,6 +222,76 @@ def test_remove(tmppath):
     assert XRootDFS(rooturl).remove("emptydir")
 
 
+def test_remove_dir(tmppath):
+    """Test removedir."""
+    fs = XRootDFS(mkurl(tmppath))
+
+    # Remove non-empty directory
+    pytest.raises(
+        DirectoryNotEmptyError, fs.removedir, "data/bfolder/")
+
+    # Use of recursive parameter
+    pytest.raises(
+        UnsupportedError, fs.removedir, "data/bfolder/", recursive=True)
+
+    # Remove file
+    pytest.raises(
+        ResourceInvalidError, fs.removedir, "data/testa.txt")
+
+    # Remove empty directory
+    fs.makedir("data/tmp")
+    assert fs.removedir("data/tmp") and not fs.exists("data/tmp")
+
+    # Remove non-empty directory
+    assert fs.removedir("data/bfolder/", force=True)
+    assert fs.removedir("data/", force=True)
+
+
+def test_remove_dir_mock1(tmppath):
+    """Test removedir."""
+    fs = XRootDFS(mkurl(tmppath))
+
+    status = XRootDStatus({
+        "status": 3,
+        "code": 101,
+        "ok": False,
+        "errno": 0,
+        "error": True,
+        "message": '[FATAL] Invalid address',
+        "fatal": True,
+        "shellcode": 51
+    })
+    fs.client.rm = Mock(return_value=(status, None))
+    pytest.raises(ResourceError, fs.removedir, "data/bfolder/", force=True)
+
+
+def test_remove_dir_mock2(tmppath):
+    """Test removedir."""
+    fs = XRootDFS(mkurl(tmppath))
+
+    status = XRootDStatus({
+        "status": 3,
+        "code": 101,
+        "ok": False,
+        "errno": 0,
+        "error": True,
+        "message": '[FATAL] Invalid address',
+        "fatal": True,
+        "shellcode": 51
+    })
+
+    def fail(f, fail_on):
+        @wraps(f)
+        def inner(path, **kwargs):
+            if path == fail_on:
+                return (status, None)
+            return f(path, **kwargs)
+        return inner
+
+    fs.client.rmdir = fail(fs.client.rmdir, fs._p("data/bfolder/"))
+    pytest.raises(ResourceError, fs.removedir, "data/", force=True)
+
+
 def test_open(tmppath):
     """Test fs.open()"""
     # Create a file to open.
@@ -225,6 +328,10 @@ def test_rename(tmppath):
         DestinationExistsError, fs.rename, "data/afolder", "bfolder")
     pytest.raises(
         DestinationExistsError, fs.rename, "data/afolder", "bfolder/bfile.txt")
+
+    pytest.raises(
+        ResourceNotFoundError, fs.rename, "data/invalid.txt",
+        "afolder/afile.txt")
 
     assert fs.exists("data/testa.txt") and not fs.exists("data/testb.txt")
     fs.rename("data/testa.txt", "testb.txt")
@@ -403,7 +510,6 @@ def test_move_bad(tmppath):
     src_exists = "data/testa.txt"
     src_new = "data/testb.txt"
     src_folder_exists = "data/afolder/"
-    src_folder_new = "data/newfolder/"
     dst_exists = "data/multiline.txt"
     dst_new = "data/ok.txt"
     dst_folder_exists = "data/bfolder/"
@@ -430,13 +536,13 @@ def test_move_bad(tmppath):
     pytest.raises(ResourceNotFoundError, fs.move, src_new, dst_folder_new)
 
     pytest.raises(
-        ResourceNotFoundError, fs.move, src_folder_new, dst_exists)
+        ResourceNotFoundError, fs.move, src_new, dst_exists)
     pytest.raises(
-        ResourceNotFoundError, fs.move, src_folder_new, dst_new)
+        ResourceNotFoundError, fs.move, src_new, dst_new)
     pytest.raises(
-        ResourceNotFoundError, fs.move, src_folder_new, dst_folder_exists)
+        ResourceNotFoundError, fs.move, src_new, dst_folder_exists)
     pytest.raises(
-        ResourceNotFoundError, fs.move, src_folder_new, dst_folder_new)
+        ResourceNotFoundError, fs.move, src_new, dst_folder_new)
 
 
 def test_movedir_bad(tmppath):

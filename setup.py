@@ -60,6 +60,7 @@ tests_require = [
     'pytest-cache>=1.0',
     'pytest-cov>=1.8.0',
     'pytest-pep8>=1.0.6',
+    'pytest-isort>=0.1.0',
     'pytest>=2.6.1',
     'coverage<4.0a1',
     'mock>=1.3.0',

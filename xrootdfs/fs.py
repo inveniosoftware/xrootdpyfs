@@ -19,8 +19,8 @@ from fs.base import FS
 from fs.errors import DestinationExistsError, DirectoryNotEmptyError, \
     FSError, InvalidPathError, RemoteConnectionError, ResourceError, \
     ResourceInvalidError, ResourceNotFoundError, UnsupportedError
-from fs.path import dirname, normpath, pathcombine, pathjoin
-from XRootD.client import FileSystem
+from fs.path import abspath, dirname, frombase, normpath, pathcombine, pathjoin
+from XRootD.client import CopyProcess, FileSystem
 from XRootD.client.flags import AccessMode, DirListFlags, MkDirFlags, \
     QueryCode, StatInfoFlags
 
@@ -538,6 +538,62 @@ class XRootDFS(FS):
 
         if not status.ok:
             self._raise_status(dst, status)
+
+        return True
+
+    def copydir(self, src, dst, overwrite=False, parallel=True):
+        """Copy a directory from one location to another.
+
+        By default the copy is done by recreating the source directory
+        structure at the destination, and then copy files in parallel from src
+        to dst.
+
+        :param src: source directory path
+        :type src: string
+        :param dst: destination directory path
+        :type dst: string
+        :param overwrite: if True then any existing files in the destination
+            directory will be overwritten
+        :type overwrite: bool
+        :param parallel: if True (default), the copy will be done in parallel.
+        :type parallel: bool
+        """
+        if not self.isdir(src):
+            raise ResourceInvalidError(
+                src, msg="Source is not a directory: %(path)s")
+
+        if self.exists(dst):
+            if overwrite:
+                if self.isdir(dst):
+                    self.removedir(dst, force=True)
+                elif self.isfile(dst):
+                    self.remove(dst)
+            else:
+                raise DestinationExistsError(dst)
+
+        if parallel:
+            process = CopyProcess()
+
+            def process_copy(src, dst, overwrite=False):
+                process.add_job(src, dst)
+
+            copyfile = process_copy
+        else:
+            copyfile = self.copy
+
+        self.makedir(dst, allow_recreate=True)
+
+        for src_dirpath, filenames in self.walk(src):
+            dst_dirpath = pathcombine(dst, frombase(src, src_dirpath))
+            self.makedir(dst_dirpath, allow_recreate=True, recursive=True)
+            for filename in filenames:
+                src_filename = pathjoin(src_dirpath, filename)
+                dst_filename = pathjoin(dst_dirpath, filename)
+                copyfile(src_filename, dst_filename, overwrite=overwrite)
+
+        if parallel:
+            process.prepare()
+            process.run()
 
         return True
 

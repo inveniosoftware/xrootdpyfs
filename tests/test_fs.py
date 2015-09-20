@@ -626,7 +626,7 @@ def test_copy_good(tmppath):
 
 
 def test_copy_bad(tmppath):
-    """Test move file."""
+    """Test copy file."""
     fs = XRootDFS(mkurl(tmppath))
 
     src_exists = "data/testa.txt"
@@ -665,3 +665,115 @@ def test_copy_bad(tmppath):
         ResourceNotFoundError, fs.copy, src_new, dst_folder_exists)
     pytest.raises(
         ResourceNotFoundError, fs.copy, src_new, dst_folder_new)
+
+
+def test_copydir_good(tmppath):
+    """Test copy directory."""
+    copydir_good(tmppath, False)
+
+
+def test_copydir_good_parallel(tmppath):
+    """Test copy directory."""
+    copydir_good(tmppath, True)
+
+
+def copydir_good(tmppath, parallel):
+    """Test copy directory."""
+    fs = XRootDFS(mkurl(tmppath))
+
+    src_exists = "data/afolder/"
+    dst_exists = "data/multiline.txt"
+    dst_new = "data/ok.txt"
+    dst_folder_exists = "data/bfolder/"
+    dst_folder_new = "data/anothernewfolder/"
+
+    assert fs.isdir(src_exists)
+    assert fs.exists(dst_exists)
+    assert not fs.exists(dst_new)
+    assert fs.exists(dst_folder_exists)
+    assert not fs.exists(dst_folder_new)
+
+    fs.copydir(src_exists, dst_new, parallel=parallel)
+    assert fs.exists(src_exists) and fs.exists(dst_new)
+
+    fs.copydir(src_exists, dst_folder_new, parallel=parallel)
+    assert fs.exists(src_exists) and fs.exists(dst_folder_new)
+
+    fs.copydir(src_exists, dst_exists, overwrite=True, parallel=parallel)
+    assert fs.exists(src_exists) and fs.exists(dst_exists)
+    assert fs.isdir(dst_exists)
+
+    fs.copydir(
+        src_exists, dst_folder_exists, overwrite=True, parallel=parallel)
+    assert fs.exists(src_exists) and fs.exists(dst_folder_exists)
+    assert fs.isdir(dst_folder_exists)
+
+
+def test_copydir_bad(tmppath):
+    """Test copy directory."""
+    copydir_bad(tmppath, False)
+
+
+def test_copydir_bad_parallel(tmppath):
+    """Test copy directory."""
+    copydir_bad(tmppath, True)
+
+
+def copydir_bad(tmppath, parallel):
+    """Test copy directory."""
+    fs = XRootDFS(mkurl(tmppath))
+
+    src_exists = "data/testa.txt"
+    src_new = "data/testb.txt"
+    src_folder_exists = "data/afolder/"
+    src_folder_new = "data/newfolder/"
+    dst_exists = "data/multiline.txt"
+    dst_new = "data/ok.txt"
+    dst_folder_exists = "data/bfolder/"
+    dst_folder_new = "data/anothernewfolder/"
+
+    # Destination exists
+    pytest.raises(
+        DestinationExistsError, fs.copydir, src_folder_exists, dst_exists,
+        parallel=parallel)
+    pytest.raises(
+        DestinationExistsError, fs.copydir, src_folder_exists,
+        src_folder_exists, parallel=parallel)
+    pytest.raises(
+        DestinationExistsError, fs.copydir, src_folder_exists,
+        dst_folder_exists, parallel=parallel)
+
+    # Cannot move file
+    pytest.raises(
+        ResourceInvalidError, fs.copydir, src_exists, dst_new,
+        parallel=parallel)
+    pytest.raises(
+        ResourceInvalidError, fs.copydir, src_exists, dst_folder_new,
+        parallel=parallel)
+
+    # Source doesn't exists
+    pytest.raises(
+        ResourceNotFoundError, fs.copydir, src_new, dst_exists,
+        parallel=parallel)
+    pytest.raises(
+        ResourceNotFoundError, fs.copydir, src_new, dst_new,
+        parallel=parallel)
+    pytest.raises(
+        ResourceNotFoundError, fs.copydir, src_new, dst_folder_exists,
+        parallel=parallel)
+    pytest.raises(
+        ResourceNotFoundError, fs.copydir, src_new, dst_folder_new,
+        parallel=parallel)
+
+    pytest.raises(
+        ResourceNotFoundError, fs.copydir, src_folder_new, dst_exists,
+        parallel=parallel)
+    pytest.raises(
+        ResourceNotFoundError, fs.copydir, src_folder_new, dst_new,
+        parallel=parallel)
+    pytest.raises(
+        ResourceNotFoundError, fs.copydir, src_folder_new, dst_folder_exists,
+        parallel=parallel)
+    pytest.raises(
+        ResourceNotFoundError, fs.copydir, src_folder_new, dst_folder_new,
+        parallel=parallel)

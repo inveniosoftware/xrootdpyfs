@@ -25,7 +25,7 @@ RUN adduser --uid 1001 xrootdfs
 RUN pip install --upgrade pip setuptools
 RUN pip install ipython \
                 pep257 \
-                pytest \
+                "pytest<2.8.0" \
                 pytest-pep8 \
                 pytest-cache \
                 pytest-cov \

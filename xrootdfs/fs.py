@@ -71,7 +71,7 @@ class XRootDFS(FS):
 
     def _raise_status(self, path, status):
         """Raise error based on status."""
-        if status.errno == 3006:
+        if status.errno in [3006, 17]:
             raise DestinationExistsError(path=path, details=status)
         elif status.errno == 3005:
             # Unfortunately only way to determine if the error is due to a
@@ -505,10 +505,41 @@ class XRootDFS(FS):
 
         status, dummy = self.client.mv(src, dst, timeout=self.timeout)
 
-        if status.ok:
-            return True
+        if not status.ok:
+            self._raise_status(dst, status)
 
-        self._raise_status(dst, status)
+        return True
+
+    def copy(self, src, dst, overwrite=False):
+        """Copy a file from src to dst.
+
+        :param src: the source path
+        :type src: string
+        :param dst: the destination path
+        :type dst: string
+        :param overwrite: if True, then an existing file at the destination may
+            be overwritten; If False then DestinationExistsError
+            will be raised.
+        :type overwrite: bool
+        """
+        src, dst = self._p(src), self._p(dst)
+
+        # isdir/isfile throws an error if file/dir doesn't exists
+        if not self.isfile(src):
+            if self.isdir(src):
+                raise ResourceInvalidError(
+                    src, msg="Source is not a file: %(path)s")
+
+        if overwrite and self.exists(dst):
+            if self.isdir(dst):
+                self.removedir(dst, force=True)
+
+        status, dummy = self.client.copy(src, dst, force=overwrite)
+
+        if not status.ok:
+            self._raise_status(dst, status)
+
+        return True
 
     #
     # XRootD specific methods.

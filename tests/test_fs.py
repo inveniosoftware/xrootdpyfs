@@ -592,3 +592,76 @@ def test_movedir_bad(tmppath):
         ResourceNotFoundError, fs.movedir, src_folder_new, dst_folder_exists)
     pytest.raises(
         ResourceNotFoundError, fs.movedir, src_folder_new, dst_folder_new)
+
+
+def test_copy_good(tmppath):
+    """Test move file."""
+    fs = XRootDFS(mkurl(tmppath))
+
+    src_exists = "data/testa.txt"
+    dst_exists = "data/multiline.txt"
+    dst_new = "data/ok.txt"
+    dst_folder_exists = "data/bfolder/"
+    dst_folder_new = "data/anothernewfolder/"
+    content = _get_content(fs, src_exists)
+
+    assert fs.exists(dst_exists)
+    assert not fs.exists(dst_new)
+    assert fs.exists(dst_folder_exists)
+    assert not fs.exists(dst_folder_new)
+
+    fs.copy(src_exists, dst_new)
+    assert fs.exists(src_exists) and fs.exists(dst_new)
+
+    fs.copy(src_exists, dst_folder_new)
+    assert fs.exists(src_exists) and fs.exists(dst_folder_new)
+
+    fs.copy(src_exists, dst_exists, overwrite=True)
+    assert fs.exists(src_exists) and fs.exists(dst_exists)
+    assert content == _get_content(fs, dst_exists)
+
+    fs.copy(src_exists, dst_folder_exists, overwrite=True)
+    assert fs.exists(src_exists) and fs.exists(dst_folder_exists)
+    assert content == _get_content(fs, dst_folder_exists)
+
+
+def test_copy_bad(tmppath):
+    """Test move file."""
+    fs = XRootDFS(mkurl(tmppath))
+
+    src_exists = "data/testa.txt"
+    src_new = "data/testb.txt"
+    src_folder_exists = "data/afolder/"
+    dst_exists = "data/multiline.txt"
+    dst_new = "data/ok.txt"
+    dst_folder_exists = "data/bfolder/"
+    dst_folder_new = "data/anothernewfolder/"
+
+    # Destination exists
+    pytest.raises(
+        DestinationExistsError, fs.copy, src_exists, dst_exists)
+    pytest.raises(
+        DestinationExistsError, fs.copy, src_exists, src_exists)
+    pytest.raises(
+        DestinationExistsError, fs.copy, src_exists, dst_folder_exists)
+
+    # Cannot copy dir
+    pytest.raises(
+        ResourceInvalidError, fs.copy, src_folder_exists, dst_new)
+    pytest.raises(
+        ResourceInvalidError, fs.copy, src_folder_exists, dst_folder_new)
+
+    # Source doesn't exists
+    pytest.raises(ResourceNotFoundError, fs.copy, src_new, dst_exists)
+    pytest.raises(ResourceNotFoundError, fs.copy, src_new, dst_new)
+    pytest.raises(ResourceNotFoundError, fs.copy, src_new, dst_folder_exists)
+    pytest.raises(ResourceNotFoundError, fs.copy, src_new, dst_folder_new)
+
+    pytest.raises(
+        ResourceNotFoundError, fs.copy, src_new, dst_exists)
+    pytest.raises(
+        ResourceNotFoundError, fs.copy, src_new, dst_new)
+    pytest.raises(
+        ResourceNotFoundError, fs.copy, src_new, dst_folder_exists)
+    pytest.raises(
+        ResourceNotFoundError, fs.copy, src_new, dst_folder_new)

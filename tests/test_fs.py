@@ -48,14 +48,14 @@ def test_init(tmppath):
     assert fs.client
     assert fs.base_path == base_path
     assert fs.root_url == root_url
-    assert fs.query is None
+    assert fs.queryargs is None
 
     qarg = "xrd.wantprot=krb5"
     fs = XRootDFS(rooturl + '?' + qarg)
     root_url, base_path, qargs = spliturl(rooturl + '?' + qarg)
     assert fs.base_path == base_path
     assert fs.root_url == root_url
-    assert fs.query == qarg
+    assert fs.queryargs == qarg
     assert qargs == qarg
 
 
@@ -375,6 +375,22 @@ def test_getinfo(tmppath):
 
     # Non existing path
     pytest.raises(ResourceNotFoundError, fs.getinfo, "invalidpath/")
+
+
+def test_getpathurl(tmppath):
+    """Test getpathurl."""
+    fs = XRootDFS(mkurl(tmppath))
+    assert fs.getpathurl("data/testa.txt") == \
+        "root://localhost/{0}/{1}".format(tmppath, "data/testa.txt")
+
+    fs = XRootDFS(mkurl(tmppath), query={'xrd.wantprot': 'krb5'})
+
+    assert fs.getpathurl("data/testa.txt") == \
+        "root://localhost/{0}/{1}".format(tmppath, "data/testa.txt")
+
+    assert fs.getpathurl("data/testa.txt", with_querystring=True) == \
+        "root://localhost/{0}/{1}?xrd.wantprot=krb5".format(
+            tmppath, "data/testa.txt")
 
 
 def test_ping(tmppath):

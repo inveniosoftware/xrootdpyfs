@@ -13,13 +13,14 @@ from __future__ import absolute_import, print_function, unicode_literals
 import re
 from datetime import datetime
 from glob import fnmatch
+from urllib import urlencode
 from urlparse import parse_qs
 
 from fs.base import FS
 from fs.errors import DestinationExistsError, DirectoryNotEmptyError, \
     FSError, InvalidPathError, RemoteConnectionError, ResourceError, \
     ResourceInvalidError, ResourceNotFoundError, UnsupportedError
-from fs.path import abspath, dirname, frombase, normpath, pathcombine, pathjoin
+from fs.path import dirname, frombase, normpath, pathcombine, pathjoin
 from XRootD.client import CopyProcess, FileSystem
 from XRootD.client.flags import AccessMode, DirListFlags, MkDirFlags, \
     QueryCode, StatInfoFlags
@@ -59,7 +60,7 @@ class XRootDFS(FS):
         self.timeout = timeout
         self.root_url = root_url
         self.base_path = base_path
-        self.query = queryargs or query
+        self.queryargs = queryargs or query
         self.client = FileSystem(root_url)
         super(XRootDFS, self).__init__(thread_synchronize=False)
 
@@ -314,6 +315,14 @@ class XRootDFS(FS):
         if not self.exists(src):
             raise ResourceNotFoundError(src)
         return self._move(src, dst, overwrite=False)
+
+    def getpathurl(self, path, allow_none=False, with_querystring=False):
+        """Get URL that corresponds to the given path."""
+        if with_querystring and self.queryargs:
+            return "{0}{1}?{2}".format(
+                self.root_url, self._p(path), urlencode(self.queryargs))
+        else:
+            return "{0}{1}".format(self.root_url, self._p(path))
 
     def getinfo(self, path):
         """Return information for a path as a dictionary.

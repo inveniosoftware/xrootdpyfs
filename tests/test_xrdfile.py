@@ -15,7 +15,8 @@ from os.path import join
 import fs.path
 import pytest
 from fs import SEEK_CUR, SEEK_END, SEEK_SET
-from fs.errors import InvalidPathError, PathError, ResourceNotFoundError
+from fs.errors import InvalidPathError, PathError, ResourceNotFoundError, \
+    UnsupportedError
 from fs.opener import fsopendir, opener
 
 from fixture import mkurl, tmppath
@@ -617,6 +618,34 @@ def test_init_streammodes(tmppath):
     xfile.close()
     xfile = XRootDFile(mkurl(fp), 'r')
     assert xfile.read() == conts
+
+
+def test_init_newline(tmppath):
+    """Tests fs.open() with specified newline parameter."""
+    fd = get_tsta_file(tmppath)
+    fp, fc = fd['full_path'], fd['contents']
+
+    xfile = XRootDFile(mkurl(fp))
+    assert xfile._newline is None
+    xfile.close()
+
+    xfile = XRootDFile(mkurl(fp), newline='\n')
+    assert xfile._newline == '\n'
+    xfile.close()
+
+    pytest.raises(UnsupportedError, XRootDFile, mkurl(fp), mode='r',
+                  newline='what')
+
+
+def test_init_notimplemented(tmppath):
+    """Tests that specifying not-implemented args to XRDFile's constructor
+       results in an error."""
+    fd = get_tsta_file(tmppath)
+    fp, fc = fd['full_path'], fd['contents']
+
+    pytest.raises(NotImplementedError, XRootDFile, mkurl(fp), buffering='')
+    pytest.raises(NotImplementedError, XRootDFile, mkurl(fp),
+                  line_buffering='')
 
 
 def test_read_errors(tmppath):

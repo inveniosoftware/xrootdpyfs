@@ -11,7 +11,8 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 from fs import SEEK_CUR, SEEK_END, SEEK_SET
-from fs.errors import InvalidPathError, PathError, ResourceNotFoundError
+from fs.errors import InvalidPathError, PathError, ResourceNotFoundError, \
+    UnsupportedError
 from XRootD.client import File
 
 from .utils import is_valid_path, is_valid_url, spliturl, \
@@ -55,6 +56,15 @@ class XRootDFile(object):
         if not is_valid_path(xpath):
             raise InvalidPathError(xpath)
 
+        if newline is not None and not newline == '\n':
+            raise UnsupportedError("Newline character not supported, "
+                                   "must be None or '\\n'.")
+        if buffering is not -1:
+            raise NotImplementedError("Specifying buffering not implemented.")
+        if line_buffering is not False:
+            raise NotImplementedError("Specifying line buffering not "
+                                      "implemented.")
+
         # PyFS attributes
         self.mode = mode
 
@@ -64,6 +74,11 @@ class XRootDFile(object):
         self._ipp = 0
         self._size = -1
         self._iterator = None
+        self._buffering = buffering
+        self._encoding = encoding
+        self._errors = errors
+        self._newline = newline
+        self._line_buffering = line_buffering
         self.timeout = timeout
 
         # flag translation

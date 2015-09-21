@@ -150,6 +150,8 @@ class XRootDFS(FS):
         :raises `fs.errors.ResourceInvalidError`: if an intermediate directory
             is an file
         :raises `fs.errors.ResourceNotFoundError`: if the path is not found
+
+        : raises some error if newline is anything else than 'slash n' or None
         """
         # Set default timeout if not overwritten.
         kwargs.setdefault("timeout", self.timeout)

@@ -6,7 +6,12 @@
 # xrootdfs is free software; you can redistribute it and/or modify it under the
 # terms of the Revised BSD License; see LICENSE file for more details.
 
-"""PyFilesystem implementation of XRootD protocol."""
+"""PyFilesystem implementation of XRootD protocol.
+
+.. note::
+   All methods prefixed with ``xrd`` in :py:class:`XRootDFS` is specific to
+   XRootDFS and not supported by other PyFilesystem implementations.
+"""
 
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -82,15 +87,8 @@ class XRootDFS(FS):
         self.root_url = root_url
         self.base_path = base_path
         self.queryargs = queryargs
-        self.client = FileSystem(self.get_rooturl())
+        self._client = FileSystem(self.xrd_get_rooturl())
         super(XRootDFS, self).__init__(thread_synchronize=False)
-
-    def get_rooturl(self):
-        """Get the root URL with query string for this FS."""
-        if self.queryargs:
-            return "{0}{1}".format(self.root_url, urlencode(self.queryargs))
-        else:
-            return self.root_url
 
     def _p(self, path):
         """Join path to base path."""
@@ -116,7 +114,7 @@ class XRootDFS(FS):
 
     def _query(self, flag, arg, parse=True):
         """Query an xrootd server."""
-        status, res = self.client.query(flag, arg, timeout=self.timeout)
+        status, res = self._client.query(flag, arg, timeout=self.timeout)
 
         if not status.ok:
             if status.errno == 3013:
@@ -196,7 +194,7 @@ class XRootDFS(FS):
 
     def _stat_flags(self, path):
         """Get status of a path."""
-        status, stat = self.client.stat(self._p(path))
+        status, stat = self._client.stat(self._p(path))
 
         if not status.ok:
             raise self._raise_status(path, status)
@@ -242,7 +240,7 @@ class XRootDFS(FS):
         :type path: `string`
         :rtype: `bool`
         """
-        status, stat = self.client.stat(self._p(path))
+        status, stat = self._client.stat(self._p(path))
         return status.ok
 
     def makedir(self, path, recursive=False, allow_recreate=False):
@@ -266,7 +264,7 @@ class XRootDFS(FS):
         flags = MkDirFlags.MAKEPATH if recursive else MkDirFlags.NONE
         mode = AccessMode.NONE
 
-        status, res = self.client.mkdir(self._p(path), flags=flags, mode=mode)
+        status, res = self._client.mkdir(self._p(path), flags=flags, mode=mode)
 
         if not status.ok:
             if allow_recreate and status.errno == 3006:
@@ -284,7 +282,7 @@ class XRootDFS(FS):
         :raises `fs.errors.DirectoryNotEmptyError`: if the directory is not
             empty
         """
-        status, res = self.client.rm(self._p(path))
+        status, res = self._client.rm(self._p(path))
 
         if not status.ok:
             self._raise_status(path, status)
@@ -313,7 +311,7 @@ class XRootDFS(FS):
         if recursive:
             raise UnsupportedError("recursive parameter is not supported.")
 
-        status, res = self.client.rmdir(self._p(path), timeout=self.timeout)
+        status, res = self._client.rmdir(self._p(path), timeout=self.timeout)
 
         if not status.ok:
             if force and status.errno == 3005:
@@ -322,11 +320,11 @@ class XRootDFS(FS):
                 for d, filenames in self.walk(path, search="depth"):
                     for filename in filenames:
                         relpath = pathjoin(d, filename)
-                        status, res = self.client.rm(
+                        status, res = self._client.rm(
                             self._p(relpath), timeout=self.timeout)
                         if not status.ok:
                             self._raise_status(relpath, status)
-                    status, res = self.client.rmdir(
+                    status, res = self._client.rmdir(
                         self._p(d), timeout=self.timeout)
                     if not status.ok:
                         self._raise_status(path, status)
@@ -382,7 +380,7 @@ class XRootDFS(FS):
         :rtype: `dict`
         """
         fullpath = self._p(path)
-        status, stat = self.client.stat(fullpath)
+        status, stat = self._client.stat(fullpath)
 
         if not status.ok:
             self._raise_status(path, status)
@@ -425,7 +423,7 @@ class XRootDFS(FS):
             DirListFlags.NONE
 
         full_path = self._p(path)
-        status, entries = self.client.dirlist(
+        status, entries = self._client.dirlist(
             full_path, flag, timeout=self.timeout)
 
         if not status.ok:
@@ -550,7 +548,7 @@ class XRootDFS(FS):
             elif self.isdir(dst):
                 self.removedir(dst, force=True)
 
-        status, dummy = self.client.mv(src, dst, timeout=self.timeout)
+        status, dummy = self._client.mv(src, dst, timeout=self.timeout)
 
         if not status.ok:
             self._raise_status(dst, status)
@@ -582,7 +580,7 @@ class XRootDFS(FS):
             if self.isdir(dst):
                 self.removedir(dst, force=True)
 
-        status, dummy = self.client.copy(src, dst, force=overwrite)
+        status, dummy = self._client.copy(src, dst, force=overwrite)
 
         if not status.ok:
             self._raise_status(dst, status)
@@ -650,8 +648,20 @@ class XRootDFS(FS):
     #
     # XRootD specific methods.
     #
-    def checksum(self, path, _statobj=None):
-        """Get checksum of file from server (XRootD only).
+    @property
+    def xrd_client(self):
+        """Pyxrootd filesystem client."""
+        return self._client
+
+    def xrd_get_rooturl(self):
+        """Get the URL with query string for this FS."""
+        if self.queryargs:
+            return "{0}{1}".format(self.root_url, urlencode(self.queryargs))
+        else:
+            return self.root_url
+
+    def xrd_checksum(self, path, _statobj=None):
+        """Get checksum of file from server.
 
         Specific to ``XRootdFS``. Note not all XRootD server supports the
         checksum operation (in particular the default local xrootd server).
@@ -672,14 +682,14 @@ class XRootDFS(FS):
             value = value[:-1]
         return (algorithm, value)
 
-    def ping(self):
-        """Ping xrootd server (XRootD only).
+    def xrd_ping(self):
+        """Ping xrootd server.
 
         Specific to ``XRootdFS``.
 
         :raise `fs.errors.RemoteConnectionError`:
         """
-        status, dummy = self.client.ping(timeout=self.timeout)
+        status, dummy = self._client.ping(timeout=self.timeout)
 
         if not status.ok:
             raise RemoteConnectionError(opname="ping", details=status)

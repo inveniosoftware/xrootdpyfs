@@ -32,7 +32,7 @@ from xrootdfs.utils import spliturl
 def test_init(tmppath):
     """Test initialization."""
     fs = XRootDFS("root://127.0.0.1//tmp/")
-    assert fs.client
+    assert fs.xrd_client
     assert fs.base_path == "//tmp/"
     assert fs.root_url == "root://127.0.0.1"
 
@@ -45,7 +45,7 @@ def test_init(tmppath):
     rooturl = mkurl(tmppath)
     fs = XRootDFS(rooturl)
     root_url, base_path, qargs = spliturl(rooturl)
-    assert fs.client
+    assert fs.xrd_client
     assert fs.base_path == base_path
     assert fs.root_url == root_url
     assert fs.queryargs is None
@@ -98,7 +98,7 @@ def test_query_error(tmppath):
         "fatal": True,
         "shellcode": 51
     }
-    fs.client.query = Mock(return_value=(XRootDStatus(fake_status), None))
+    fs.xrd_client.query = Mock(return_value=(XRootDStatus(fake_status), None))
     pytest.raises(FSError, fs._query, 3, "data/testa.txt")
 
 
@@ -275,7 +275,7 @@ def test_remove_dir_mock1(tmppath):
         "fatal": True,
         "shellcode": 51
     })
-    fs.client.rm = Mock(return_value=(status, None))
+    fs.xrd_client.rm = Mock(return_value=(status, None))
     pytest.raises(ResourceError, fs.removedir, "data/bfolder/", force=True)
 
 
@@ -302,7 +302,7 @@ def test_remove_dir_mock2(tmppath):
             return f(path, **kwargs)
         return inner
 
-    fs.client.rmdir = fail(fs.client.rmdir, fs._p("data/bfolder/"))
+    fs.xrd_client.rmdir = fail(fs.xrd_client.rmdir, fs._p("data/bfolder/"))
     pytest.raises(ResourceError, fs.removedir, "data/", force=True)
 
 
@@ -420,7 +420,7 @@ def test_getpathurl(tmppath):
 def test_ping(tmppath):
     """Test ping method."""
     fs = XRootDFS(mkurl(tmppath))
-    assert fs.ping()
+    assert fs.xrd_ping()
     fake_status = {
         "status": 3,
         "code": 101,
@@ -431,8 +431,8 @@ def test_ping(tmppath):
         "fatal": True,
         "shellcode": 51
     }
-    fs.client.ping = Mock(return_value=(XRootDStatus(fake_status), None))
-    pytest.raises(RemoteConnectionError, fs.ping)
+    fs.xrd_client.ping = Mock(return_value=(XRootDStatus(fake_status), None))
+    pytest.raises(RemoteConnectionError, fs.xrd_ping)
 
 
 def test_checksum(tmppath):
@@ -440,7 +440,7 @@ def test_checksum(tmppath):
     fs = XRootDFS(mkurl(tmppath))
 
     # Local xrootd server does not support checksum operation
-    pytest.raises(UnsupportedError, fs.checksum, "data/testa.txt")
+    pytest.raises(UnsupportedError, fs.xrd_checksum, "data/testa.txt")
 
     # Let's fake a success response
     fake_status = {
@@ -453,9 +453,9 @@ def test_checksum(tmppath):
         "fatal": False,
         "shellcode": 0
     }
-    fs.client.query = Mock(
+    fs.xrd_client.query = Mock(
         return_value=(XRootDStatus(fake_status), 'adler32 3836a69a\x00'))
-    algo, val = fs.checksum("data/testa.txt")
+    algo, val = fs.xrd_checksum("data/testa.txt")
     assert algo == 'adler32' and val == "3836a69a"
 
     # Fake a bad response (e.g. on directory)
@@ -470,9 +470,9 @@ def test_checksum(tmppath):
         "fatal": False,
         "shellcode": 54
     }
-    fs.client.query = Mock(
+    fs.xrd_client.query = Mock(
         return_value=(XRootDStatus(fake_status), None))
-    pytest.raises(FSError, fs.checksum, "data/")
+    pytest.raises(FSError, fs.xrd_checksum, "data/")
 
 
 def test_move_good(tmppath):

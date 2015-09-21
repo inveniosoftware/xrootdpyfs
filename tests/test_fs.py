@@ -152,7 +152,7 @@ def test_isfile(tmppath):
     rooturl = mkurl(tmppath)
     assert XRootDFS(rooturl).isfile("data/testa.txt")
     assert not XRootDFS(rooturl).isfile("data")
-    pytest.raises(ResourceNotFoundError, XRootDFS(rooturl).isfile, "nofile")
+    assert not XRootDFS(rooturl).isfile("nofile")
 
 
 def test_isdir(tmppath):
@@ -160,7 +160,7 @@ def test_isdir(tmppath):
     rooturl = mkurl(tmppath)
     assert not XRootDFS(rooturl).isdir("data/testa.txt")
     assert XRootDFS(rooturl).isdir("data")
-    pytest.raises(ResourceNotFoundError, XRootDFS(rooturl).isdir, "nofile")
+    assert not XRootDFS(rooturl).isdir("nofile")
 
 
 def test_exists(tmppath):

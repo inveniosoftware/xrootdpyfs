@@ -211,8 +211,12 @@ class XRootDFS(FS):
         :rtype: bool
 
         """
-        flags = self._stat_flags(path) if _statobj is None else _statobj.flags
-        return bool(flags & StatInfoFlags.IS_DIR)
+        try:
+            flags = self._stat_flags(path) if _statobj is None \
+                else _statobj.flags
+            return bool(flags & StatInfoFlags.IS_DIR)
+        except ResourceNotFoundError:
+            return False
 
     def isfile(self, path, _statobj=None):
         """Check if a path references a file.
@@ -223,8 +227,13 @@ class XRootDFS(FS):
         :rtype: bool
 
         """
-        flags = self._stat_flags(path) if _statobj is None else _statobj.flags
-        return not bool(flags & (StatInfoFlags.IS_DIR | StatInfoFlags.OTHER))
+        try:
+            flags = self._stat_flags(path) if _statobj is None \
+                else _statobj.flags
+            return not bool(
+                flags & (StatInfoFlags.IS_DIR | StatInfoFlags.OTHER))
+        except ResourceNotFoundError:
+            return False
 
     def exists(self, path):
         """Check if a path references a valid resource.
@@ -491,6 +500,7 @@ class XRootDFS(FS):
             if self.isdir(src):
                 raise ResourceInvalidError(
                     src, msg="Source is not a file: %(path)s")
+            raise ResourceNotFoundError(src)
         return self._move(src, dst, overwrite=overwrite)
 
     def movedir(self, src, dst, overwrite=False, **kwargs):
@@ -515,6 +525,7 @@ class XRootDFS(FS):
             if self.isfile(src):
                 raise ResourceInvalidError(
                     src, msg="Source is not a directory: %(path)s")
+            raise ResourceNotFoundError(src)
         return self._move(src, dst, overwrite=overwrite)
 
     def _move(self, src, dst, overwrite=False):
@@ -565,6 +576,7 @@ class XRootDFS(FS):
             if self.isdir(src):
                 raise ResourceInvalidError(
                     src, msg="Source is not a file: %(path)s")
+            raise ResourceNotFoundError(src)
 
         if overwrite and self.exists(dst):
             if self.isdir(dst):
@@ -595,8 +607,10 @@ class XRootDFS(FS):
         :type parallel: bool
         """
         if not self.isdir(src):
-            raise ResourceInvalidError(
-                src, msg="Source is not a directory: %(path)s")
+            if self.isfile(src):
+                raise ResourceInvalidError(
+                    src, msg="Source is not a directory: %(path)s")
+            raise ResourceNotFoundError(src)
 
         if self.exists(dst):
             if overwrite:

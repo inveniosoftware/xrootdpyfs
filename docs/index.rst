@@ -43,6 +43,11 @@ Opener
    :members:
    :undoc-members:
 
+Environment
+-----------
+.. automodule:: xrootdfs.env
+   :members:
+   :undoc-members:
 
 .. include:: ../CHANGES
 

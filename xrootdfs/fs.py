@@ -36,7 +36,16 @@ from .xrdfile import XRootDFile
 
 class XRootDFS(FS):
 
-    """XRootD PyFilesystem interface."""
+    """XRootD PyFilesystem interface.
+
+    :param query: Dictionary of key/values to append to the URL query string.
+        The contents of the dictionary gets merged with any querystring
+        provided in the ``url``.
+    :type query: dict
+    :param timeout: Sets the timeout in seconds.
+    :type timeout: int
+
+    """
 
     _meta = {
         'thread_safe': True,

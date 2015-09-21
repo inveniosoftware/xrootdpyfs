@@ -57,12 +57,40 @@ class XRootDFS(FS):
         if not is_valid_path(base_path):
             raise InvalidPathError(path=base_path)
 
+        if queryargs:
+            # Convert query string in URL into a dictionary. Assumes there's no
+            # duplication of fields names in query string (such as e.g.
+            # '?f1=a&f1=b').
+            queryargs = dict(map(
+                lambda (k, v): (k, v[0]),
+                parse_qs(queryargs).items()
+            ))
+
+            # Merge values from kwarg query into the dictionary. Conflicting
+            # keys raises an exception.
+            for k, v in (query or {}).items():
+                if k in queryargs:
+                    raise KeyError(
+                        "Query string field {0} conflicts with "
+                        "field in URL {1}".format(k, url))
+                queryargs[k] = v
+        else:
+            # No query string in URL, use kwarg instead.
+            queryargs = query
+
         self.timeout = timeout
         self.root_url = root_url
         self.base_path = base_path
-        self.queryargs = queryargs or query
-        self.client = FileSystem(root_url)
+        self.queryargs = queryargs
+        self.client = FileSystem(self.get_rooturl())
         super(XRootDFS, self).__init__(thread_synchronize=False)
+
+    def get_rooturl(self):
+        """Get the root URL with query string for this FS."""
+        if self.queryargs:
+            return "{0}{1}".format(self.root_url, urlencode(self.queryargs))
+        else:
+            return self.root_url
 
     def _p(self, path):
         """Join path to base path."""
@@ -120,8 +148,7 @@ class XRootDFS(FS):
         kwargs.setdefault("timeout", self.timeout)
 
         return XRootDFile(
-            # Path must be full-on address with the server and everything.
-            self.root_url + self._p(path),
+            self.getpathurl(path, with_querystring=True),
             mode=mode,
             buffering=buffering,
             encoding=encoding,

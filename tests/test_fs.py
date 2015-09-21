@@ -55,8 +55,22 @@ def test_init(tmppath):
     root_url, base_path, qargs = spliturl(rooturl + '?' + qarg)
     assert fs.base_path == base_path
     assert fs.root_url == root_url
-    assert fs.queryargs == qarg
+    assert fs.queryargs == {'xrd.wantprot': 'krb5'}
     assert qargs == qarg
+
+    qarg = "xrd.wantprot=krb5"
+    fs = XRootDFS(rooturl + '?' + qarg, query={'xrd.k5ccname': '/tmp/krb'})
+
+    assert fs.queryargs == {
+        'xrd.wantprot': 'krb5',
+        'xrd.k5ccname': '/tmp/krb',
+    }
+
+    pytest.raises(
+        KeyError,
+        XRootDFS,
+        rooturl + '?' + qarg, query={'xrd.wantprot': 'krb5'}
+    )
 
 
 def test_p():
@@ -303,6 +317,16 @@ def test_open(tmppath):
     xrdfs = XRootDFS(xrd_rooturl)
     xfile = xrdfs.open(file_name, mode='r')
     assert xfile
+    assert xfile.path.endswith("data/testa.txt")
+    assert type(xfile) == XRootDFile
+    assert xfile.read() == contents
+    xfile.close()
+
+    # Test passing of querystring.
+    xrdfs = XRootDFS(xrd_rooturl + "?xrd.wantprot=krb5")
+    xfile = xrdfs.open(file_name, mode='r')
+    assert xfile
+    assert xfile.path.endswith("data/testa.txt?xrd.wantprot=krb5")
     assert type(xfile) == XRootDFile
     assert xfile.read() == contents
     xfile.close()

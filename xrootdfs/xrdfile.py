@@ -59,6 +59,7 @@ class XRootDFile(object):
         self.mode = mode
 
         # XRootD attributes & internals
+        self.path = path
         self._file = File()
         self._ipp = 0
         self._size = -1

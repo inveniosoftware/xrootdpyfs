@@ -6,10 +6,12 @@
 # xrootdfs is free software; you can redistribute it and/or modify it under the
 # terms of the Revised BSD License; see LICENSE file for more details.
 
-"""XRootDFS is a PyFilesystem interface for XRootD.
+r"""XRootDFS is a PyFilesystem interface for XRootD.
 
 XRootD protocol aims at giving high performance, scalable fault tolerant access
-to data repositories of many kinds.
+to data repositories of many kinds. The XRootDFS adds a high-level interface
+on top of the existing Python interface (pyxrootd) and makes it easy to e.g.
+copy a directory in parallel or recursively remove a directory.
 
 .. testsetup::
 
@@ -60,8 +62,8 @@ Next, start a XRootD server in the container and fire up an ipython shell:
    [xrootdfs@xrootdfs code]$ xrootd -b -l /dev/null
    [xrootdfs@xrootdfs code]$ ipython
 
-Quick example
--------------
+Quick examples
+--------------
 
 Here is a quick example of a file listing with the xrootd PyFilesystem
 integration:
@@ -78,6 +80,24 @@ Or, alternatively using the PyFilesystem opener:
     >>> fs, path = opener.parse("root://localhost//tmp/")
     >>> fs.listdir("xrootdfs")
     [u'test.txt']
+
+Reading files:
+
+    >>> f = fs.open("xrootdfs/test.txt")
+    >>> f.read()
+    'Welcome to xrootdfs!'
+    >>> f.close()
+
+Reading files using the ``getcontents()`` method:
+
+    >>> fs.getcontents("xrootdfs/test.txt")
+    'Welcome to xrootdfs!'
+
+Writing files:
+
+    >>> f = fs.open("xrootdfs/hello.txt", "w+")
+    >>> f.write("World")
+    >>> f.close()
 """
 
 from __future__ import absolute_import, print_function, unicode_literals

@@ -44,7 +44,7 @@ RUN chown -R xrootdfs:xrootdfs /code && chmod a+x /code/run-docker.sh && chmod a
 
 USER xrootdfs
 
-RUN mkdir /tmp/xrootdfs && touch /tmp/xrootdfs/test.txt
+RUN mkdir /tmp/xrootdfs && echo "Hello XRootD!" >> /tmp/xrootdfs/test.txt
 
 # Print xrootd version
 RUN xrootd -v

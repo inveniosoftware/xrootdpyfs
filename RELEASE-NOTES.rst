@@ -2,7 +2,7 @@
  XRootDFS v0.1.0
 =================
 
-XRootDFS v0.1.0 was released on TBD
+XRootDFS v0.1.0 was released on 2015-09-29.
 
 About
 -----

@@ -89,6 +89,14 @@ class XRootDFile(object):
             self._iterator = self._file.readchunks()
         return self
 
+    def __enter__(self):
+        """Enter context manager method."""
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Exit context manager method."""
+        self.close()
+
     def next(self):
         """Return next item."""
         return self._iterator.next()

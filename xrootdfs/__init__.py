@@ -98,6 +98,10 @@ Writing files:
     >>> f = fs.open("xrootdfs/hello.txt", "w+")
     >>> f.write("World")
     >>> f.close()
+
+Writing files using the ``setcontents()`` method:
+
+    >>> fs.setcontents("xrootdfs/test.txt", "World")
 """
 
 from __future__ import absolute_import, print_function, unicode_literals

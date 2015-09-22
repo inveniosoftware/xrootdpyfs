@@ -150,8 +150,10 @@ class XRootDFile(object):
         not 0, an empty string is returned only when EOF is encountered
         immediately.
         """
+        chunksize = sizehint if sizehint is not None else 0
+
         self._assert_mode("r-")
-        return self._file.readline(chunksize=sizehint)
+        return self._file.readline(chunksize=chunksize)
 
     def readlines(self, sizehint=None):
         """Read until EOF using readline().
@@ -209,6 +211,13 @@ class XRootDFile(object):
         """
         if "-" in self.mode:
             raise IOError("File is not seekable.")
+
+        # Convert to integer by rounding down/omitting everything after
+        # the decimal point
+        offset = int(offset)
+
+        if offset < 0:
+            raise IOError("Invalid argument.")
 
         if whence == SEEK_SET:
             self._ipp = offset

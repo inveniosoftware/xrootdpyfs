@@ -13,6 +13,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 from fs import SEEK_CUR, SEEK_END, SEEK_SET
 from fs.errors import InvalidPathError, PathError, ResourceNotFoundError, \
     UnsupportedError
+from fs.path import basename
+from six import b
 from XRootD.client import File
 
 from .utils import is_valid_path, is_valid_url, spliturl, \
@@ -41,7 +43,8 @@ class XRootDFile(object):
     """
 
     def __init__(self, path, mode='r', buffering=-1, encoding=None,
-                 errors=None, newline=None, line_buffering=False, **kwargs):
+                 errors=None, newline=None, line_buffering=False,
+                 buffer_size=None, **kwargs):
         """XRootDFile constructor.
 
         Raises PathError if the given path isn't a valid XRootD URL,
@@ -55,33 +58,42 @@ class XRootDFile(object):
         if not is_valid_path(xpath):
             raise InvalidPathError(xpath)
 
-        if newline is not None and not newline == '\n':
-            raise UnsupportedError("Newline character not supported, "
-                                   "must be None or '\\n'.")
-        if buffering is not -1:
-            raise NotImplementedError("Specifying buffering not implemented.")
+        if newline not in [None, '', '\n', '\r', '\r\n']:
+            raise UnsupportedError(
+                "Newline character {0} not supported".format(newline))
+
         if line_buffering is not False:
-            raise NotImplementedError("Specifying line buffering not "
-                                      "implemented.")
+            raise NotImplementedError("Line buffering for writing is not "
+                                      "supported.")
+
+        buffering = int(buffering)
+        if buffering == 1 and 'b' in mode:
+            raise UnsupportedError(
+                "Line buffering is not supported for "
+                "binary files.")
+
         # PyFS attributes
         self.mode = mode
 
         # XRootD attributes & internals
         self.path = path
+        self.encoding = encoding
+        self.errors = errors
+        self.buffer_size = buffer_size or 64*1024
+        self.buffering = buffering
         self._file = File()
         self._ipp = 0
         self._size = -1
         self._iterator = None
-        self._buffering = buffering
-        self._encoding = encoding
-        self._errors = errors
-        self._newline = newline
-        self._line_buffering = line_buffering
+        self._newline = newline or b("\n")
+        self._buffer = b('')
+        self._buffer_pos = 0
 
         # flag translation
         self._flags = translate_file_mode_to_flags(mode)
 
         statmsg, response = self._file.open(path, flags=self._flags)
+
         if not statmsg.ok:
             self._raise_status(self.path, statmsg,
                                "instantiating file ({0})".format(path))
@@ -100,10 +112,22 @@ class XRootDFile(object):
                          source+' ', status.message)
             raise IOError(errstr)
 
+    def __del__(self):
+        """Close file on object deletion."""
+        self.close()
+
     def __iter__(self):
         """Initialize the internal iterator."""
-        if self._iterator is None:
-            self._iterator = self._file.readchunks()
+        self._next_func = self.read
+        self._next_args = ([], dict(sizehint=self.buffer_size))
+
+        if self.buffering == 1 or \
+           (self.buffering == -1 and 'b' not in self.mode):
+            self._next_func = self.readline
+            self._next_args = ([], dict())
+        elif self.buffering > 1:
+            self._next_args = ([], dict(sizehint=self.buffering))
+
         return self
 
     def __enter__(self):
@@ -116,7 +140,10 @@ class XRootDFile(object):
 
     def next(self):
         """Return next item."""
-        return self._iterator.next()
+        item = self._next_func(*self._next_args[0], **self._next_args[1])
+        if not item:
+            raise StopIteration
+        return item
 
     def read(self, sizehint=-1):
         """Read approximately <sizehint> bytes from the file-like object.
@@ -155,36 +182,49 @@ class XRootDFile(object):
 
         return res
 
-    def readline(self, sizehint=None):
+    def readline(self):
         """Read one entire line from the file.
 
         A trailing newline character is kept in the string (but may be absent
-        when a file ends with an incomplete line). [6] If the size argument
-        is present and non-negative, it is a maximum byte count (including the
-        trailing newline) and an incomplete line may be returned. When size is
-        not 0, an empty string is returned only when EOF is encountered
-        immediately.
+        when a file ends with an incomplete line).
         """
-        chunksize = sizehint if sizehint is not None else 0
+        bits = [self._buffer if self._buffer_pos == self.tell() else b("")]
+        indx = bits[-1].find(self._newline)
 
-        self._assert_mode("r-")
-        return self._file.readline(chunksize=chunksize)
+        if indx == -1:
+            # Read chunks until first newline is found or entire file is read.
+            while indx == -1:
+                bit = self.read(self.buffer_size)
+                bits.append(bit)
+                if not bit:
+                    break
+                indx = bit.find(self._newline)
 
-    def readlines(self, sizehint=None):
-        """Read until EOF using readline().
+        if indx == -1:
+            return b("").join(bits)
 
-        Returns a list containing the lines thus read. If the optional
-        sizehint argument is present, instead of reading up to EOF, whole
-        lines totalling approximately sizehint bytes (possibly after rounding
-        up to an internal buffer size) are read.
-        """
-        self._assert_mode("r-")
-        return self._file.readlines(chunksize=sizehint)
+        indx += len(self._newline)
+        extra = bits[-1][indx:]
+        bits[-1] = bits[-1][:indx]
 
-    def xreadlines(self):
+        self._buffer = extra
+        self._buffer_pos = self.tell()
+
+        return b("").join(bits)
+
+    def readlines(self):
+        """Read until EOF using readline()."""
+        return list(self.xreadlines())
+
+    def xreadlines(self, sizehint=-1):
         """Get an iterator over number of lines."""
-        self._assert_mode("r-")
-        return iter(self)
+        line = True
+
+        while line:
+            line = self.readline()
+            if not line:
+                break
+            yield line
 
     def write(self, string, flushing=False):
         """Write the given string to the file-like object.
@@ -207,6 +247,11 @@ class XRootDFile(object):
         self._size = max(self.size, self.tell())
         if flushing:
             self.flush()
+
+    def writelines(self, sequence):
+        """Write an sequence of lines to file."""
+        for s in sequence:
+            self.write(s)
 
     def seek(self, offset, whence=SEEK_SET):
         """Set the file's internal position pointer, approximately.
@@ -258,6 +303,7 @@ class XRootDFile(object):
             size = self.tell()
 
         statmsg = self._file.truncate(size)[0]
+
         if not statmsg.ok:
             self._raise_status(self.path, statmsg, "truncating")
 
@@ -274,9 +320,34 @@ class XRootDFile(object):
     def flush(self):
         """Flush write buffers."""
         if not self.closed:
-            statmsg, res = self._file.sync()
+            statmsg, dummy = self._file.sync()
             if not statmsg.ok:
                 self._raise_status(self.path, statmsg, "flushing write buffer")
+
+    def seekable(self):
+        """Check if file is seekable."""
+        return '-' not in self.mode
+
+    def readable(self):
+        """Check if file is readable."""
+        return 'r' in self.mode or '+' in self.mode
+
+    def writable(self):
+        """Check if file is writable."""
+        return 'w' in self.mode or '+' in self.mode or 'a' in self.mode
+
+    def isatty(self):
+        """Check if file is a TTY."""
+        return False
+
+    def fileno(self):
+        """Get the underlying file descriptor."""
+        raise IOError("File descriptor is unsupported by xrootd.")
+
+    @property
+    def name(self):
+        """Get filename."""
+        return basename(self.path)
 
     @property
     def closed(self):

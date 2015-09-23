@@ -11,6 +11,7 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import errno
+import math
 from os.path import join
 
 import fs.path
@@ -694,7 +695,7 @@ def test_init_newline(tmppath):
     fp, fc = fd['full_path'], fd['contents']
 
     xfile = XRootDFile(mkurl(fp))
-    assert xfile._newline is None
+    assert xfile._newline == '\n'
     xfile.close()
 
     xfile = XRootDFile(mkurl(fp), newline='\n')
@@ -711,7 +712,8 @@ def test_init_notimplemented(tmppath):
     fd = get_tsta_file(tmppath)
     fp, fc = fd['full_path'], fd['contents']
 
-    pytest.raises(NotImplementedError, XRootDFile, mkurl(fp), buffering='')
+    pytest.raises(UnsupportedError, XRootDFile, mkurl(fp), 'rb',
+                  buffering=1)
     pytest.raises(NotImplementedError, XRootDFile, mkurl(fp),
                   line_buffering='')
 
@@ -913,11 +915,18 @@ def test_readline(tmppath):
     fp, fc = fd['full_path'], fd['contents']
     fp2 = fb['full_path']
 
-    xfile, pfile = XRootDFile(mkurl(fp), 'r'), open(fp2, 'r')
+    xfile, pfile = XRootDFile(mkurl(fp), 'r'), opener.open(fp2, 'r')
 
     assert xfile.readline() == pfile.readline()
     assert xfile.readline() == pfile.readline()
     assert xfile.readline() == pfile.readline()
+
+    xfile.close(), pfile.close()
+    xfile, pfile = XRootDFile(mkurl(fp), 'r'), opener.open(fp2, 'r')
+    assert xfile.readline() == pfile.readline()
+    xfile.seek(0), pfile.seek(0)
+    assert xfile.readline() == pfile.readline()
+    assert xfile.tell(), pfile.tell()
 
     xfile.close(), pfile.close()
     xfile = XRootDFile(mkurl(fp), 'w+')
@@ -1007,3 +1016,123 @@ def test__assert_mode(tmppath):
     xfile = XRootDFile(mkurl(full_path), 'a')
     assert xfile._assert_mode('w')
     pytest.raises(IOError, xfile._assert_mode, 'r')
+
+
+def test_readlines(tmppath):
+    """Tests readlines()"""
+    fd = get_mltl_file(tmppath)
+    fb = get_copy_file(fd)
+    fp, fc = fd['full_path'], fd['contents']
+    fp2 = fb['full_path']
+
+    xfile, pfile = XRootDFile(mkurl(fp), 'r'), open(fp2, 'r')
+
+    assert xfile.readlines() == pfile.readlines()
+
+    xfile.seek(0), pfile.seek(0)
+    assert pfile.readlines() == xfile.readlines()
+
+    xfile.close(), pfile.close()
+
+    xfile, pfile = XRootDFile(mkurl(fp), 'w+'), open(fp2, 'w+')
+    xfile.seek(0), pfile.seek(0)
+    assert xfile.readlines() == pfile.readlines()
+
+
+def test_xreadlines(tmppath):
+    """Tests xreadlines()"""
+    fp = get_mltl_file(tmppath)['full_path']
+
+    xfile = XRootDFile(mkurl(fp), 'r')
+
+    rl = xfile.readlines()
+    xfile.seek(0)
+    xl = xfile.xreadlines()
+    assert xl != rl
+    assert list(xl) == rl
+
+
+def test_fileno(tmppath):
+    """Test fileno."""
+    pytest.raises(
+        IOError,
+        XRootDFile(mkurl(join(tmppath, "data/testa.txt")), 'r-').fileno
+    )
+
+
+def test_name(tmppath):
+    """Test name property."""
+    assert XRootDFile(mkurl(join(tmppath, "data/testa.txt"))).name == \
+        'testa.txt'
+
+
+def test_isatty(tmppath):
+    """Test isatty()."""
+    assert XRootDFile(mkurl(join(tmppath, "data/testa.txt"))).isatty() is \
+        False
+
+
+def test_writelines(tmppath):
+    """Test writelines()."""
+    xfile = XRootDFile(mkurl(join(tmppath, "data/multiline.txt")), 'r')
+    yfile = XRootDFile(mkurl(join(tmppath, "data/newfile.txt")), 'w+')
+    yfile.writelines(xfile.xreadlines())
+    xfile.seek(0), yfile.seek(0)
+    assert xfile.readlines() == yfile.readlines()
+
+
+def test_seekable(tmppath):
+    """Test seekable."""
+    assert XRootDFile(
+        mkurl(join(tmppath, "data/testa.txt")), 'r-').seekable() is False
+    assert XRootDFile(
+        mkurl(join(tmppath, "data/testa.txt")), 'r').seekable() is True
+    assert XRootDFile(
+        mkurl(join(tmppath, "data/testa.txt")), 'w').seekable() is True
+    assert XRootDFile(
+        mkurl(join(tmppath, "data/testa.txt")), 'w-').seekable() is False
+    assert XRootDFile(
+        mkurl(join(tmppath, "data/testa.txt")), 'r+').seekable() is True
+
+
+def test_readable(tmppath):
+    """Test seekable."""
+    assert XRootDFile(
+        mkurl(join(tmppath, "data/testa.txt")), 'r-').readable() is True
+    assert XRootDFile(
+        mkurl(join(tmppath, "data/testa.txt")), 'r').readable() is True
+    assert XRootDFile(
+        mkurl(join(tmppath, "data/testa.txt")), 'w').readable() is False
+    assert XRootDFile(
+        mkurl(join(tmppath, "data/testa.txt")), 'r+').readable() is True
+    assert XRootDFile(
+        mkurl(join(tmppath, "data/testa.txt")), 'w+').readable() is True
+    assert XRootDFile(
+        mkurl(join(tmppath, "data/testa.txt")), 'w-').readable() is False
+
+
+def test_writable(tmppath):
+    """Test seekable."""
+    assert XRootDFile(
+        mkurl(join(tmppath, "data/testa.txt")), 'r-').writable() is False
+    assert XRootDFile(
+        mkurl(join(tmppath, "data/testa.txt")), 'r').writable() is False
+    assert XRootDFile(
+        mkurl(join(tmppath, "data/testa.txt")), 'w').writable() is True
+    assert XRootDFile(
+        mkurl(join(tmppath, "data/testa.txt")), 'r+').writable() is True
+    assert XRootDFile(
+        mkurl(join(tmppath, "data/testa.txt")), 'w+').writable() is True
+    assert XRootDFile(
+        mkurl(join(tmppath, "data/testa.txt")), 'w-').writable() is True
+    assert XRootDFile(
+        mkurl(join(tmppath, "data/testa.txt")), 'a').writable() is True
+
+
+def test_iterator_buffering(tmppath):
+    "Test file iteration."
+    f = "data/multiline.txt"
+    xfile = XRootDFile(mkurl(join(tmppath, f)), 'r')
+    assert len(list(iter(xfile))) == len(open(join(tmppath, f)).readlines())
+    xfile = XRootDFile(mkurl(join(tmppath, f)), 'r', buffering=10)
+    assert len(list(iter(xfile))) == int(math.ceil(xfile.size / 10.0))

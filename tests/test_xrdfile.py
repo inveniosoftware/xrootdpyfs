@@ -10,6 +10,7 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+import errno
 from os.path import join
 
 import fs.path
@@ -18,6 +19,8 @@ from fs import SEEK_CUR, SEEK_END, SEEK_SET
 from fs.errors import InvalidPathError, PathError, ResourceNotFoundError, \
     UnsupportedError
 from fs.opener import fsopendir, opener
+from mock import Mock
+from XRootD.client.responses import XRootDStatus
 
 from fixture import mkurl, tmppath
 from xrootdfs import XRootDFile
@@ -876,3 +879,38 @@ def test_readline(tmppath):
     xfile.seek(0)
     assert xfile.readline() == str2
     assert xfile.readline() == u'\x00'+str2
+
+
+def test_flush(tmppath):
+    """Tests for flush()"""
+    # Mostly it just ensures calling it doesn't crash the program.
+    fd = get_tsta_file(tmppath)
+    full_path, fc = fd['full_path'], fd['contents']
+    xfile = XRootDFile(mkurl(full_path), 'w')
+
+    writestr = 'whut'
+
+    xfile.flush()
+    xfile.seek(0, SEEK_END)
+    xfile.write(writestr)
+    xfile.flush()
+    xfile.close()
+
+    xfile = XRootDFile(mkurl(full_path), 'r')
+    assert xfile.read() == writestr
+
+    # Fake/mock an error response
+    fake_status = {
+        "status": 3,
+        "code": 0,
+        "ok": False,
+        "errno": errno.EREMOTEIO,
+        "error": True,
+        "message": '[FATAL] Remote I/O Error',
+        "fatal": True,
+        "shellcode": 51
+    }
+    # Assign mock return value to the file's sync() function
+    # (which is called by flush())
+    xfile._file.sync = Mock(return_value=(XRootDStatus(fake_status), None))
+    pytest.raises(IOError, xfile.flush)

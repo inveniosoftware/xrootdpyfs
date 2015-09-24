@@ -274,7 +274,7 @@ class XRootDFile(object):
     def flush(self):
         """Flush write buffers."""
         if not self.closed:
-            statmsg = self._file.sync()
+            statmsg, res = self._file.sync()
             if not statmsg.ok or statmsg.error:
                 raise IOError("XRootD error while flushing write buffer: {0}".
                               format(statmsg.message))

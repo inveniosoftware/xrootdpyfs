@@ -154,6 +154,20 @@ def test_read_existing(tmppath):
     overflow_read = xfile.read(len(fc))
     assert overflow_read == fc[3:]
 
+    # Mock an error, yayy!
+    fake_status = {
+        "status": 3,
+        "code": 0,
+        "ok": False,
+        "errno": errno.EREMOTEIO,
+        "error": True,
+        "message": '[FATAL] Remote I/O Error',
+        "fatal": True,
+        "shellcode": 51
+    }
+    xfile._file.read = Mock(return_value=(XRootDStatus(fake_status), None))
+    pytest.raises(IOError, xfile.read)
+
 
 def test__is_open(tmppath):
     """Test _is_open()"""
@@ -165,8 +179,8 @@ def test__is_open(tmppath):
     assert xfile.closed
 
 
-def test__get_size(tmppath):
-    """Tests for __get_size()."""
+def test_size(tmppath):
+    """Tests for the size property size."""
     fd = get_tsta_file(tmppath)
     full_path, fc = fd['full_path'], fd['contents']
     xfile = XRootDFile(mkurl(full_path))
@@ -182,6 +196,26 @@ def test__get_size(tmppath):
     fpp, fc = fd['full_path'], fd['contents']
     xfile = XRootDFile(mkurl(fpp))
     assert xfile.size == len(fc)
+
+    # Mock the error
+    fake_status = {
+        "status": 3,
+        "code": 0,
+        "ok": False,
+        "errno": errno.EREMOTEIO,
+        "error": True,
+        "message": '[FATAL] Remote I/O Error',
+        "fatal": True,
+        "shellcode": 51
+    }
+    xfile.close()
+    xfile = XRootDFile(mkurl(full_path))
+    xfile._file.stat = Mock(return_value=(XRootDStatus(fake_status), None))
+    try:
+        xfile.size
+        assert False
+    except IOError:
+        assert True
 
 
 def test_seek_and_tell(tmppath):
@@ -341,6 +375,20 @@ def test_truncate1(tmppath):
     xfile = XRootDFile(mkurl(full_path), 'r+')
     assert xfile.size == 1
     assert xfile.read() == '\x00'
+
+    # Mock it.
+    fake_status = {
+        "status": 3,
+        "code": 0,
+        "ok": False,
+        "errno": errno.EREMOTEIO,
+        "error": True,
+        "message": '[FATAL] Remote I/O Error',
+        "fatal": True,
+        "shellcode": 51
+    }
+    xfile._file.truncate = Mock(return_value=(XRootDStatus(fake_status), None))
+    pytest.raises(IOError, xfile.truncate, 0)
 
 
 def test_truncate2(tmppath):
@@ -517,6 +565,23 @@ def test_write(tmppath):
     xfile.write(nc)
     assert xfile.tell() == len(nc) + 2
     assert xfile.read() == fc[2+len(nc):]
+
+    # run w/ flushing == true
+    xfile.write('', True)
+
+    # Mock an error, yayy!
+    fake_status = {
+        "status": 3,
+        "code": 0,
+        "ok": False,
+        "errno": errno.EREMOTEIO,
+        "error": True,
+        "message": '[FATAL] Remote I/O Error',
+        "fatal": True,
+        "shellcode": 51
+    }
+    xfile._file.write = Mock(return_value=(XRootDStatus(fake_status), None))
+    pytest.raises(IOError, xfile.write, '')
 
 
 def test_init_paths(tmppath):

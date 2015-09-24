@@ -914,3 +914,31 @@ def test_flush(tmppath):
     # (which is called by flush())
     xfile._file.sync = Mock(return_value=(XRootDStatus(fake_status), None))
     pytest.raises(IOError, xfile.flush)
+
+
+def test__assert_mode(tmppath):
+    """Tests for _assert_mode"""
+    fd = get_tsta_file(tmppath)
+    full_path, fc = fd['full_path'], fd['contents']
+    mode = 'r'
+    xfile = XRootDFile(mkurl(full_path), mode)
+
+    assert xfile.mode == mode
+    assert xfile._assert_mode(mode)
+    delattr(xfile, 'mode')
+    pytest.raises(AttributeError, xfile._assert_mode, mode)
+
+    xfile.close()
+    xfile = XRootDFile(mkurl(full_path), 'r')
+    assert xfile._assert_mode('r')
+    pytest.raises(IOError, xfile._assert_mode, 'w')
+
+    xfile.close()
+    xfile = XRootDFile(mkurl(full_path), 'w-')
+    assert xfile._assert_mode('w-')
+    pytest.raises(IOError, xfile._assert_mode, 'r')
+
+    xfile.close()
+    xfile = XRootDFile(mkurl(full_path), 'a')
+    assert xfile._assert_mode('w')
+    pytest.raises(IOError, xfile._assert_mode, 'r')

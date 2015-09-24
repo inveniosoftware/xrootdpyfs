@@ -301,7 +301,9 @@ class XRootDFile(object):
             try:
                 mstr = self.mode
             except AttributeError:
-                mstr = "r+"
+                raise AttributeError("Mode attribute missing -- "
+                                     "was it deleted? "
+                                     "Close and re-open the file.")
         if "+" in mstr:
             return True
         if "-" in mstr and "-" not in mode:

@@ -250,9 +250,6 @@ class XRootDFile(object):
         """
         self._assert_mode('w')
 
-        if "-" in self.mode:
-            raise IOError("File is not seekable; can't truncate.")
-
         if size is None:
             size = self.tell()
 

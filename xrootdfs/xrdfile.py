@@ -82,7 +82,7 @@ class XRootDFile(object):
         self._flags = translate_file_mode_to_flags(mode)
 
         statmsg, response = self._file.open(path, flags=self._flags)
-        if not statmsg.ok or statmsg.error:
+        if not statmsg.ok:
             if statmsg.errno == 3011:
                 raise ResourceNotFoundError(path)
             else:
@@ -138,7 +138,7 @@ class XRootDFile(object):
             size=chunksize,
         )
 
-        if not statmsg.ok or statmsg.error:
+        if not statmsg.ok:
             raise IOError("XRootD error reading file: {0}".format(
                           statmsg.message))
 
@@ -195,7 +195,7 @@ class XRootDFile(object):
 
         statmsg, res = self._file.write(string, offset=self._ipp)
 
-        if not statmsg.ok or statmsg.error:
+        if not statmsg.ok:
             raise IOError("XRootD error writing to file: {0}".format(
                           statmsg.message))
 
@@ -254,7 +254,7 @@ class XRootDFile(object):
             size = self.tell()
 
         statmsg = self._file.truncate(size)[0]
-        if not statmsg.ok or statmsg.error:
+        if not statmsg.ok:
             raise IOError("XRootD error while truncating: {0}".format(
                           statmsg.message))
 
@@ -272,7 +272,7 @@ class XRootDFile(object):
         """Flush write buffers."""
         if not self.closed:
             statmsg, res = self._file.sync()
-            if not statmsg.ok or statmsg.error:
+            if not statmsg.ok:
                 raise IOError("XRootD error while flushing write buffer: {0}".
                               format(statmsg.message))
 
@@ -286,7 +286,7 @@ class XRootDFile(object):
         """Get file size."""
         if self._size == -1:
             statmsg, res = self._file.stat()
-            if not statmsg.ok or statmsg.error:
+            if not statmsg.ok:
                 raise IOError("XRootD error while retrieving size: {0}".format(
                               statmsg.message))
             self._size = res.size

@@ -25,7 +25,8 @@ RUN adduser --uid 1001 xrootdfs
 RUN pip install --upgrade pip setuptools
 RUN pip install ipython \
                 pep257 \
-                "pytest<2.8.0" \
+                coverage \
+                pytest \
                 pytest-pep8 \
                 pytest-cache \
                 pytest-cov \
@@ -36,7 +37,7 @@ RUN pip install fs
 
 # Add sources to `code` and work there:
 WORKDIR /code
-ADD . /code
+COPY . /code
 
 RUN pip install -e .
 

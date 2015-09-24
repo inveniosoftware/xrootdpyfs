@@ -83,16 +83,22 @@ class XRootDFile(object):
 
         statmsg, response = self._file.open(path, flags=self._flags)
         if not statmsg.ok:
-            if statmsg.errno == 3011:
-                raise ResourceNotFoundError(path)
-            else:
-                raise IOError(
-                    "XRootD error while instantiating file ({0}): {1}"
-                    .format(path, statmsg.message))
+            self._raise_status(self.path, statmsg,
+                               "instantiating file ({0})".format(path))
 
         # Deal with the modes
         if 'a' in self.mode:
             self.seek(self.size, SEEK_SET)
+
+    def _raise_status(self, path, status, source=None):
+        """Raise error based on status."""
+        if status.errno == 3011:
+            raise ResourceNotFoundError(path)
+        else:
+            if source:
+                errstr = "XRootD error {0}file: {1}".format(
+                         source+' ', status.message)
+            raise IOError(errstr)
 
     def __iter__(self):
         """Initialize the internal iterator."""
@@ -139,8 +145,7 @@ class XRootDFile(object):
         )
 
         if not statmsg.ok:
-            raise IOError("XRootD error reading file: {0}".format(
-                          statmsg.message))
+            self._raise_status(self.path, statmsg, "reading")
 
         # Increment internal file pointer.
         self._ipp = min(
@@ -196,8 +201,7 @@ class XRootDFile(object):
         statmsg, res = self._file.write(string, offset=self._ipp)
 
         if not statmsg.ok:
-            raise IOError("XRootD error writing to file: {0}".format(
-                          statmsg.message))
+            self._raise_status(self.path, statmsg, "writing")
 
         self._ipp += len(string)
         self._size = max(self.size, self.tell())
@@ -255,8 +259,7 @@ class XRootDFile(object):
 
         statmsg = self._file.truncate(size)[0]
         if not statmsg.ok:
-            raise IOError("XRootD error while truncating: {0}".format(
-                          statmsg.message))
+            self._raise_status(self.path, statmsg, "truncating")
 
         self._size = size
 
@@ -273,8 +276,7 @@ class XRootDFile(object):
         if not self.closed:
             statmsg, res = self._file.sync()
             if not statmsg.ok:
-                raise IOError("XRootD error while flushing write buffer: {0}".
-                              format(statmsg.message))
+                self._raise_status(self.path, statmsg, "flushing write buffer")
 
     @property
     def closed(self):
@@ -287,8 +289,7 @@ class XRootDFile(object):
         if self._size == -1:
             statmsg, res = self._file.stat()
             if not statmsg.ok:
-                raise IOError("XRootD error while retrieving size: {0}".format(
-                              statmsg.message))
+                self._raise_status(self.path, statmsg, "retrieving size")
             self._size = res.size
         return self._size
 

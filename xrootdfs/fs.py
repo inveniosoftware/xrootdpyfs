@@ -42,8 +42,6 @@ class XRootDFS(FS):
         The contents of the dictionary gets merged with any querystring
         provided in the ``url``.
     :type query: dict
-    :param timeout: Sets the timeout in seconds.
-    :type timeout: int
 
     """
 
@@ -61,7 +59,7 @@ class XRootDFS(FS):
         'atomic.setcontents': False
     }
 
-    def __init__(self, url, query=None, timeout=0):
+    def __init__(self, url, query=None):
         """Initialize file system object."""
         if not is_valid_url(url):
             raise InvalidPathError(path=url)
@@ -92,7 +90,6 @@ class XRootDFS(FS):
             # No query string in URL, use kwarg instead.
             queryargs = query
 
-        self.timeout = timeout
         self.root_url = root_url
         self.base_path = base_path
         self.queryargs = queryargs
@@ -123,7 +120,7 @@ class XRootDFS(FS):
 
     def _query(self, flag, arg, parse=True):
         """Query an xrootd server."""
-        status, res = self._client.query(flag, arg, timeout=self.timeout)
+        status, res = self._client.query(flag, arg)
 
         if not status.ok:
             if status.errno == 3013:
@@ -153,9 +150,6 @@ class XRootDFS(FS):
 
         : raises some error if newline is anything else than 'slash n' or None
         """
-        # Set default timeout if not overwritten.
-        kwargs.setdefault("timeout", self.timeout)
-
         return XRootDFile(
             self.getpathurl(path, with_querystring=True),
             mode=mode,
@@ -322,7 +316,7 @@ class XRootDFS(FS):
         if recursive:
             raise UnsupportedError("recursive parameter is not supported.")
 
-        status, res = self._client.rmdir(self._p(path), timeout=self.timeout)
+        status, res = self._client.rmdir(self._p(path))
 
         if not status.ok:
             if force and status.errno == 3005:
@@ -331,12 +325,10 @@ class XRootDFS(FS):
                 for d, filenames in self.walk(path, search="depth"):
                     for filename in filenames:
                         relpath = pathjoin(d, filename)
-                        status, res = self._client.rm(
-                            self._p(relpath), timeout=self.timeout)
+                        status, res = self._client.rm(self._p(relpath))
                         if not status.ok:
                             self._raise_status(relpath, status)
-                    status, res = self._client.rmdir(
-                        self._p(d), timeout=self.timeout)
+                    status, res = self._client.rmdir(self._p(d))
                     if not status.ok:
                         self._raise_status(path, status)
                 return True
@@ -434,8 +426,7 @@ class XRootDFS(FS):
             DirListFlags.NONE
 
         full_path = self._p(path)
-        status, entries = self._client.dirlist(
-            full_path, flag, timeout=self.timeout)
+        status, entries = self._client.dirlist(full_path, flag)
 
         if not status.ok:
             self._raise_status(path, status)
@@ -559,7 +550,7 @@ class XRootDFS(FS):
             elif self.isdir(dst):
                 self.removedir(dst, force=True)
 
-        status, dummy = self._client.mv(src, dst, timeout=self.timeout)
+        status, dummy = self._client.mv(src, dst)
 
         if not status.ok:
             self._raise_status(dst, status)
@@ -700,7 +691,7 @@ class XRootDFS(FS):
 
         :raise `fs.errors.RemoteConnectionError`:
         """
-        status, dummy = self._client.ping(timeout=self.timeout)
+        status, dummy = self._client.ping()
 
         if not status.ok:
             raise RemoteConnectionError(opname="ping", details=status)

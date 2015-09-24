@@ -41,8 +41,7 @@ class XRootDFile(object):
     """
 
     def __init__(self, path, mode='r', buffering=-1, encoding=None,
-                 errors=None, newline=None, line_buffering=False, timeout=0,
-                 **kwargs):
+                 errors=None, newline=None, line_buffering=False, **kwargs):
         """XRootDFile constructor.
 
         Raises PathError if the given path isn't a valid XRootD URL,
@@ -64,7 +63,6 @@ class XRootDFile(object):
         if line_buffering is not False:
             raise NotImplementedError("Specifying line buffering not "
                                       "implemented.")
-
         # PyFS attributes
         self.mode = mode
 
@@ -79,13 +77,11 @@ class XRootDFile(object):
         self._errors = errors
         self._newline = newline
         self._line_buffering = line_buffering
-        self.timeout = timeout
 
         # flag translation
         self._flags = translate_file_mode_to_flags(mode)
 
-        statmsg, response = self._file.open(path, flags=self._flags,
-                                            timeout=self.timeout)
+        statmsg, response = self._file.open(path, flags=self._flags)
         if not statmsg.ok or statmsg.error:
             if statmsg.errno == 3011:
                 raise ResourceNotFoundError(path)
@@ -140,7 +136,6 @@ class XRootDFile(object):
         statmsg, res = self._file.read(
             offset=self._ipp,
             size=chunksize,
-            timeout=self.timeout,
         )
 
         if not statmsg.ok or statmsg.error:
@@ -198,8 +193,7 @@ class XRootDFile(object):
         if 'a' in self.mode:
             self.seek(0, SEEK_END)
 
-        statmsg, res = self._file.write(string, offset=self._ipp,
-                                        timeout=self.timeout)
+        statmsg, res = self._file.write(string, offset=self._ipp)
 
         if not statmsg.ok or statmsg.error:
             raise IOError("XRootD error writing to file: {0}".format(
@@ -262,7 +256,7 @@ class XRootDFile(object):
         if size is None:
             size = self.tell()
 
-        statmsg = self._file.truncate(size, timeout=self.timeout)[0]
+        statmsg = self._file.truncate(size)[0]
         if not statmsg.ok or statmsg.error:
             raise IOError("XRootD error while truncating: {0}".format(
                           statmsg.message))
@@ -275,12 +269,12 @@ class XRootDFile(object):
         The file may not be accessed further once it is closed.
         """
         if not self.closed:
-            self._file.close(timeout=self.timeout)
+            self._file.close()
 
     def flush(self):
         """Flush write buffers."""
         if not self.closed:
-            statmsg = self._file.sync(timeout=self.timeout)
+            statmsg = self._file.sync()
             if not statmsg.ok or statmsg.error:
                 raise IOError("XRootD error while flushing write buffer: {0}".
                               format(statmsg.message))
@@ -294,7 +288,7 @@ class XRootDFile(object):
     def size(self):
         """Get file size."""
         if self._size == -1:
-            statmsg, res = self._file.stat(timeout=self.timeout)
+            statmsg, res = self._file.stat()
             if not statmsg.ok or statmsg.error:
                 raise IOError("XRootD error while retrieving size: {0}".format(
                               statmsg.message))

@@ -13,7 +13,7 @@
    XRootDFS and not supported by other PyFilesystem implementations.
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
+from __future__ import absolute_import, print_function
 
 import re
 from datetime import datetime

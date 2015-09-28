@@ -173,7 +173,7 @@ written):
     5
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
+from __future__ import absolute_import, print_function
 
 from .fs import XRootDFS
 from .opener import XRootDOpener

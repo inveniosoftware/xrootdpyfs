@@ -11,6 +11,7 @@
 from __future__ import absolute_import, print_function
 
 import sys
+
 from fs import SEEK_CUR, SEEK_END, SEEK_SET
 from fs.errors import InvalidPathError, PathError, ResourceNotFoundError, \
     UnsupportedError

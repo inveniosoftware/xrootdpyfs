@@ -29,7 +29,7 @@ RUN pip install ipython \
                 pytest \
                 pytest-pep8 \
                 pytest-cov \
-                pytest-isort \
+                isort \
                 mock \
                 Sphinx
 RUN pip install fs

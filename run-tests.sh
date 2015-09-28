@@ -7,4 +7,5 @@
 pep257 xrootdfs && \
 sphinx-build -qnN docs docs/_build/html && \
 python setup.py test && \
-sphinx-build -qnNW -b doctest docs docs/_build/doctest
+sphinx-build -qnNW -b doctest docs docs/_build/doctest && \
+isort -rc -c .

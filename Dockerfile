@@ -28,7 +28,6 @@ RUN pip install ipython \
                 coverage \
                 pytest \
                 pytest-pep8 \
-                pytest-cache \
                 pytest-cov \
                 pytest-isort \
                 mock \

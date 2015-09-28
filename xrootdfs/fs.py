@@ -26,6 +26,7 @@ from fs.errors import DestinationExistsError, DirectoryNotEmptyError, \
     FSError, InvalidPathError, RemoteConnectionError, ResourceError, \
     ResourceInvalidError, ResourceNotFoundError, UnsupportedError
 from fs.path import dirname, frombase, normpath, pathcombine, pathjoin
+from six import binary_type, text_type
 from XRootD.client import CopyProcess, FileSystem
 from XRootD.client.flags import AccessMode, DirListFlags, MkDirFlags, \
     QueryCode, StatInfoFlags
@@ -96,11 +97,16 @@ class XRootDFS(FS):
         self._client = FileSystem(self.xrd_get_rooturl())
         super(XRootDFS, self).__init__(thread_synchronize=False)
 
-    def _p(self, path):
+    def _p(self, path, encoding='utf-8'):
         """Join path to base path."""
         # fs.path.pathjoin() omits the first '/' in self.base_path.
         # It is resolved by adding on an additional '/' to its return value.
-        return '/' + pathjoin(self.base_path, path)
+        if isinstance(path, binary_type):
+            path = path.decode(encoding)
+        # pathjoin always returns unicode
+        return (
+            u'/' + pathjoin(self.base_path.decode('utf-8'), path)
+        ).encode(encoding)
 
     def _raise_status(self, path, status):
         """Raise error based on status."""

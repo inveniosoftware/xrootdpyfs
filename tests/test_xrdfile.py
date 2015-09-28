@@ -12,6 +12,7 @@ from __future__ import absolute_import, print_function
 
 import errno
 import math
+import sys
 from os.path import join
 
 import fs.path
@@ -583,6 +584,43 @@ def test_write(tmppath):
     }
     xfile._file.write = Mock(return_value=(XRootDStatus(fake_status), None))
     pytest.raises(IOError, xfile.write, '')
+
+
+def test_readwrite_unicode(tmppath):
+    """Test read/write unicode."""
+    if sys.getdefaultencoding() != 'ascii':
+        # Python 2 only problem
+        raise AssertionError(
+            "Default system encoding is not ascii. This is likely due to some"
+            " imported module changing it using sys.setdefaultencoding."
+        )
+
+    fd = get_tsta_file(tmppath)
+    fb = get_copy_file(fd)
+    fp, dummy = fd['full_path'], fd['contents']
+    fp2 = fb['full_path']
+
+    unicodestr = u"æøå"
+
+    pfile = open(fp2, 'w')
+    xfile = XRootDFile(mkurl(fp), 'w')
+    pytest.raises(UnicodeEncodeError, pfile.write, unicodestr)
+    pytest.raises(UnicodeEncodeError, xfile.write, unicodestr)
+    xfile.close()
+
+    xfile = XRootDFile(mkurl(fp), 'w+', encoding='utf-8')
+    xfile.write(unicodestr)
+    xfile.flush()
+    xfile.seek(0)
+    assert unicodestr.encode('utf8') == xfile.read()
+    xfile.close()
+
+    xfile = XRootDFile(mkurl(fp), 'w+', errors='ignore')
+    xfile.write(unicodestr)
+    xfile.flush()
+    xfile.seek(0)
+    assert unicodestr.encode('ascii', 'ignore') == xfile.read()
+    xfile.close()
 
 
 def test_init_paths(tmppath):

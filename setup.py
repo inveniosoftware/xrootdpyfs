@@ -56,9 +56,7 @@ with open(os.path.join('xrootdfs', 'version.py'), 'rt') as f:
 tests_require = [
     'coverage>=4.0',
     'mock>=1.3.0',
-    'pytest-cache>=1.0',
     'pytest-cov>=2.0.0',
-    'pytest-isort>=0.1.0',
     'pytest-pep8>=1.0.6',
     'pytest>=2.8.0',
 ]

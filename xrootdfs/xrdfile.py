@@ -10,11 +10,12 @@
 
 from __future__ import absolute_import, print_function
 
+import sys
 from fs import SEEK_CUR, SEEK_END, SEEK_SET
 from fs.errors import InvalidPathError, PathError, ResourceNotFoundError, \
     UnsupportedError
 from fs.path import basename
-from six import b, binary_type
+from six import b, binary_type, text_type
 from XRootD.client import File
 
 from .utils import is_valid_path, is_valid_url, spliturl, \
@@ -77,8 +78,8 @@ class XRootDFile(object):
 
         # XRootD attributes & internals
         self.path = path
-        self.encoding = encoding
-        self.errors = errors
+        self.encoding = encoding or sys.getdefaultencoding()
+        self.errors = errors or 'strict'
         self.buffer_size = buffer_size or 64*1024
         self.buffering = buffering
         self._file = File()
@@ -241,6 +242,8 @@ class XRootDFile(object):
         if not isinstance(data, binary_type):
             if isinstance(data, bytearray):
                 data = bytes(data)
+            elif isinstance(data, text_type):
+                data = data.encode(self.encoding, self.errors)
 
         statmsg, res = self._file.write(data, offset=self._ipp)
 

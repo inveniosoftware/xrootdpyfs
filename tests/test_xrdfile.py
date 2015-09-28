@@ -897,7 +897,7 @@ def test_write_binary(tmppath):
 
     # Test with bytearray
     xf_new = XRootDFile(mkurl(join(tmppath, 'data/tmp_bin')), 'wb+')
-    barr = str(bytearray(range(0, 5)))
+    barr = bytearray(range(0, 5))
     xf_new.write(barr), xf_new.seek(0)
     assert xf_new.read() == barr
     xf_new.close()

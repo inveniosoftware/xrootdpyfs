@@ -14,7 +14,7 @@ from fs import SEEK_CUR, SEEK_END, SEEK_SET
 from fs.errors import InvalidPathError, PathError, ResourceNotFoundError, \
     UnsupportedError
 from fs.path import basename
-from six import b
+from six import b, binary_type
 from XRootD.client import File
 
 from .utils import is_valid_path, is_valid_url, spliturl, \
@@ -226,7 +226,7 @@ class XRootDFile(object):
                 break
             yield line
 
-    def write(self, string, flushing=False):
+    def write(self, data, flushing=False):
         """Write the given string to the file-like object.
 
         If the keyword argument 'flushing' is true, it indicates that the
@@ -238,12 +238,16 @@ class XRootDFile(object):
         if 'a' in self.mode:
             self.seek(0, SEEK_END)
 
-        statmsg, res = self._file.write(string, offset=self._ipp)
+        if not isinstance(data, binary_type):
+            if isinstance(data, bytearray):
+                data = bytes(data)
+
+        statmsg, res = self._file.write(data, offset=self._ipp)
 
         if not statmsg.ok:
             self._raise_status(self.path, statmsg, "writing")
 
-        self._ipp += len(string)
+        self._ipp += len(data)
         self._size = max(self.size, self.tell())
         if flushing:
             self.flush()

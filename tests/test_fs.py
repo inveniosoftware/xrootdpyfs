@@ -24,7 +24,7 @@ from fs.errors import BackReferenceError, DestinationExistsError, \
 from mock import Mock
 from XRootD.client.responses import XRootDStatus
 
-from fixture import mkurl, tmppath
+from conftest import mkurl
 from xrootdfs import XRootDFile, XRootDFS
 from xrootdfs.utils import spliturl
 

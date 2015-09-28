@@ -12,8 +12,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 from fs.opener import opener
 
-from fixture import mkurl, tmppath
-from xrootdfs import XRootDFile, XRootDFS, XRootDOpener
+from conftest import mkurl
+from xrootdfs.opener import XRootDOpener  # no-qa
 
 
 def test_parse(tmppath):

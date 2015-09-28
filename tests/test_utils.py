@@ -38,6 +38,7 @@ def test_spliturl():
 
 
 def test_is_valid_path():
+    """Test is valid path."""
     assert is_valid_path("//")
     assert is_valid_path("//something/wicked/this/tub/comes/")
     assert is_valid_path("//every/time")
@@ -48,6 +49,7 @@ def test_is_valid_path():
 
 
 def test_translate_file_mode_to_flags():
+    """Test mode to xrootd flags translation."""
     assert translate_file_mode_to_flags('in') == 0
     assert translate_file_mode_to_flags('r') == OpenFlags.READ
     assert translate_file_mode_to_flags('r-') == OpenFlags.READ

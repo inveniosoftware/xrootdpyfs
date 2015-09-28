@@ -45,7 +45,7 @@ XRootDFS depends on `PyFilesystem <http://docs.pyfilesystem.org>`_ and
 XRootD Python bindings
 ----------------------
 The XRootD Python bindings can be somewhat tricky to install if this is your
-first experience with XRootD. First you must usually install XRootD, then the
+first experience with XRootD. First you must install XRootD as usual, then the
 Python bindings. The Python bindings are installed using
 ``python setup.py install`` and requires access to the xrootd headers and
 library. If these can't be found you need to set the ``XRD_LIBDIR`` and
@@ -54,7 +54,7 @@ library. If these can't be found you need to set the ``XRD_LIBDIR`` and
 Cent OS 7/YUM based
 ~~~~~~~~~~~~~~~~~~~
 
-Install XRootD using the official YUM repositories, e.g.:
+Install XRootD + Python bindings using the official YUM repositories, e.g.:
 
 .. code-block:: console
 

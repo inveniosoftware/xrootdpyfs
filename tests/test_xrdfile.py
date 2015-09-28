@@ -23,7 +23,7 @@ from fs.opener import fsopendir, opener
 from mock import Mock
 from XRootD.client.responses import XRootDStatus
 
-from fixture import mkurl, tmppath
+from conftest import mkurl
 from xrootdfs import XRootDFile
 from xrootdfs.utils import is_valid_path, is_valid_url
 

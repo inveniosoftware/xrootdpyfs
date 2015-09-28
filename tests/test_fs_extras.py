@@ -10,23 +10,11 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-import os
-import types
-from datetime import datetime
-from functools import wraps
-from os.path import exists, join
-
 import pytest
-from fs.errors import BackReferenceError, DestinationExistsError, \
-    DirectoryNotEmptyError, FSError, InvalidPathError, RemoteConnectionError, \
-    ResourceError, ResourceInvalidError, ResourceNotFoundError, \
-    UnsupportedError
-from mock import Mock
-from XRootD.client.responses import XRootDStatus
+from fs.errors import ResourceNotFoundError
 
-from fixture import mkurl, tmppath
-from xrootdfs import XRootDFile, XRootDFS
-from xrootdfs.utils import spliturl
+from conftest import mkurl
+from xrootdfs import XRootDFS
 
 
 def test_getcontents(tmppath):

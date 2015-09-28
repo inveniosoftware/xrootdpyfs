@@ -15,7 +15,7 @@ from os.path import join
 from XRootD import client as xclient
 from XRootD.client.flags import OpenFlags
 
-from fixture import mkurl, tmppath
+from conftest import mkurl
 
 
 # If "test" is in its name then pytest picks it up.

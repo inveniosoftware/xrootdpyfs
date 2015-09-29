@@ -6,7 +6,7 @@
 # xrootdfs is free software; you can redistribute it and/or modify it under the
 # terms of the Revised BSD License; see LICENSE file for more details.
 
-"""Wrapper for XRootD files."""
+"""File-like interface for interacting with files over the XRootD protocol."""
 
 from __future__ import absolute_import, print_function
 
@@ -25,23 +25,49 @@ from .utils import is_valid_path, is_valid_url, spliturl, \
 
 class XRootDFile(object):
 
-    """Wrapper-like class for XRootD file objects.
+    r"""File-like interface for working with files over XRootD protocol.
 
     This class understands and will accept the following mode strings,
     with any additional characters being ignored:
 
-    * ``r`` - open the file for reading only.
-    * ``r+`` - open the file for reading and writing.
-    * ``r-`` - open the file for streamed reading; do not allow seek/tell.
-    * ``w`` - open the file for writing only; create the file if
+    * ``r`` - Open the file for reading only.
+    * ``r+`` - Open the file for reading and writing.
+    * ``r-`` - Open the file for streamed reading; do not allow seek/tell.
+    * ``w`` - Open the file for writing only; create the file if
       it doesn't exist; truncate it to zero length.
-    * ``w+`` - open the file for reading and writing; create the file
+    * ``w+`` - Open the file for reading and writing; create the file
       if it doesn't exist; truncate it to zero length.
-    * ``w-`` - open the file for streamed writing; do not allow seek/tell.
-    * ``a`` - open the file for writing only; create the file if it
+    * ``w-`` - Open the file for streamed writing; do not allow seek/tell.
+    * ``a`` - Open the file for writing only; create the file if it
       doesn't exist; place pointer at end of file.
-    * ``a+`` - open the file for reading and writing; create the file
+    * ``a+`` - Open the file for reading and writing; create the file
       if it doesn't exist; place pointer at end of file.
+
+
+    .. note::
+       Streamed reading/writing modes has no performance advantages over
+       non-streamed reading/writing for XRootD.
+
+    :param path: Path to file that should be opened.
+    :type path: string
+    :param mode: Mode of file to open, identical to the mode string used
+        in 'file' and 'open' builtins.
+    :type mode: string
+    :param buffering: An optional integer used to set the buffering policy.
+        Pass 0 to switch buffering off (only allowed in binary mode),
+        1 to select line buffering (only usable in text mode), and
+        an integer > 1 to indicate the size of a fixed-size chunk buffer.
+    :param encoding: Determines encoding used when writing unicode data.
+    :param errors: An optional string that specifies how encoding and
+        decoding errors are to be handled (e.g. ``strict``, ``ignore`` or
+        ``replace``).
+    :param newline: Newline character to use (either ``\\n``, ``\\r``,
+        ``\\r\\n``, ``''`` or ``None``).
+    :param line_buffering: Unsupported. Anything by False will raise and
+        error.
+    :param buffer_size: Buffer size used when reading files (defaults to 64K).
+        This can likely be optimized to chunks up to 2MB depending on your
+        desired memory usage.
     """
 
     def __init__(self, path, mode='r', buffering=-1, encoding=None,
@@ -141,24 +167,19 @@ class XRootDFile(object):
         self.close()
 
     def next(self):
-        """Return next item."""
+        """Return next item for file iteration."""
         item = self._next_func(*self._next_args[0], **self._next_args[1])
         if not item:
             raise StopIteration
         return item
 
     def read(self, sizehint=-1):
-        """Read approximately <sizehint> bytes from the file-like object.
+        """Read ``sizehint`` bytes from the file object.
 
-        The method need not guarantee any particular number of bytes -
-        it may return more bytes than requested, or fewer.  If needed the
-        size hint may be completely ignored.  It may even return an empty
-        string if no data is yet available.
+        If no ``sizehint`` is provided the entire file is read! Multiple calls
+        to this method after EOF as been reached, will return an empty string.
 
-        Because of this, the method must return None to signify that EOF
-        has been reached.  The higher-level methods will never indicate EOF
-        until None has been read from _read().  Once EOF is reached, it
-        should be safe to call _read() again, immediately returning None.
+        :oaram sizehint: Number of bytes to read from file object.
         """
         if self.closed:
             raise ValueError("I/O operation on closed file.")
@@ -215,7 +236,13 @@ class XRootDFile(object):
         return b("").join(bits)
 
     def readlines(self):
-        """Read until EOF using readline()."""
+        """Read until EOF using readline().
+
+        .. warning::
+           This methods reads the entire file into memory! You are probably
+           better off using either ``xreadlines`` or just normal iteration
+           over the file object.
+        """
         return list(self.xreadlines())
 
     def xreadlines(self, sizehint=-1):
@@ -229,7 +256,7 @@ class XRootDFile(object):
             yield line
 
     def write(self, data, flushing=False):
-        """Write the given string to the file-like object.
+        """Write the given string to the file.
 
         If the keyword argument 'flushing' is true, it indicates that the
         internal write buffers are being flushed, and *all* the given data
@@ -302,8 +329,7 @@ class XRootDFile(object):
         """Truncate the file's size to ``size``.
 
         Note that ``size`` will never be None; if it was not specified by the
-        user then it is calculated as the file's apparent position (which may
-        be different to its actual position due to buffering).
+        user the current file position is used.
         """
         self._assert_mode('w')
 
@@ -345,11 +371,17 @@ class XRootDFile(object):
         return 'w' in self.mode or '+' in self.mode or 'a' in self.mode
 
     def isatty(self):
-        """Check if file is a TTY."""
+        """Check if file is a TTY (false always).
+
+        Added for ``io`` module compatibility.
+        """
         return False
 
     def fileno(self):
-        """Get the underlying file descriptor."""
+        """Get the underlying file descriptor.
+
+        Unsupported by XRootDFS (added for ``io`` module compatibility).
+        """
         raise IOError("File descriptor is unsupported by xrootd.")
 
     @property

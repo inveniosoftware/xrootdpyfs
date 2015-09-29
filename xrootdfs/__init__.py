@@ -42,6 +42,9 @@ If you just want to try out the library, the easiest is to use Docker. See
 XRootDFS depends on `PyFilesystem <http://docs.pyfilesystem.org>`_ and
 `XRootD Python bindings <http://xrootd.org/doc/python/xrootd-python-0.1.0/>`_.
 
+XRootDFS is not Python 3 compatible due to the underlying Python bindings not
+being Python 3 compatible.
+
 XRootD Python bindings
 ----------------------
 The XRootD Python bindings can be somewhat tricky to install if this is your
@@ -112,9 +115,9 @@ so all you need is:
 Getting started
 ===============
 
-The easiest way to run the examples is using the provided docker container.
-This way you don't need to have access to an XRootD server plus all the
-dependencies installed:
+The easiest way to run the examples is to use the provided docker container.
+This way you do not need to have a local XRootD server plus all the
+libraries installed:
 
 .. code-block:: console
 

@@ -8,8 +8,13 @@
 
 """PyFilesystem implementation of XRootD protocol.
 
+:py:class:`XRootDFS` is a subclass of PyFilesystem FS class and thus implements
+the entire PyFilesystem
+`Filesystem interface <http://docs.pyfilesystem.org/en/latest/interface.html>`_
+.
+
 .. note::
-   All methods prefixed with ``xrd`` in :py:class:`XRootDFS` is specific to
+   All methods prefixed with ``xrd`` in :py:class:`XRootDFS` are specific to
    XRootDFS and not supported by other PyFilesystem implementations.
 """
 
@@ -26,7 +31,7 @@ from fs.errors import DestinationExistsError, DirectoryNotEmptyError, \
     FSError, InvalidPathError, RemoteConnectionError, ResourceError, \
     ResourceInvalidError, ResourceNotFoundError, UnsupportedError
 from fs.path import dirname, frombase, normpath, pathcombine, pathjoin
-from six import binary_type, text_type
+from six import binary_type
 from XRootD.client import CopyProcess, FileSystem
 from XRootD.client.flags import AccessMode, DirListFlags, MkDirFlags, \
     QueryCode, StatInfoFlags
@@ -39,11 +44,33 @@ class XRootDFS(FS):
 
     """XRootD PyFilesystem interface.
 
+    The argument ``query`` is particular useful for specifying e.g. Kerberos
+    or GSI authentication without adding it in the URL. The following:
+
+    .. code-block:: python
+
+        fs = XRootDFS(
+            "root://localhost?&xrd.wantprot=krb5&xrd.k5ccname=/tmp/krb_filexxx"
+        )
+
+    is equivalent to:
+
+    .. code-block:: python
+
+        fs = XRootDFS(
+            "root://localhost",
+            {"xrd.wantprot": "krb5", "xrd.k5ccname": "/tmp/krb_filexxx"}
+        )
+
+    This way you can easily separate the URL from the authentication query
+    parameters. Note that ``xrd.k5ccname`` specifies a Kerberos `ticket`
+    and not a `keytab`.
+
+    :param url: A root URL.
     :param query: Dictionary of key/values to append to the URL query string.
         The contents of the dictionary gets merged with any querystring
         provided in the ``url``.
     :type query: dict
-
     """
 
     _meta = {
@@ -137,24 +164,31 @@ class XRootDFS(FS):
 
     def open(self, path, mode='r', buffering=-1, encoding=None, errors=None,
              newline=None, line_buffering=False, **kwargs):
-        """Open the given path as a file-like object.
+        r"""Open the given path and return a file-like object.
 
-        :param path: a path to file that should be opened
+        :param path: Path to file that should be opened.
         :type path: string
-        :param mode: mode of file to open, identical to the mode string used
-            in 'file' and 'open' builtins
+        :param mode: Mode of file to open, identical to the mode string used
+            in 'file' and 'open' builtins.
         :type mode: string
-        :param kwargs: additional (optional) keyword parameters that may
-            be required to open the file
-        :type kwargs: dict
+        :param buffering: An optional integer used to set the buffering policy.
+            Pass 0 to switch buffering off (only allowed in binary mode),
+            1 to select line buffering (only usable in text mode), and
+            an integer > 1 to indicate the size of a fixed-size chunk buffer.
+        :param encoding: Determines encoding used when writing unicode data.
+        :param errors: An optional string that specifies how encoding and
+            decoding errors are to be handled (e.g. ``strict``, ``ignore`` or
+            ``replace``).
+        :param newline: Newline character to use (either ``\\n``, ``\\r``,
+            ``\\r\\n``, ``''`` or ``None``).
+        :param line_buffering: Unsupported. Anything by False will raise and
+            error.
 
-        :rtype: a file-like object
+        :rtype: A file-like object.
 
-        :raises `fs.errors.ResourceInvalidError`: if an intermediate directory
-            is an file
-        :raises `fs.errors.ResourceNotFoundError`: if the path is not found
-
-        : raises some error if newline is anything else than 'slash n' or None
+        :raises `fs.errors.ResourceInvalidError`: If an intermediate directory
+            is an file.
+        :raises `fs.errors.ResourceNotFoundError`: If the path is not found.
         """
         return XRootDFile(
             self.getpathurl(path, with_querystring=True),
@@ -178,25 +212,25 @@ class XRootDFS(FS):
 
         The directory contents are returned as a list of unicode paths.
 
-        :param path: root of the path to list
+        :param path: Path to list.
         :type path: string
-        :param wildcard: only returns paths that match this wildcard
-        :type wildcard: string containing a wildcard, or a callable that
-            accepts a path and returns a boolean
-        :param full: returns full paths (relative to the root)
+        :param wildcard: Return only paths that matches the wildcard
+        :type wildcard: string containing a unix filename pattern, or a
+            callable that accepts a path and returns a boolean
+        :param full: Return full paths (relative to the base path).
         :type full: bool
-        :param absolute: returns absolute paths (paths beginning with /)
+        :param absolute: Return absolute paths (paths beginning with /)
         :type absolute: bool
-        :param dirs_only: if True, only return directories
+        :param dirs_only: If True, return only directories.
         :type dirs_only: bool
-        :param files_only: if True, only return files
+        :param files_only: If True, return only files.
         :type files_only: bool
 
-        :rtype: iterable of paths
+        :rtype: Iterable of paths.
 
-        :raises `fs.errors.ResourceInvalidError`: if the path exists, but is
-            not a directory
-        :raises `fs.errors.ResourceNotFoundError`: if the path is not found
+        :raises `fs.errors.ResourceInvalidError`: If the path exists, but is
+            not a directory.
+        :raises `fs.errors.ResourceNotFoundError`: If the path is not found.
         """
         return list(self.ilistdir(
             path=path, wildcard=wildcard, full=full, absolute=absolute,
@@ -257,20 +291,20 @@ class XRootDFS(FS):
     def makedir(self, path, recursive=False, allow_recreate=False):
         """Make a directory on the filesystem.
 
-        :param path: path of directory
+        :param path: Path of directory.
         :type path: string
-        :param recursive: if True, any intermediate directories will also be
-            created
+        :param recursive: If True, any intermediate directories will also be
+            created.
         :type recursive: `bool`
-        :param allow_recreate: if True, re-creating a directory wont be an
-            error
+        :param allow_recreate: If True, re-creating a directory wont be an
+            error.
         :type allow_create: `bool`
 
-        :raises `fs.errors.DestinationExistsError`: if the path is already a
-            existing, and allow_recreate is False
-        :raises `fs.errors.ResourceInvalidError`: if a containing
+        :raises `fs.errors.DestinationExistsError`: If the path is already
+            existing, and allow_recreate is False.
+        :raises `fs.errors.ResourceInvalidError`: If a containing
             directory is missing and recursive is False or if a path is an
-            existing file
+            existing file.
         """
         flags = MkDirFlags.MAKEPATH if recursive else MkDirFlags.NONE
         mode = AccessMode.NONE
@@ -286,12 +320,12 @@ class XRootDFS(FS):
     def remove(self, path):
         """Remove a file from the filesystem.
 
-        :param path: Path of the resource to remove
+        :param path: Path of the resource to remove.
         :type path: string
 
-        :raises `fs.errors.ResourceInvalidError`: if the path is a directory
-        :raises `fs.errors.DirectoryNotEmptyError`: if the directory is not
-            empty
+        :raises `fs.errors.ResourceInvalidError`: If the path is a directory.
+        :raises `fs.errors.DirectoryNotEmptyError`: If the directory is not
+            empty.
         """
         status, res = self._client.rm(self._p(path))
 
@@ -302,22 +336,22 @@ class XRootDFS(FS):
     def removedir(self, path, recursive=False, force=False):
         """Remove a directory from the filesystem.
 
-        :param path: path of the directory to remove.
+        :param path: Path of the directory to remove.
         :type path: string
         :param recursive: Unsupported by XRootDFS implementation.
         :type recursive: bool
-        :param force: if True, any directory contents will be removed
+        :param force: If True, any directory contents will be removed
             (recursively). Note that this can be very expensive as the xrootd
             protocol does not support recursive deletes - i.e. the library
             will do a full recursive listing of the directory and send a
             network request per file/directory.
         :type force: bool
 
-        :raises `fs.errors.DirectoryNotEmptyError`: if the directory is not
+        :raises `fs.errors.DirectoryNotEmptyError`: If the directory is not
             empty and force is `False`.
-        :raises `fs.errors.ResourceInvalidError`: if the path is not a
+        :raises `fs.errors.ResourceInvalidError`: If the path is not a
             directory.
-        :raises `fs.errors.ResourceNotFoundError`: if the path does not exist.
+        :raises `fs.errors.ResourceNotFoundError`: If the path does not exist.
         """
         if recursive:
             raise UnsupportedError("recursive parameter is not supported.")
@@ -372,7 +406,7 @@ class XRootDFS(FS):
 
         The following values can be found in the info dictionary:
 
-        * ``size`` - Number of bytes used to store the file or directory
+        * ``size`` - Number of bytes used to store the file or directory.
         * ``created_time`` - A datetime object containing the time the
            resource was created.
         * ``modified_time`` - A datetime object containing the time the
@@ -384,7 +418,7 @@ class XRootDFS(FS):
         * ``readable`` - True if file/directory is readable.
         * ``executable`` - True if file/directory is executable.
 
-        :param path: a path to retrieve information for.
+        :param path: Path to retrieve information about.
         :type path: `string`
         :rtype: `dict`
         """
@@ -423,10 +457,8 @@ class XRootDFS(FS):
                  files_only=False):
         """Generator yielding the files and directories under a given path.
 
-        This method behaves identically to :py:meth:`fs.base.FS.listdir` but
-        returns an generator instead of a list.  Depending on the filesystem
-        this may be more efficient than calling :py:meth:`fs.base.FS.listdir`
-        and iterating over the resulting list.
+        This method behaves identically to :py:meth:`fs.base:FS.listdir` but
+        returns an generator instead of a list.
         """
         flag = DirListFlags.STAT if dirs_only or files_only else \
             DirListFlags.NONE
@@ -487,17 +519,17 @@ class XRootDFS(FS):
     def move(self, src, dst, overwrite=False, **kwargs):
         """Move a file from one location to another.
 
-        :param src: source path
+        :param src: Source path.
         :type src: string
-        :param dst: destination path
+        :param dst: Destination path.
         :type dst: string
         :param overwrite: When True the destination will be overwritten (if it
             exists), otherwise a DestinationExistsError will be thrown.
         :type overwrite: bool
-        :raise `fs.errors.DestinationExistsError`: if destination exists and
-            `overwrite` is False
-        :raise `fs.errors.ResourceInvalidError`: if source is not a file.
-        :raise `fs.errors.ResourceNotFoundError`: if source was not found.
+        :raise `fs.errors.DestinationExistsError`: If destination exists and
+            ``overwrite`` is False.
+        :raise `fs.errors.ResourceInvalidError`: If source is not a file.
+        :raise `fs.errors.ResourceNotFoundError`: If source was not found.
         """
         src, dst = self._p(src), self._p(dst)
 
@@ -512,17 +544,17 @@ class XRootDFS(FS):
     def movedir(self, src, dst, overwrite=False, **kwargs):
         """Move a directory from one location to another.
 
-        :param src: source directory path
+        :param src: Source directory path.
         :type src: string
-        :param dst: destination directory path
+        :param dst: Destination directory path.
         :type dst: string
         :param overwrite: When True the destination will be overwritten (if it
             exists), otherwise a DestinationExistsError will be thrown.
         :type overwrite: bool
-        :raise `fs.errors.DestinationExistsError`: if destination exists and
+        :raise `fs.errors.DestinationExistsError`: If destination exists and
             `overwrite` is `False`.
-        :raise `fs.errors.ResourceInvalidError`: if source is not a directory.
-        :raise `fs.errors.ResourceNotFoundError`: if source was not found.
+        :raise `fs.errors.ResourceInvalidError`: If source is not a directory.
+        :raise `fs.errors.ResourceNotFoundError`: If source was not found.
         """
         src, dst = self._p(src), self._p(dst)
 
@@ -564,14 +596,14 @@ class XRootDFS(FS):
         return True
 
     def copy(self, src, dst, overwrite=False):
-        """Copy a file from src to dst.
+        """Copy a file from source to destination.
 
-        :param src: the source path
+        :param src: Source path.
         :type src: string
-        :param dst: the destination path
+        :param dst: Destination path.
         :type dst: string
-        :param overwrite: if True, then an existing file at the destination may
-            be overwritten; If False then DestinationExistsError
+        :param overwrite: If True, then an existing file at the destination may
+            be overwritten; If False then ``DestinationExistsError``
             will be raised.
         :type overwrite: bool
         """
@@ -596,20 +628,20 @@ class XRootDFS(FS):
         return True
 
     def copydir(self, src, dst, overwrite=False, parallel=True):
-        """Copy a directory from one location to another.
+        """Copy a directory from source to destination.
 
         By default the copy is done by recreating the source directory
-        structure at the destination, and then copy files in parallel from src
-        to dst.
+        structure at the destination, and then copy files in parallel from
+        source to destination.
 
-        :param src: source directory path
+        :param src: Source directory path.
         :type src: string
-        :param dst: destination directory path
+        :param dst: Destination directory path.
         :type dst: string
-        :param overwrite: if True then any existing files in the destination
-            directory will be overwritten
+        :param overwrite: If True then any existing files in the destination
+            directory will be overwritten.
         :type overwrite: bool
-        :param parallel: if True (default), the copy will be done in parallel.
+        :param parallel: If True (default), the copy will be done in parallel.
         :type parallel: bool
         """
         if not self.isdir(src):
@@ -658,11 +690,17 @@ class XRootDFS(FS):
     #
     @property
     def xrd_client(self):
-        """Pyxrootd filesystem client."""
+        """Pyxrootd filesystem client.
+
+        Specific to ``XRootDFS``.
+        """
         return self._client
 
     def xrd_get_rooturl(self):
-        """Get the URL with query string for this FS."""
+        """Get the URL with query string for this FS.
+
+        Specific to ``XRootDFS``.
+        """
         if self.queryargs:
             return "{0}{1}".format(self.root_url, urlencode(self.queryargs))
         else:
@@ -671,14 +709,14 @@ class XRootDFS(FS):
     def xrd_checksum(self, path, _statobj=None):
         """Get checksum of file from server.
 
-        Specific to ``XRootdFS``. Note not all XRootD server supports the
+        Specific to ``XRootdFS``. Note not all XRootD servers support the
         checksum operation (in particular the default local xrootd server).
 
-        :param src: path to calculate checksum for.
+        :param src: File to calculate checksum for.
         :type src: string
-        :raise `fs.errors.UnsupportedError`: if server does not support
+        :raise `fs.errors.UnsupportedError`: If server does not support
             checksum calculation.
-        :raise `fs.errors.FSError`: if you try to get the checksum of e.g. a
+        :raise `fs.errors.FSError`: If you try to get the checksum of e.g. a
             directory.
         """
         if not self.isfile(path, _statobj=_statobj):
@@ -694,8 +732,6 @@ class XRootDFS(FS):
         """Ping xrootd server.
 
         Specific to ``XRootdFS``.
-
-        :raise `fs.errors.RemoteConnectionError`:
         """
         status, dummy = self._client.ping()
 

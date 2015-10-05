@@ -1,7 +1,7 @@
-# This file is part of xrootdfs
+# This file is part of xrootdpyfs
 # Copyright (C) 2015 CERN.
 #
-# xrootdfs is free software; you can redistribute it and/or modify it under the
+# xrootdpyfs is free software; you can redistribute it and/or modify it under the
 # terms of the Revised BSD License; see LICENSE file for more details.
 
 include LICENSE AUTHORS CHANGES README.rst

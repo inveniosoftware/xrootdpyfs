@@ -1,8 +1,8 @@
-# This file is part of xrootdfs
+# This file is part of xrootdpyfs
 # Copyright (C) 2015 CERN.
 #
-# xrootdfs is free software; you can redistribute it and/or modify it under the
-# terms of the Revised BSD License; see LICENSE file for more details.
+# xrootdpyfs is free software; you can redistribute it and/or modify it under
+# the terms of the Revised BSD License; see LICENSE file for more details.
 
 
 sudo: required
@@ -22,11 +22,11 @@ cache:
 
 install:
   - "docker build -t xrootd ."
-  - "docker run -h xrootdfs -t -u root xrootd pip install -r requirements.${REQUIREMENTS}.txt"
+  - "docker run -h xrootdpyfs -t -u root xrootd pip install -r requirements.${REQUIREMENTS}.txt"
   - "travis_retry pip install coveralls pep257 Sphinx twine wheel"
 
 script:
-  - "docker run -h xrootdfs -t xrootd"
+  - "docker run -h xrootdpyfs -t xrootd"
 
 after_success:
   - coveralls

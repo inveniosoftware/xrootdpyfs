@@ -1,9 +1,9 @@
-==========
- XRootDFS
-==========
-.. currentmodule:: xrootdfs
+===========
+ XRootDPyFS
+===========
+.. currentmodule:: xrootdpyfs
 
-.. automodule:: xrootdfs
+.. automodule:: xrootdpyfs
 
 .. _api:
 
@@ -13,26 +13,26 @@ API
 Filesystem interface
 --------------------
 
-.. automodule:: xrootdfs.fs
+.. automodule:: xrootdpyfs.fs
    :members:
    :undoc-members:
 
 File interface
 --------------
 
-.. automodule:: xrootdfs.xrdfile
+.. automodule:: xrootdpyfs.xrdfile
    :members:
    :undoc-members:
 
 Opener
 ------
-.. automodule:: xrootdfs.opener
+.. automodule:: xrootdpyfs.opener
    :members:
    :undoc-members:
 
 Environment
 -----------
-.. automodule:: xrootdfs.env
+.. automodule:: xrootdpyfs.env
    :members:
    :undoc-members:
 

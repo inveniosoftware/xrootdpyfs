@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of xrootdfs
+# This file is part of xrootdpyfs
 # Copyright (C) 2015 CERN.
 #
-# xrootdfs is free software; you can redistribute it and/or modify it under the
-# terms of the Revised BSD License; see LICENSE file for more details.
+# xrootdpyfs is free software; you can redistribute it and/or modify it under
+# the terms of the Revised BSD License; see LICENSE file for more details.
 
 """Simple performance test of XRootD PyFilesystem wrapper.
 
@@ -27,7 +27,7 @@ from os.path import join
 from fs.opener import opener
 from XRootD import client
 
-from xrootdfs import XRootDOpener  # no-qa
+from xrootdpyfs import XRootDPyOpener  # no-qa
 
 
 def teardown(tmppath):
@@ -116,7 +116,7 @@ def main():
         print("pyxrootd:", rooturl, read_pyxrootd_chunks(rooturl, n=n))
 
         pr = profile_start()
-        print("xrootdfs:", rooturl, read_pyfs_chunks(rooturl, n=n))
+        print("xrootdpyfs:", rooturl, read_pyfs_chunks(rooturl, n=n))
         profile_end(pr)
     finally:
         teardown(tmppath)

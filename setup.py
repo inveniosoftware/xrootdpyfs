@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of xrootdfs
+# This file is part of xrootdpyfs
 # Copyright (C) 2015 CERN.
 #
-# xrootdfs is free software; you can redistribute it and/or modify it under the
-# terms of the Revised BSD License; see LICENSE file for more details.
+# xrootdpyfs is free software; you can redistribute it and/or modify it under
+# the terms of the Revised BSD License; see LICENSE file for more details.
 
-"""XRootDFS is PyFilesystem interface to XRootD."""
+"""XRootDPyFS is a PyFilesystem interface to XRootD."""
 
 import os
 import re
@@ -47,7 +47,7 @@ class PyTest(TestCommand):
         sys.exit(errno)
 
 # Get the version string.  Cannot be done with import!
-with open(os.path.join('xrootdfs', 'version.py'), 'rt') as f:
+with open(os.path.join('xrootdpyfs', 'version.py'), 'rt') as f:
     version = re.search(
         '__version__\s*=\s*"(?P<version>.*)"\n',
         f.read()
@@ -62,15 +62,15 @@ tests_require = [
 ]
 
 setup(
-    name='xrootdfs',
+    name='xrootdpyfs',
     version=version,
     description=__doc__,
-    url='http://github.com/inveniosoftware/xrootdfs/',
+    url='http://github.com/inveniosoftware/xrootdpyfs/',
     license='BSD',
     author='Invenio Collaboration',
     author_email='info@invenio-software.org',
     long_description=open('README.rst').read(),
-    packages=['xrootdfs', ],
+    packages=['xrootdpyfs', ],
     zip_safe=False,
     platforms='any',
     tests_require=tests_require,

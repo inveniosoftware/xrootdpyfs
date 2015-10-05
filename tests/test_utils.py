@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of xrootdfs
+# This file is part of xrootdpyfs
 # Copyright (C) 2015 CERN.
 #
-# xrootdfs is free software; you can redistribute it and/or modify it under the
-# terms of the Revised BSD License; see LICENSE file for more details.
+# xrootdpyfs is free software; you can redistribute it and/or modify it under
+# the terms of the Revised BSD License; see LICENSE file for more details.
 
-"""Test of XRootDFS utils."""
+"""Test of XRootDPyFS utils."""
 
 from __future__ import absolute_import, print_function
 
 from XRootD.client.flags import OpenFlags
 
-from xrootdfs.utils import is_valid_path, spliturl, \
+from xrootdpyfs.utils import is_valid_path, spliturl, \
     translate_file_mode_to_flags
 
 

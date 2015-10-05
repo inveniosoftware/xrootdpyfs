@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of xrootdfs
+# This file is part of xrootdpyfs
 # Copyright (C) 2015 CERN.
 #
-# xrootdfs is free software; you can redistribute it and/or modify it under the
-# terms of the Revised BSD License; see LICENSE file for more details.
+# xrootdpyfs is free software; you can redistribute it and/or modify it under
+# the terms of the Revised BSD License; see LICENSE file for more details.
 
-"""Test of XRootDFS."""
+"""Test of XRootDPyFS."""
 
 from __future__ import absolute_import, print_function
 
@@ -25,8 +25,8 @@ from mock import Mock
 from XRootD.client.responses import XRootDStatus
 
 from conftest import mkurl
-from xrootdfs import XRootDFile
-from xrootdfs.utils import is_valid_path, is_valid_url
+from xrootdpyfs import XRootDPyFile
+from xrootdpyfs.utils import is_valid_path, is_valid_url
 
 
 def test_init_basic(tmppath):
@@ -36,9 +36,9 @@ def test_init_basic(tmppath):
     fpath = 'data/'
     fcontents = 'testa.txt\n'
     full_fpath = join(tmppath, fpath, fname)
-    xfile = XRootDFile(mkurl(full_fpath))
+    xfile = XRootDPyFile(mkurl(full_fpath))
     assert xfile
-    assert type(xfile == XRootDFile)
+    assert type(xfile == XRootDPyFile)
     assert xfile._file
     assert xfile.mode == 'r'
 
@@ -51,14 +51,14 @@ def test_init_writemode_basic(tmppath):
     # Non-existing file is created.
     fn, fp, fc = 'nope', 'data/', ''
     full_path = join(tmppath, fp, fn)
-    xfile = XRootDFile(mkurl(full_path), mode='w+')
+    xfile = XRootDPyFile(mkurl(full_path), mode='w+')
     assert xfile
     assert xfile.read() == fc
 
     # Existing file is truncated
     fd = get_tsta_file(tmppath)
     full_path = fd['full_path']
-    xfile = XRootDFile(mkurl(full_path), mode='w+')
+    xfile = XRootDPyFile(mkurl(full_path), mode='w+')
     assert xfile
     assert xfile.read() == ''
     assert xfile.size == 0
@@ -70,13 +70,13 @@ def test_init_readmode_basic(tmppath):
     # Resource not found error.
     fn, fp, fc = 'nope', 'data/', ''
     full_path = join(tmppath, fp, fn)
-    pytest.raises(ResourceNotFoundError, XRootDFile, mkurl(full_path),
+    pytest.raises(ResourceNotFoundError, XRootDPyFile, mkurl(full_path),
                   mode='r')
 
     # Existing file can be read?
     fd = get_tsta_file(tmppath)
     full_path, fc = fd['full_path'], fd['contents']
-    xfile = XRootDFile(mkurl(full_path), mode='r')
+    xfile = XRootDPyFile(mkurl(full_path), mode='r')
     assert xfile
     assert xfile.read() == fc
 
@@ -130,7 +130,7 @@ def test_open_close(tmppath):
     """Test close() on an open file."""
     fd = get_tsta_file(tmppath)
     full_path = fd['full_path']
-    xfile = XRootDFile(mkurl(full_path))
+    xfile = XRootDPyFile(mkurl(full_path))
     assert xfile
     assert not xfile.closed
     xfile.close()
@@ -141,7 +141,7 @@ def test_read_existing(tmppath):
     """Test read() on an existing non-empty file."""
     fd = get_tsta_file(tmppath)
     full_path, fc = fd['full_path'], fd['contents']
-    xfile = XRootDFile(mkurl(full_path))
+    xfile = XRootDPyFile(mkurl(full_path))
 
     res = xfile.read()
     assert res == fc
@@ -175,7 +175,7 @@ def test__is_open(tmppath):
     """Test _is_open()"""
     fd = get_tsta_file(tmppath)
     full_path = fd['full_path']
-    xfile = XRootDFile(mkurl(full_path))
+    xfile = XRootDPyFile(mkurl(full_path))
     assert not xfile.closed
     xfile.close()
     assert xfile.closed
@@ -185,18 +185,18 @@ def test_size(tmppath):
     """Tests for the size property size."""
     fd = get_tsta_file(tmppath)
     full_path, fc = fd['full_path'], fd['contents']
-    xfile = XRootDFile(mkurl(full_path))
+    xfile = XRootDPyFile(mkurl(full_path))
 
     assert xfile.size == len(fc)
 
     # Length of empty file
-    xfile = XRootDFile(mkurl(join(tmppath, fd['dir'], 'whut')), 'w+')
+    xfile = XRootDPyFile(mkurl(join(tmppath, fd['dir'], 'whut')), 'w+')
     assert xfile.size == len('')
 
     # Length of multiline file
     fd = get_mltl_file(tmppath)
     fpp, fc = fd['full_path'], fd['contents']
-    xfile = XRootDFile(mkurl(fpp))
+    xfile = XRootDPyFile(mkurl(fpp))
     assert xfile.size == len(fc)
 
     # Mock the error
@@ -211,7 +211,7 @@ def test_size(tmppath):
         "shellcode": 51
     }
     xfile.close()
-    xfile = XRootDFile(mkurl(full_path))
+    xfile = XRootDPyFile(mkurl(full_path))
     xfile._file.stat = Mock(return_value=(XRootDStatus(fake_status), None))
     try:
         xfile.size
@@ -224,7 +224,7 @@ def test_seek_and_tell(tmppath):
     """Basic tests for seek() and tell()."""
     fd = get_tsta_file(tmppath)
     full_path, fc = fd['full_path'], fd['contents']
-    xfile = XRootDFile(mkurl(full_path))
+    xfile = XRootDPyFile(mkurl(full_path))
     assert xfile.tell() == 0
 
     # Read file, then check the internal position pointer.
@@ -246,7 +246,7 @@ def test_seek_and_tell(tmppath):
     # # Now with a multiline file!
     fd = get_mltl_file(tmppath)
     full_path, fc = fd['full_path'], fd['contents']
-    xfile = XRootDFile(mkurl(full_path))
+    xfile = XRootDPyFile(mkurl(full_path))
 
     assert xfile.tell() == 0
     newpos = len(fc)//3
@@ -272,7 +272,7 @@ def test_seek_args(tmppath):
     fb = get_copy_file(fd)
     full_path, fc = fd['full_path'], fd['contents']
 
-    xfile = XRootDFile(mkurl(full_path), 'r+')
+    xfile = XRootDPyFile(mkurl(full_path), 'r+')
     pfile = open(fb['full_path'], 'r+')
 
     xfile.truncate(3), pfile.truncate(3)
@@ -302,31 +302,31 @@ def test_tell_after_open(tmppath):
     fd = get_tsta_file(tmppath)
     full_path, fc = fd['full_path'], fd['contents']
 
-    xfile = XRootDFile(mkurl(full_path), 'r')
+    xfile = XRootDPyFile(mkurl(full_path), 'r')
     assert xfile.tell() == 0
     xfile.close()
 
-    xfile = XRootDFile(mkurl(full_path), 'r+')
+    xfile = XRootDPyFile(mkurl(full_path), 'r+')
     assert xfile.tell() == 0
     xfile.close()
 
-    xfile = XRootDFile(mkurl(full_path), 'r-')
+    xfile = XRootDPyFile(mkurl(full_path), 'r-')
     assert xfile.tell() == 0
     xfile.close()
 
-    xfile = XRootDFile(mkurl(full_path), 'a')
+    xfile = XRootDPyFile(mkurl(full_path), 'a')
     assert xfile.tell() == len(fc)
     xfile.close()
 
-    xfile = XRootDFile(mkurl(full_path), 'a+')
+    xfile = XRootDPyFile(mkurl(full_path), 'a+')
     assert xfile.tell() == len(fc)
     xfile.close()
 
-    xfile = XRootDFile(mkurl(full_path), 'w')
+    xfile = XRootDPyFile(mkurl(full_path), 'w')
     assert xfile.tell() == 0
     xfile.close()
 
-    xfile = XRootDFile(mkurl(full_path), 'w-')
+    xfile = XRootDPyFile(mkurl(full_path), 'w-')
     assert xfile.tell() == 0
     xfile.close()
 
@@ -335,7 +335,7 @@ def test_truncate1(tmppath):
     """Test truncate(0)."""
     fd = get_tsta_file(tmppath)
     full_path, fc = fd['full_path'], fd['contents']
-    xfile = XRootDFile(mkurl(full_path), 'r+')
+    xfile = XRootDPyFile(mkurl(full_path), 'r+')
     # r+ opens for r/w, and won't truncate the file automatically.
     assert xfile.read() == fc
     assert xfile.tell() == len(fc)
@@ -351,7 +351,7 @@ def test_truncate1(tmppath):
     xfile.close()
 
     # Re-open same file.
-    xfile = XRootDFile(mkurl(full_path), 'r+')
+    xfile = XRootDPyFile(mkurl(full_path), 'r+')
     assert xfile.size == 0
     assert xfile.read() == ''
 
@@ -374,7 +374,7 @@ def test_truncate1(tmppath):
     assert xfile.tell() == 1
     xfile.close()
 
-    xfile = XRootDFile(mkurl(full_path), 'r+')
+    xfile = XRootDPyFile(mkurl(full_path), 'r+')
     assert xfile.size == 1
     assert xfile.read() == '\x00'
 
@@ -397,7 +397,7 @@ def test_truncate2(tmppath):
     """Test truncate(self._size)."""
     fd = get_tsta_file(tmppath)
     full_path, fc = fd['full_path'], fd['contents']
-    xfile = XRootDFile(mkurl(full_path), 'r+')
+    xfile = XRootDPyFile(mkurl(full_path), 'r+')
     conts = xfile.read()
     assert conts == fc
 
@@ -413,7 +413,7 @@ def test_truncate3(tmppath):
     """Test truncate(0 < size < self._size)."""
     fd = get_mltl_file(tmppath)
     full_path, fc = fd['full_path'], fd['contents']
-    xfile = XRootDFile(mkurl(full_path), 'r+')
+    xfile = XRootDPyFile(mkurl(full_path), 'r+')
 
     initcp = xfile.tell()
 
@@ -429,11 +429,11 @@ def test_truncate4(tmppath):
     fd = get_mltl_file(tmppath)
     full_path, fc = fd['full_path'], fd['contents']
 
-    xfile = XRootDFile(mkurl(full_path), 'r')
+    xfile = XRootDPyFile(mkurl(full_path), 'r')
     pytest.raises(IOError, xfile.truncate, 0)
 
     xfile.close()
-    xfile = XRootDFile(mkurl(full_path), 'w-')
+    xfile = XRootDPyFile(mkurl(full_path), 'w-')
     pytest.raises(IOError, xfile.truncate, 0)
 
 
@@ -444,8 +444,8 @@ def test_truncate5(tmppath):
     fp, fc = fd['full_path'], fd['contents']
     fp2 = fb['full_path']
 
-    xfa = XRootDFile(mkurl(fp), 'r+')
-    xfb = XRootDFile(mkurl(fp2), 'r+')
+    xfa = XRootDPyFile(mkurl(fp), 'r+')
+    xfb = XRootDPyFile(mkurl(fp2), 'r+')
 
     acnts = xfa.read()
     assert acnts == xfb.read()
@@ -478,7 +478,7 @@ def test_truncate_read_write(tmppath):
     wstr = "I am the string"
 
     pfile = open(fp2, 'r+')
-    xfile = XRootDFile(mkurl(fp), 'r+')
+    xfile = XRootDPyFile(mkurl(fp), 'r+')
 
     xfile.truncate(sp), pfile.truncate(sp)
     assert xfile.tell() == pfile.tell()
@@ -506,7 +506,7 @@ def test_truncate_read_write2(tmppath):
     wstr = "I am the string"
 
     pfile = open(fp2, 'r+')
-    xfile = XRootDFile(mkurl(fp), 'r+')
+    xfile = XRootDPyFile(mkurl(fp), 'r+')
 
     xfile.truncate(sp), pfile.truncate(sp)
     assert xfile.tell() == pfile.tell()
@@ -528,7 +528,7 @@ def test_truncate_read_write2(tmppath):
 def test_write(tmppath):
     """Test write()."""
     # With a new file.
-    xfile = XRootDFile(mkurl(join(tmppath, 'data/nuts')), 'w+')
+    xfile = XRootDPyFile(mkurl(join(tmppath, 'data/nuts')), 'w+')
     assert xfile.size == 0
     conts = xfile.read()
     assert not conts
@@ -543,7 +543,7 @@ def test_write(tmppath):
     xfile.close()
 
     # Verify persistence after closing.
-    xfile = XRootDFile(mkurl(join(tmppath, 'data/nuts')), 'r+')
+    xfile = XRootDPyFile(mkurl(join(tmppath, 'data/nuts')), 'r+')
     assert xfile.size == len(nconts)
     assert xfile.read() == nconts
 
@@ -560,7 +560,7 @@ def test_write(tmppath):
     # Seek(x>0) followed by a write of len < size-x
     fd = get_tsta_file(tmppath)
     fp, fc = fd['full_path'], fd['contents']
-    xfile = XRootDFile(mkurl(fp), 'r+')
+    xfile = XRootDPyFile(mkurl(fp), 'r+')
     assert xfile.read() == fc
     xfile.seek(2)
     nc = 'yo'
@@ -603,19 +603,19 @@ def test_readwrite_unicode(tmppath):
     unicodestr = u"æøå"
 
     pfile = open(fp2, 'w')
-    xfile = XRootDFile(mkurl(fp), 'w')
+    xfile = XRootDPyFile(mkurl(fp), 'w')
     pytest.raises(UnicodeEncodeError, pfile.write, unicodestr)
     pytest.raises(UnicodeEncodeError, xfile.write, unicodestr)
     xfile.close()
 
-    xfile = XRootDFile(mkurl(fp), 'w+', encoding='utf-8')
+    xfile = XRootDPyFile(mkurl(fp), 'w+', encoding='utf-8')
     xfile.write(unicodestr)
     xfile.flush()
     xfile.seek(0)
     assert unicodestr.encode('utf8') == xfile.read()
     xfile.close()
 
-    xfile = XRootDFile(mkurl(fp), 'w+', errors='ignore')
+    xfile = XRootDPyFile(mkurl(fp), 'w+', errors='ignore')
     xfile.write(unicodestr)
     xfile.flush()
     xfile.seek(0)
@@ -628,18 +628,18 @@ def test_init_paths(tmppath):
     # Invalid url should raise error
     url = "fee-fyyy-/fooo"
     assert not is_valid_url(url) \
-        and pytest.raises(PathError, XRootDFile, url)
+        and pytest.raises(PathError, XRootDPyFile, url)
 
     path = '//ARGMEGXXX//\\///'
     assert not is_valid_path(path) \
-        and pytest.raises(InvalidPathError, XRootDFile, mkurl(path))
+        and pytest.raises(InvalidPathError, XRootDPyFile, mkurl(path))
 
 
 def test_init_append(tmppath):
     """Test for files opened 'a'"""
     fd = get_tsta_file(tmppath)
     fp, fc = fd['full_path'], fd['contents']
-    xfile = XRootDFile(mkurl(fp), 'a')
+    xfile = XRootDPyFile(mkurl(fp), 'a')
     assert xfile.mode == 'a'
     pytest.raises(IOError, xfile.read)
     assert xfile.tell() == len(fc)
@@ -652,11 +652,11 @@ def test_init_append(tmppath):
     assert xfile.tell() == len(fc) + len(newcont)
     # Can't read in this mode.
     xfile.close()
-    xfile = XRootDFile(mkurl(fp), 'r')
+    xfile = XRootDPyFile(mkurl(fp), 'r')
     assert xfile.read() == fc + newcont
 
     xfile.close()
-    xfile = XRootDFile(mkurl(fp), 'a')
+    xfile = XRootDPyFile(mkurl(fp), 'a')
     xfile.write(fc)
     xfile.seek(0)
     pytest.raises(IOError, xfile.read)
@@ -666,7 +666,7 @@ def test_init_appendread(tmppath):
     """Test for files opened in mode 'a+'."""
     fd = get_tsta_file(tmppath)
     fp, fc = fd['full_path'], fd['contents']
-    xfile = XRootDFile(mkurl(fp), 'a+')
+    xfile = XRootDPyFile(mkurl(fp), 'a+')
     assert xfile.mode == 'a+'
     assert xfile.tell() == len(fc)
     assert xfile.read() == u''
@@ -688,7 +688,7 @@ def test_init_writemode(tmppath):
     """Tests for opening files in 'w(+)'"""
     fd = get_tsta_file(tmppath)
     fp, fc = fd['full_path'], fd['contents']
-    xfile = XRootDFile(mkurl(fp), 'w')
+    xfile = XRootDPyFile(mkurl(fp), 'w')
     pytest.raises(IOError, xfile.read)
 
     xfile.seek(1)
@@ -697,7 +697,7 @@ def test_init_writemode(tmppath):
     assert xfile.tell() == 1 + len(conts)
     assert xfile.size == 1 + len(conts)
     xfile.close()
-    xfile = XRootDFile(mkurl(fp), 'r')
+    xfile = XRootDPyFile(mkurl(fp), 'r')
     fc = xfile.read()
     assert fc == '\x00'+conts
     assert not fc == conts
@@ -706,7 +706,7 @@ def test_init_writemode(tmppath):
 def test_init_streammodes(tmppath):
     fd = get_tsta_file(tmppath)
     fp, fc = fd['full_path'], fd['contents']
-    xfile = XRootDFile(mkurl(fp), 'r-')
+    xfile = XRootDPyFile(mkurl(fp), 'r-')
     pytest.raises(IOError, xfile.seek, 3)
     assert xfile.size == len(fc)
     assert xfile.tell() == 0
@@ -714,7 +714,7 @@ def test_init_streammodes(tmppath):
     assert xfile.tell() == len(fc)
 
     xfile.close()
-    xfile = XRootDFile(mkurl(fp), 'w-')
+    xfile = XRootDPyFile(mkurl(fp), 'w-')
     pytest.raises(IOError, xfile.read)
     pytest.raises(IOError, xfile.seek, 3)
     assert xfile.tell() == 0
@@ -723,7 +723,7 @@ def test_init_streammodes(tmppath):
     xfile.write(conts)
     assert xfile.tell() == len(conts)
     xfile.close()
-    xfile = XRootDFile(mkurl(fp), 'r')
+    xfile = XRootDPyFile(mkurl(fp), 'r')
     assert xfile.read() == conts
 
 
@@ -732,15 +732,15 @@ def test_init_newline(tmppath):
     fd = get_tsta_file(tmppath)
     fp, fc = fd['full_path'], fd['contents']
 
-    xfile = XRootDFile(mkurl(fp))
+    xfile = XRootDPyFile(mkurl(fp))
     assert xfile._newline == '\n'
     xfile.close()
 
-    xfile = XRootDFile(mkurl(fp), newline='\n')
+    xfile = XRootDPyFile(mkurl(fp), newline='\n')
     assert xfile._newline == '\n'
     xfile.close()
 
-    pytest.raises(UnsupportedError, XRootDFile, mkurl(fp), mode='r',
+    pytest.raises(UnsupportedError, XRootDPyFile, mkurl(fp), mode='r',
                   newline='what')
 
 
@@ -750,16 +750,16 @@ def test_init_notimplemented(tmppath):
     fd = get_tsta_file(tmppath)
     fp, fc = fd['full_path'], fd['contents']
 
-    pytest.raises(UnsupportedError, XRootDFile, mkurl(fp), 'rb',
+    pytest.raises(UnsupportedError, XRootDPyFile, mkurl(fp), 'rb',
                   buffering=1)
-    pytest.raises(NotImplementedError, XRootDFile, mkurl(fp),
+    pytest.raises(NotImplementedError, XRootDPyFile, mkurl(fp),
                   line_buffering='')
 
 
 def test_read_errors(tmppath):
     fd = get_tsta_file(tmppath)
     fp, fc = fd['full_path'], fd['contents']
-    xfile = XRootDFile(mkurl(fp), 'r')
+    xfile = XRootDPyFile(mkurl(fp), 'r')
     xfile.close()
     pytest.raises(ValueError, xfile.read)
 
@@ -775,7 +775,7 @@ def test_read_and_write(tmppath):
     writestr = "Come what may in May this day says Ray all gay like Jay"
 
     pfile = open(fp2, 'r+')
-    xfile = XRootDFile(mkurl(fp), 'r+')
+    xfile = XRootDPyFile(mkurl(fp), 'r+')
 
     assert xfile.tell() == pfile.tell()
     assert xfile.read() == pfile.read()
@@ -793,7 +793,7 @@ def test_read_and_write(tmppath):
 
 
 def test_write_and_read(tmppath):
-    """Tests that the XRootDFile behaves like a regular python file in w+."""
+    """Tests that the XRootDPyFile behaves like a regular python file in w+."""
     fd = get_tsta_file(tmppath)
     fb = get_copy_file(fd)
     fp, fc = fd['full_path'], fd['contents']
@@ -804,7 +804,7 @@ def test_write_and_read(tmppath):
     # In 'w' (and variant modes) the file's contents are deleted upon opening.
 
     pfile = open(fp2, 'w+')
-    xfile = XRootDFile(mkurl(fp), 'w+')
+    xfile = XRootDPyFile(mkurl(fp), 'w+')
 
     assert xfile.tell() == pfile.tell()
     assert xfile.read() == pfile.read()
@@ -835,7 +835,7 @@ def test_seek_past_eof_rw(tmppath):
     skpnt = len(fc)+4
 
     pfile = open(fp2, 'r+')
-    xfile = XRootDFile(mkurl(fp), 'r+')
+    xfile = XRootDPyFile(mkurl(fp), 'r+')
 
     xfile.seek(skpnt), pfile.seek(skpnt)
     assert xfile.tell() == pfile.tell()
@@ -873,7 +873,7 @@ def test_seek_past_eof_wr(tmppath):
     skpnt = len(fc)+4
 
     pfile = open(fp2, 'w+')
-    xfile = XRootDFile(mkurl(fp), 'w+')
+    xfile = XRootDPyFile(mkurl(fp), 'w+')
 
     xfile.seek(skpnt), pfile.seek(skpnt)
     assert xfile.tell() == pfile.tell()
@@ -907,7 +907,7 @@ def test_read_binary(tmppath):
     fp2 = fb['full_path']
 
     pfile = open(fp2, 'rb')
-    xfile = XRootDFile(mkurl(fp), 'rb')
+    xfile = XRootDPyFile(mkurl(fp), 'rb')
 
     assert xfile.read() == pfile.read() == fc
 
@@ -918,13 +918,13 @@ def test_write_binary(tmppath):
     fp, fc = fd['full_path'], fd['contents']
 
     # Test w/ confirmed binary data read from a binary file
-    xf_new = XRootDFile(mkurl(join(tmppath, 'data/tmp_bin')), 'wb+')
+    xf_new = XRootDPyFile(mkurl(join(tmppath, 'data/tmp_bin')), 'wb+')
     xf_new.write(fc), xf_new.seek(0)
     assert xf_new.read() == fc
 
     xf_new.close()
     # Verify persistence.
-    xf_new = XRootDFile(mkurl(join(tmppath, 'data/tmp_bin')), 'r+')
+    xf_new = XRootDPyFile(mkurl(join(tmppath, 'data/tmp_bin')), 'r+')
     assert xf_new.read() == fc
 
     # Test truncate
@@ -934,14 +934,14 @@ def test_write_binary(tmppath):
     xf_new.close()
 
     # Test with bytearray
-    xf_new = XRootDFile(mkurl(join(tmppath, 'data/tmp_bin')), 'wb+')
+    xf_new = XRootDPyFile(mkurl(join(tmppath, 'data/tmp_bin')), 'wb+')
     barr = bytearray(range(0, 5))
     xf_new.write(barr), xf_new.seek(0)
     assert xf_new.read() == barr
     xf_new.close()
 
     # Verify persistence.
-    xf_new = XRootDFile(mkurl(join(tmppath, 'data/tmp_bin')), 'r')
+    xf_new = XRootDPyFile(mkurl(join(tmppath, 'data/tmp_bin')), 'r')
     assert xf_new.read() == barr
     xf_new.close()
 
@@ -953,21 +953,21 @@ def test_readline(tmppath):
     fp, fc = fd['full_path'], fd['contents']
     fp2 = fb['full_path']
 
-    xfile, pfile = XRootDFile(mkurl(fp), 'r'), opener.open(fp2, 'r')
+    xfile, pfile = XRootDPyFile(mkurl(fp), 'r'), opener.open(fp2, 'r')
 
     assert xfile.readline() == pfile.readline()
     assert xfile.readline() == pfile.readline()
     assert xfile.readline() == pfile.readline()
 
     xfile.close(), pfile.close()
-    xfile, pfile = XRootDFile(mkurl(fp), 'r'), opener.open(fp2, 'r')
+    xfile, pfile = XRootDPyFile(mkurl(fp), 'r'), opener.open(fp2, 'r')
     assert xfile.readline() == pfile.readline()
     xfile.seek(0), pfile.seek(0)
     assert xfile.readline() == pfile.readline()
     assert xfile.tell(), pfile.tell()
 
     xfile.close(), pfile.close()
-    xfile = XRootDFile(mkurl(fp), 'w+')
+    xfile = XRootDPyFile(mkurl(fp), 'w+')
 
     str1 = 'hello\n'
     str2 = 'bye\n'
@@ -983,7 +983,7 @@ def test_readline(tmppath):
     assert xfile.readline() == ''
 
     xfile.close()
-    xfile = XRootDFile(mkurl(fp), 'w+')
+    xfile = XRootDPyFile(mkurl(fp), 'w+')
 
     xfile.write(str2)
     xfile.seek(len(str2)+1)
@@ -998,7 +998,7 @@ def test_flush(tmppath):
     # Mostly it just ensures calling it doesn't crash the program.
     fd = get_tsta_file(tmppath)
     full_path, fc = fd['full_path'], fd['contents']
-    xfile = XRootDFile(mkurl(full_path), 'w')
+    xfile = XRootDPyFile(mkurl(full_path), 'w')
 
     writestr = 'whut'
 
@@ -1008,7 +1008,7 @@ def test_flush(tmppath):
     xfile.flush()
     xfile.close()
 
-    xfile = XRootDFile(mkurl(full_path), 'r')
+    xfile = XRootDPyFile(mkurl(full_path), 'r')
     assert xfile.read() == writestr
 
     # Fake/mock an error response
@@ -1033,7 +1033,7 @@ def test__assert_mode(tmppath):
     fd = get_tsta_file(tmppath)
     full_path, fc = fd['full_path'], fd['contents']
     mode = 'r'
-    xfile = XRootDFile(mkurl(full_path), mode)
+    xfile = XRootDPyFile(mkurl(full_path), mode)
 
     assert xfile.mode == mode
     assert xfile._assert_mode(mode)
@@ -1041,17 +1041,17 @@ def test__assert_mode(tmppath):
     pytest.raises(AttributeError, xfile._assert_mode, mode)
 
     xfile.close()
-    xfile = XRootDFile(mkurl(full_path), 'r')
+    xfile = XRootDPyFile(mkurl(full_path), 'r')
     assert xfile._assert_mode('r')
     pytest.raises(IOError, xfile._assert_mode, 'w')
 
     xfile.close()
-    xfile = XRootDFile(mkurl(full_path), 'w-')
+    xfile = XRootDPyFile(mkurl(full_path), 'w-')
     assert xfile._assert_mode('w-')
     pytest.raises(IOError, xfile._assert_mode, 'r')
 
     xfile.close()
-    xfile = XRootDFile(mkurl(full_path), 'a')
+    xfile = XRootDPyFile(mkurl(full_path), 'a')
     assert xfile._assert_mode('w')
     pytest.raises(IOError, xfile._assert_mode, 'r')
 
@@ -1063,7 +1063,7 @@ def test_readlines(tmppath):
     fp, fc = fd['full_path'], fd['contents']
     fp2 = fb['full_path']
 
-    xfile, pfile = XRootDFile(mkurl(fp), 'r'), open(fp2, 'r')
+    xfile, pfile = XRootDPyFile(mkurl(fp), 'r'), open(fp2, 'r')
 
     assert xfile.readlines() == pfile.readlines()
 
@@ -1072,7 +1072,7 @@ def test_readlines(tmppath):
 
     xfile.close(), pfile.close()
 
-    xfile, pfile = XRootDFile(mkurl(fp), 'w+'), open(fp2, 'w+')
+    xfile, pfile = XRootDPyFile(mkurl(fp), 'w+'), open(fp2, 'w+')
     xfile.seek(0), pfile.seek(0)
     assert xfile.readlines() == pfile.readlines()
 
@@ -1081,7 +1081,7 @@ def test_xreadlines(tmppath):
     """Tests xreadlines()"""
     fp = get_mltl_file(tmppath)['full_path']
 
-    xfile = XRootDFile(mkurl(fp), 'r')
+    xfile = XRootDPyFile(mkurl(fp), 'r')
 
     rl = xfile.readlines()
     xfile.seek(0)
@@ -1094,26 +1094,26 @@ def test_fileno(tmppath):
     """Test fileno."""
     pytest.raises(
         IOError,
-        XRootDFile(mkurl(join(tmppath, "data/testa.txt")), 'r-').fileno
+        XRootDPyFile(mkurl(join(tmppath, "data/testa.txt")), 'r-').fileno
     )
 
 
 def test_name(tmppath):
     """Test name property."""
-    assert XRootDFile(mkurl(join(tmppath, "data/testa.txt"))).name == \
+    assert XRootDPyFile(mkurl(join(tmppath, "data/testa.txt"))).name == \
         'testa.txt'
 
 
 def test_isatty(tmppath):
     """Test isatty()."""
-    assert XRootDFile(mkurl(join(tmppath, "data/testa.txt"))).isatty() is \
+    assert XRootDPyFile(mkurl(join(tmppath, "data/testa.txt"))).isatty() is \
         False
 
 
 def test_writelines(tmppath):
     """Test writelines()."""
-    xfile = XRootDFile(mkurl(join(tmppath, "data/multiline.txt")), 'r')
-    yfile = XRootDFile(mkurl(join(tmppath, "data/newfile.txt")), 'w+')
+    xfile = XRootDPyFile(mkurl(join(tmppath, "data/multiline.txt")), 'r')
+    yfile = XRootDPyFile(mkurl(join(tmppath, "data/newfile.txt")), 'w+')
     yfile.writelines(xfile.xreadlines())
     xfile.seek(0), yfile.seek(0)
     assert xfile.readlines() == yfile.readlines()
@@ -1121,56 +1121,56 @@ def test_writelines(tmppath):
 
 def test_seekable(tmppath):
     """Test seekable."""
-    assert XRootDFile(
+    assert XRootDPyFile(
         mkurl(join(tmppath, "data/testa.txt")), 'r-').seekable() is False
-    assert XRootDFile(
+    assert XRootDPyFile(
         mkurl(join(tmppath, "data/testa.txt")), 'r').seekable() is True
-    assert XRootDFile(
+    assert XRootDPyFile(
         mkurl(join(tmppath, "data/testa.txt")), 'w').seekable() is True
-    assert XRootDFile(
+    assert XRootDPyFile(
         mkurl(join(tmppath, "data/testa.txt")), 'w-').seekable() is False
-    assert XRootDFile(
+    assert XRootDPyFile(
         mkurl(join(tmppath, "data/testa.txt")), 'r+').seekable() is True
 
 
 def test_readable(tmppath):
     """Test seekable."""
-    assert XRootDFile(
+    assert XRootDPyFile(
         mkurl(join(tmppath, "data/testa.txt")), 'r-').readable() is True
-    assert XRootDFile(
+    assert XRootDPyFile(
         mkurl(join(tmppath, "data/testa.txt")), 'r').readable() is True
-    assert XRootDFile(
+    assert XRootDPyFile(
         mkurl(join(tmppath, "data/testa.txt")), 'w').readable() is False
-    assert XRootDFile(
+    assert XRootDPyFile(
         mkurl(join(tmppath, "data/testa.txt")), 'r+').readable() is True
-    assert XRootDFile(
+    assert XRootDPyFile(
         mkurl(join(tmppath, "data/testa.txt")), 'w+').readable() is True
-    assert XRootDFile(
+    assert XRootDPyFile(
         mkurl(join(tmppath, "data/testa.txt")), 'w-').readable() is False
 
 
 def test_writable(tmppath):
     """Test seekable."""
-    assert XRootDFile(
+    assert XRootDPyFile(
         mkurl(join(tmppath, "data/testa.txt")), 'r-').writable() is False
-    assert XRootDFile(
+    assert XRootDPyFile(
         mkurl(join(tmppath, "data/testa.txt")), 'r').writable() is False
-    assert XRootDFile(
+    assert XRootDPyFile(
         mkurl(join(tmppath, "data/testa.txt")), 'w').writable() is True
-    assert XRootDFile(
+    assert XRootDPyFile(
         mkurl(join(tmppath, "data/testa.txt")), 'r+').writable() is True
-    assert XRootDFile(
+    assert XRootDPyFile(
         mkurl(join(tmppath, "data/testa.txt")), 'w+').writable() is True
-    assert XRootDFile(
+    assert XRootDPyFile(
         mkurl(join(tmppath, "data/testa.txt")), 'w-').writable() is True
-    assert XRootDFile(
+    assert XRootDPyFile(
         mkurl(join(tmppath, "data/testa.txt")), 'a').writable() is True
 
 
 def test_iterator_buffering(tmppath):
     "Test file iteration."
     f = "data/multiline.txt"
-    xfile = XRootDFile(mkurl(join(tmppath, f)), 'r')
+    xfile = XRootDPyFile(mkurl(join(tmppath, f)), 'r')
     assert len(list(iter(xfile))) == len(open(join(tmppath, f)).readlines())
-    xfile = XRootDFile(mkurl(join(tmppath, f)), 'r', buffering=10)
+    xfile = XRootDPyFile(mkurl(join(tmppath, f)), 'r', buffering=10)
     assert len(list(iter(xfile))) == int(math.ceil(xfile.size / 10.0))

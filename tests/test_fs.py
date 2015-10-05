@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of xrootdfs
+# This file is part of xrootdpyfs
 # Copyright (C) 2015 CERN.
 #
-# xrootdfs is free software; you can redistribute it and/or modify it under the
-# terms of the Revised BSD License; see LICENSE file for more details.
+# xrootdpyfs is free software; you can redistribute it and/or modify it under
+# the terms of the Revised BSD License; see LICENSE file for more details.
 
-"""Test of XRootDFS."""
+"""Test of XRootDPyFS."""
 
 from __future__ import absolute_import, print_function
 
@@ -25,25 +25,26 @@ from mock import Mock
 from XRootD.client.responses import XRootDStatus
 
 from conftest import mkurl
-from xrootdfs import XRootDFile, XRootDFS
-from xrootdfs.utils import spliturl
+from xrootdpyfs import XRootDPyFile, XRootDPyFS
+from xrootdpyfs.utils import spliturl
 
 
 def test_init(tmppath):
     """Test initialization."""
-    fs = XRootDFS("root://127.0.0.1//tmp/")
+    fs = XRootDPyFS("root://127.0.0.1//tmp/")
     assert fs.xrd_client
     assert fs.base_path == "//tmp/"
     assert fs.root_url == "root://127.0.0.1"
 
-    XRootDFS("root://user:pw@eosuser.cern.ch//")
-    XRootDFS("root://eosuser.cern.ch//")
-    XRootDFS("root://eosuser.cern.ch//")
-    pytest.raises(InvalidPathError, XRootDFS, "http://localhost")
-    pytest.raises(InvalidPathError, XRootDFS, "root://eosuser.cern.ch//lhc//")
+    XRootDPyFS("root://user:pw@eosuser.cern.ch//")
+    XRootDPyFS("root://eosuser.cern.ch//")
+    XRootDPyFS("root://eosuser.cern.ch//")
+    pytest.raises(InvalidPathError, XRootDPyFS, "http://localhost")
+    pytest.raises(InvalidPathError, XRootDPyFS,
+                  "root://eosuser.cern.ch//lhc//")
 
     rooturl = mkurl(tmppath)
-    fs = XRootDFS(rooturl)
+    fs = XRootDPyFS(rooturl)
     root_url, base_path, qargs = spliturl(rooturl)
     assert fs.xrd_client
     assert fs.base_path == base_path
@@ -51,7 +52,7 @@ def test_init(tmppath):
     assert fs.queryargs is None
 
     qarg = "xrd.wantprot=krb5"
-    fs = XRootDFS(rooturl + '?' + qarg)
+    fs = XRootDPyFS(rooturl + '?' + qarg)
     root_url, base_path, qargs = spliturl(rooturl + '?' + qarg)
     assert fs.base_path == base_path
     assert fs.root_url == root_url
@@ -59,7 +60,7 @@ def test_init(tmppath):
     assert qargs == qarg
 
     qarg = "xrd.wantprot=krb5"
-    fs = XRootDFS(rooturl + '?' + qarg, query={'xrd.k5ccname': '/tmp/krb'})
+    fs = XRootDPyFS(rooturl + '?' + qarg, query={'xrd.k5ccname': '/tmp/krb'})
 
     assert fs.queryargs == {
         'xrd.wantprot': 'krb5',
@@ -68,14 +69,14 @@ def test_init(tmppath):
 
     pytest.raises(
         KeyError,
-        XRootDFS,
+        XRootDPyFS,
         rooturl + '?' + qarg, query={'xrd.wantprot': 'krb5'}
     )
 
 
 def test_p():
     """Test path combine."""
-    fs = XRootDFS("root://eosuser.cern.ch//eos/user/")
+    fs = XRootDPyFS("root://eosuser.cern.ch//eos/user/")
     assert fs._p("./") == "//eos/user"
     assert fs._p("l") == "//eos/user/l"
     assert fs._p("/eos") == "//eos"
@@ -87,7 +88,7 @@ def test_p():
 
 def test_query_error(tmppath):
     """Test unknown error from query."""
-    fs = XRootDFS(mkurl(tmppath))
+    fs = XRootDPyFS(mkurl(tmppath))
     fake_status = {
         "status": 3,
         "code": 101,
@@ -105,70 +106,72 @@ def test_query_error(tmppath):
 def test_ilistdir(tmppath):
     """Test the ilistdir returns a generator."""
     rooturl = mkurl(tmppath)
-    assert isinstance(XRootDFS(rooturl).ilistdir(), types.GeneratorType)
+    assert isinstance(XRootDPyFS(rooturl).ilistdir(), types.GeneratorType)
 
 
 def test_listdir(tmppath):
     """Test listdir."""
     rooturl = mkurl(tmppath)
 
-    dirs = XRootDFS(rooturl).listdir()
+    dirs = XRootDPyFS(rooturl).listdir()
     assert len(dirs) == 1
     assert 'data' in dirs
 
-    dirs = XRootDFS(rooturl).listdir("data")
+    dirs = XRootDPyFS(rooturl).listdir("data")
     assert len(dirs) == 5
 
-    dirs = XRootDFS(rooturl + "/data").listdir("afolder", full=True)
+    dirs = XRootDPyFS(rooturl + "/data").listdir("afolder", full=True)
     assert 'afolder/afile.txt' in dirs
 
-    dirs = XRootDFS(rooturl + "/data").listdir("afolder/../bfolder", full=True)
+    dirs = XRootDPyFS(rooturl + "/data").listdir("afolder/../bfolder",
+                                                 full=True)
     assert 'bfolder/bfile.txt' in dirs
 
-    dirs = XRootDFS(rooturl + "/data").listdir(
+    dirs = XRootDPyFS(rooturl + "/data").listdir(
         "afolder", absolute=True)
     assert '/' + tmppath + "/data/afolder/afile.txt" in dirs
 
     # abosolute/full conflicts - full wins.
-    dirs = XRootDFS(rooturl + "/data").listdir(
+    dirs = XRootDPyFS(rooturl + "/data").listdir(
         "afolder", absolute=True, full=True)
     assert "afolder/afile.txt" in dirs
 
-    dirs = XRootDFS(rooturl).listdir("data", wildcard="*.txt")
+    dirs = XRootDPyFS(rooturl).listdir("data", wildcard="*.txt")
     assert 'testa.txt' in dirs
     assert 'afolder' not in dirs
 
     pytest.raises(
         ValueError,
-        XRootDFS(rooturl).listdir,
+        XRootDPyFS(rooturl).listdir,
         "data", files_only=True, dirs_only=True
     )
 
-    pytest.raises(ResourceNotFoundError, XRootDFS(rooturl).listdir, "invalid")
+    pytest.raises(ResourceNotFoundError, XRootDPyFS(rooturl).listdir,
+                  "invalid")
 
 
 def test_isfile(tmppath):
     """Test isfile."""
     rooturl = mkurl(tmppath)
-    assert XRootDFS(rooturl).isfile("data/testa.txt")
-    assert not XRootDFS(rooturl).isfile("data")
-    assert not XRootDFS(rooturl).isfile("nofile")
+    assert XRootDPyFS(rooturl).isfile("data/testa.txt")
+    assert not XRootDPyFS(rooturl).isfile("data")
+    assert not XRootDPyFS(rooturl).isfile("nofile")
 
 
 def test_isdir(tmppath):
     """Test isdir."""
     rooturl = mkurl(tmppath)
-    assert not XRootDFS(rooturl).isdir("data/testa.txt")
-    assert XRootDFS(rooturl).isdir("data")
-    assert not XRootDFS(rooturl).isdir("nofile")
+    assert not XRootDPyFS(rooturl).isdir("data/testa.txt")
+    assert XRootDPyFS(rooturl).isdir("data")
+    assert not XRootDPyFS(rooturl).isdir("nofile")
 
 
 def test_exists(tmppath):
     """Test exists."""
     rooturl = mkurl(tmppath)
-    assert XRootDFS(rooturl).exists("data/testa.txt")
-    assert XRootDFS(rooturl).exists("data")
-    assert not XRootDFS(rooturl).exists("nofile")
+    assert XRootDPyFS(rooturl).exists("data/testa.txt")
+    assert XRootDPyFS(rooturl).exists("data")
+    assert not XRootDPyFS(rooturl).exists("nofile")
 
 
 def test_makedir(tmppath):
@@ -176,35 +179,35 @@ def test_makedir(tmppath):
     rooturl = mkurl(tmppath)
 
     # Dir in parent
-    assert not XRootDFS(rooturl).exists("somedir")
-    assert XRootDFS(rooturl).makedir("somedir")
-    assert XRootDFS(rooturl).exists("somedir")
+    assert not XRootDPyFS(rooturl).exists("somedir")
+    assert XRootDPyFS(rooturl).makedir("somedir")
+    assert XRootDPyFS(rooturl).exists("somedir")
     assert exists(join(tmppath, "somedir"))
 
     # if the path is already a directory, and allow_recreate is False
-    assert pytest.raises(DestinationExistsError, XRootDFS(rooturl).makedir,
+    assert pytest.raises(DestinationExistsError, XRootDPyFS(rooturl).makedir,
                          "data")
 
     # allow_recreate
-    assert XRootDFS(rooturl).makedir("data", allow_recreate=True)
+    assert XRootDPyFS(rooturl).makedir("data", allow_recreate=True)
 
     # if a containing directory is missing and recursive is False
     assert pytest.raises(ResourceNotFoundError,
-                         XRootDFS(rooturl).makedir, "aa/bb/cc")
+                         XRootDPyFS(rooturl).makedir, "aa/bb/cc")
 
     # Recursive
-    assert not XRootDFS(rooturl).exists("aa/bb/cc")
-    assert XRootDFS(rooturl).makedir("aa/bb/cc", recursive=True)
-    assert XRootDFS(rooturl).exists("aa/bb/cc")
+    assert not XRootDPyFS(rooturl).exists("aa/bb/cc")
+    assert XRootDPyFS(rooturl).makedir("aa/bb/cc", recursive=True)
+    assert XRootDPyFS(rooturl).exists("aa/bb/cc")
 
     # if a path is an existing file
-    assert pytest.raises(DestinationExistsError, XRootDFS(rooturl).makedir,
+    assert pytest.raises(DestinationExistsError, XRootDPyFS(rooturl).makedir,
                          "data/testa.txt")
 
 
 def test_unicode_paths(tmppath):
     """Test creation of unicode paths."""
-    fs = XRootDFS(mkurl(tmppath))
+    fs = XRootDPyFS(mkurl(tmppath))
     d = u'\xe6\xf8\xe5'
     assert not fs.exists(d)
     assert fs.makedir(d)
@@ -219,26 +222,26 @@ def test_remove(tmppath):
     """Test remove."""
     rooturl = mkurl(tmppath)
 
-    assert XRootDFS(rooturl).exists("data/testa.txt")
-    XRootDFS(rooturl).remove("data/testa.txt")
-    assert not XRootDFS(rooturl).exists("data/testa.txt")
+    assert XRootDPyFS(rooturl).exists("data/testa.txt")
+    XRootDPyFS(rooturl).remove("data/testa.txt")
+    assert not XRootDPyFS(rooturl).exists("data/testa.txt")
 
     # Does not exists
-    assert pytest.raises(ResourceNotFoundError, XRootDFS(rooturl).remove,
+    assert pytest.raises(ResourceNotFoundError, XRootDPyFS(rooturl).remove,
                          "a/testa.txt")
 
     # Directory not empty
-    assert pytest.raises(DirectoryNotEmptyError, XRootDFS(rooturl).remove,
+    assert pytest.raises(DirectoryNotEmptyError, XRootDPyFS(rooturl).remove,
                          "data")
 
     # Remove emptydir
-    assert XRootDFS(rooturl).makedir("emptydir")
-    assert XRootDFS(rooturl).remove("emptydir")
+    assert XRootDPyFS(rooturl).makedir("emptydir")
+    assert XRootDPyFS(rooturl).remove("emptydir")
 
 
 def test_remove_dir(tmppath):
     """Test removedir."""
-    fs = XRootDFS(mkurl(tmppath))
+    fs = XRootDPyFS(mkurl(tmppath))
 
     # Remove non-empty directory
     pytest.raises(
@@ -263,7 +266,7 @@ def test_remove_dir(tmppath):
 
 def test_remove_dir_mock1(tmppath):
     """Test removedir."""
-    fs = XRootDFS(mkurl(tmppath))
+    fs = XRootDPyFS(mkurl(tmppath))
 
     status = XRootDStatus({
         "status": 3,
@@ -281,7 +284,7 @@ def test_remove_dir_mock1(tmppath):
 
 def test_remove_dir_mock2(tmppath):
     """Test removedir."""
-    fs = XRootDFS(mkurl(tmppath))
+    fs = XRootDPyFS(mkurl(tmppath))
 
     status = XRootDStatus({
         "status": 3,
@@ -314,20 +317,20 @@ def test_open(tmppath):
     xrd_rooturl = mkurl(tmppath)
 
     # Open file w/ xrootd
-    xrdfs = XRootDFS(xrd_rooturl)
+    xrdfs = XRootDPyFS(xrd_rooturl)
     xfile = xrdfs.open(file_name, mode='r')
     assert xfile
     assert xfile.path.endswith("data/testa.txt")
-    assert type(xfile) == XRootDFile
+    assert type(xfile) == XRootDPyFile
     assert xfile.read() == contents
     xfile.close()
 
     # Test passing of querystring.
-    xrdfs = XRootDFS(xrd_rooturl + "?xrd.wantprot=krb5")
+    xrdfs = XRootDPyFS(xrd_rooturl + "?xrd.wantprot=krb5")
     xfile = xrdfs.open(file_name, mode='r')
     assert xfile
     assert xfile.path.endswith("data/testa.txt?xrd.wantprot=krb5")
-    assert type(xfile) == XRootDFile
+    assert type(xfile) == XRootDPyFile
     assert xfile.read() == contents
     xfile.close()
 
@@ -341,7 +344,7 @@ def _get_content(fs, path):
 
 def test_rename(tmppath):
     """Test rename."""
-    fs = XRootDFS(mkurl(tmppath))
+    fs = XRootDPyFS(mkurl(tmppath))
 
     pytest.raises(
         DestinationExistsError, fs.rename, "data/testa.txt", "multiline.txt")
@@ -371,16 +374,16 @@ def test_rename(tmppath):
 
 def test_getinfo(tmppath):
     """Test getinfo."""
-    fs = XRootDFS(mkurl(tmppath))
+    fs = XRootDPyFS(mkurl(tmppath))
 
     # Info for file
     f = "data/testa.txt"
     info = fs.getinfo(f)
     assert info['size'] == os.stat(join(tmppath, f)).st_size
-    assert info['offline'] == False
-    assert info['writable'] == True
-    assert info['readable'] == True
-    assert info['executable'] == False
+    assert info['offline'] is False
+    assert info['writable'] is True
+    assert info['readable'] is True
+    assert info['executable'] is False
     assert isinstance(info['created_time'], datetime)
     assert isinstance(info['modified_time'], datetime)
     assert isinstance(info['accessed_time'], datetime)
@@ -389,10 +392,10 @@ def test_getinfo(tmppath):
     f = "data/"
     info = fs.getinfo(f)
     assert info['size'] == os.stat(join(tmppath, f)).st_size
-    assert info['offline'] == False
-    assert info['writable'] == True
-    assert info['readable'] == True
-    assert info['executable'] == True
+    assert info['offline'] is False
+    assert info['writable'] is True
+    assert info['readable'] is True
+    assert info['executable'] is True
     assert isinstance(info['created_time'], datetime)
     assert isinstance(info['modified_time'], datetime)
     assert isinstance(info['accessed_time'], datetime)
@@ -403,11 +406,11 @@ def test_getinfo(tmppath):
 
 def test_getpathurl(tmppath):
     """Test getpathurl."""
-    fs = XRootDFS(mkurl(tmppath))
+    fs = XRootDPyFS(mkurl(tmppath))
     assert fs.getpathurl("data/testa.txt") == \
         "root://localhost/{0}/{1}".format(tmppath, "data/testa.txt")
 
-    fs = XRootDFS(mkurl(tmppath), query={'xrd.wantprot': 'krb5'})
+    fs = XRootDPyFS(mkurl(tmppath), query={'xrd.wantprot': 'krb5'})
 
     assert fs.getpathurl("data/testa.txt") == \
         "root://localhost/{0}/{1}".format(tmppath, "data/testa.txt")
@@ -419,7 +422,7 @@ def test_getpathurl(tmppath):
 
 def test_ping(tmppath):
     """Test ping method."""
-    fs = XRootDFS(mkurl(tmppath))
+    fs = XRootDPyFS(mkurl(tmppath))
     assert fs.xrd_ping()
     fake_status = {
         "status": 3,
@@ -437,7 +440,7 @@ def test_ping(tmppath):
 
 def test_checksum(tmppath):
     """Test checksum method."""
-    fs = XRootDFS(mkurl(tmppath))
+    fs = XRootDPyFS(mkurl(tmppath))
 
     # Local xrootd server does not support checksum operation
     pytest.raises(UnsupportedError, fs.xrd_checksum, "data/testa.txt")
@@ -477,7 +480,7 @@ def test_checksum(tmppath):
 
 def test_move_good(tmppath):
     """Test move file."""
-    fs = XRootDFS(mkurl(tmppath))
+    fs = XRootDPyFS(mkurl(tmppath))
 
     src_exists = "data/testa.txt"
     dst_exists = "data/multiline.txt"
@@ -511,7 +514,7 @@ def test_move_good(tmppath):
 
 def test_movedir_good(tmppath):
     """Test move file."""
-    fs = XRootDFS(mkurl(tmppath))
+    fs = XRootDPyFS(mkurl(tmppath))
 
     src_exists = "data/afolder/"
     dst_exists = "data/multiline.txt"
@@ -545,7 +548,7 @@ def test_movedir_good(tmppath):
 
 def test_move_bad(tmppath):
     """Test move file."""
-    fs = XRootDFS(mkurl(tmppath))
+    fs = XRootDPyFS(mkurl(tmppath))
 
     src_exists = "data/testa.txt"
     src_new = "data/testb.txt"
@@ -587,7 +590,7 @@ def test_move_bad(tmppath):
 
 def test_movedir_bad(tmppath):
     """Test move file."""
-    fs = XRootDFS(mkurl(tmppath))
+    fs = XRootDPyFS(mkurl(tmppath))
 
     src_exists = "data/testa.txt"
     src_new = "data/testb.txt"
@@ -636,7 +639,7 @@ def test_movedir_bad(tmppath):
 
 def test_copy_good(tmppath):
     """Test move file."""
-    fs = XRootDFS(mkurl(tmppath))
+    fs = XRootDPyFS(mkurl(tmppath))
 
     src_exists = "data/testa.txt"
     dst_exists = "data/multiline.txt"
@@ -667,7 +670,7 @@ def test_copy_good(tmppath):
 
 def test_copy_bad(tmppath):
     """Test copy file."""
-    fs = XRootDFS(mkurl(tmppath))
+    fs = XRootDPyFS(mkurl(tmppath))
 
     src_exists = "data/testa.txt"
     src_new = "data/testb.txt"
@@ -719,7 +722,7 @@ def test_copydir_good_parallel(tmppath):
 
 def copydir_good(tmppath, parallel):
     """Test copy directory."""
-    fs = XRootDFS(mkurl(tmppath))
+    fs = XRootDPyFS(mkurl(tmppath))
 
     src_exists = "data/afolder/"
     dst_exists = "data/multiline.txt"
@@ -761,7 +764,7 @@ def test_copydir_bad_parallel(tmppath):
 
 def copydir_bad(tmppath, parallel):
     """Test copy directory."""
-    fs = XRootDFS(mkurl(tmppath))
+    fs = XRootDPyFS(mkurl(tmppath))
 
     src_exists = "data/testa.txt"
     src_new = "data/testb.txt"

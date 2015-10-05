@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of xrootdfs
+# This file is part of xrootdpyfs
 # Copyright (C) 2015 CERN.
 #
-# xrootdfs is free software; you can redistribute it and/or modify it under the
-# terms of the Revised BSD License; see LICENSE file for more details.
+# xrootdpyfs is free software; you can redistribute it and/or modify it under
+# the terms of the Revised BSD License; see LICENSE file for more details.
 
 """File-like interface for interacting with files over the XRootD protocol."""
 
@@ -23,7 +23,7 @@ from .utils import is_valid_path, is_valid_url, spliturl, \
     translate_file_mode_to_flags
 
 
-class XRootDFile(object):
+class XRootDPyFile(object):
 
     r"""File-like interface for working with files over XRootD protocol.
 
@@ -73,7 +73,7 @@ class XRootDFile(object):
     def __init__(self, path, mode='r', buffering=-1, encoding=None,
                  errors=None, newline=None, line_buffering=False,
                  buffer_size=None, **kwargs):
-        """XRootDFile constructor.
+        """XRootDPyFile constructor.
 
         Raises PathError if the given path isn't a valid XRootD URL,
         and InvalidPathError if it isn't a valid XRootD file path.
@@ -380,7 +380,7 @@ class XRootDFile(object):
     def fileno(self):
         """Get the underlying file descriptor.
 
-        Unsupported by XRootDFS (added for ``io`` module compatibility).
+        Unsupported by XRootDPyFS (added for ``io`` module compatibility).
         """
         raise IOError("File descriptor is unsupported by xrootd.")
 

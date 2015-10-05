@@ -1,19 +1,19 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of xrootdfs
+# This file is part of xrootdpyfs
 # Copyright (C) 2015 CERN.
 #
-# xrootdfs is free software; you can redistribute it and/or modify it under the
-# terms of the Revised BSD License; see LICENSE file for more details.
+# xrootdpyfs is free software; you can redistribute it and/or modify it under
+# the terms of the Revised BSD License; see LICENSE file for more details.
 
-"""Test of XRootDOpener."""
+"""Test of XRootDPyOpener."""
 
 from __future__ import absolute_import, print_function
 
 from fs.opener import opener
 
 from conftest import mkurl
-from xrootdfs.opener import XRootDOpener  # no-qa
+from xrootdpyfs.opener import XRootDPyOpener  # no-qa
 
 
 def test_parse(tmppath):

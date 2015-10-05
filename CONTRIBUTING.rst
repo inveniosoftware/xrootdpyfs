@@ -6,7 +6,7 @@ If you find a demonstrable problem that is caused by the code of this
 library, please:
 
 1. Search for `already reported problems
-   <https://github.com/inveniosoftware/xrootdfs/issues>`_.
+   <https://github.com/inveniosoftware/xrootdpyfs/issues>`_.
 2. Check if the issue has been fixed or is still reproducible on the
    latest `master` branch.
 3. Create an issue with **a test case**.
@@ -17,7 +17,7 @@ operating correctly. The easiest is to run the tests using Docker:
 .. code-block:: console
 
     $ docker build -t xrootd .
-    $ docker run -h xrootdfs -it xrootd
+    $ docker run -h xrootdpyfs -it xrootd
 
 You can also run the tests locally:
 

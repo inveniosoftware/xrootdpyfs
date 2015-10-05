@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of xrootdfs
+# This file is part of xrootdpyfs
 # Copyright (C) 2015 CERN.
 #
-# xrootdfs is free software; you can redistribute it and/or modify it under the
-# terms of the Revised BSD License; see LICENSE file for more details.
+# xrootdpyfs is free software; you can redistribute it and/or modify it under
+# the terms of the Revised BSD License; see LICENSE file for more details.
 
 """Set global timeout behavior in environment.
 
@@ -30,7 +30,7 @@ def set_timeout(value):
     """Default value for the time after which an error is declared.
 
     This value can be overwritten on case-by-case in
-    :py:class:`xrootdfs.fs.XRootDFS`.
+    :py:class:`xrootdpyfs.fs.XRootDPyFS`.
 
     Sets the environment variable ``XRD_REQUESTTIMEOUT``.
     """

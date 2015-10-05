@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of xrootdfs
+# This file is part of xrootdpyfs
 # Copyright (C) 2015 CERN.
 #
-# xrootdfs is free software; you can redistribute it and/or modify it under the
-# terms of the Revised BSD License; see LICENSE file for more details.
+# xrootdpyfs is free software; you can redistribute it and/or modify it under
+# the terms of the Revised BSD License; see LICENSE file for more details.
 
 """PyFilesystem opener for XRootD."""
 
@@ -13,11 +13,11 @@ from __future__ import absolute_import, print_function
 from fs.opener import Opener, opener
 from fs.path import pathsplit
 
-from .fs import XRootDFS
+from .fs import XRootDPyFS
 from .utils import spliturl
 
 
-class XRootDOpener(Opener):
+class XRootDPyOpener(Opener):
 
     """XRootD PyFilesystem Opener."""
 
@@ -27,7 +27,7 @@ class XRootDOpener(Opener):
     @classmethod
     def get_fs(cls, registry, fs_name, fs_name_params, fs_path, writeable,
                create_dir):
-        """Get a :py:class:`XRootDFS` object.
+        """Get a :py:class:`XRootDPyFS` object.
 
         :param fs_name: The name of the opener, as extracted from the protocol
             part of the url.
@@ -44,7 +44,7 @@ class XRootDOpener(Opener):
 
         dirpath, resourcepath = pathsplit(path)
 
-        fs = XRootDFS(root_url + dirpath + query)
+        fs = XRootDPyFS(root_url + dirpath + query)
 
         if create_dir and path:
             fs.makedir(path, recursive=True, allow_recreate=True)
@@ -58,4 +58,4 @@ class XRootDOpener(Opener):
             return fs, resourcepath
 
 
-opener.add(XRootDOpener)
+opener.add(XRootDPyOpener)

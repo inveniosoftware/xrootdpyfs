@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# XRootDFS documentation build configuration file, created by
+# XRootDPyFS documentation build configuration file, created by
 # sphinx-quickstart on Tue Aug 18 13:49:11 2015.
 #
 # This file is execfile()d with the current directory set to its
@@ -54,7 +54,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'XRootDFS'
+project = u'XRootDPyFS'
 copyright = u'2015, Invenio Collaboration'
 author = u'Invenio Collaboration'
 
@@ -64,7 +64,7 @@ author = u'Invenio Collaboration'
 #
 # The short X.Y version.
 # Get the version string. Cannot be done with import!
-with open(os.path.join('..', 'xrootdfs', 'version.py'), 'rt') as f:
+with open(os.path.join('..', 'xrootdpyfs', 'version.py'), 'rt') as f:
     version = re.search(
         '__version__\s*=\s*"(?P<version>.*)"\n',
         f.read()
@@ -128,15 +128,15 @@ html_theme = 'alabaster'
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    'description': 'XRootDFS is a PyFilesystem interface for XRootD.',
+    'description': 'XRootDPyFS is a PyFilesystem interface for XRootD.',
     'github_user': 'inveniosoftware',
-    'github_repo': 'xrootdfs',
+    'github_repo': 'xrootdpyfs',
     'github_button': False,
     'github_banner': True,
     'show_powered_by': False,
     'extra_nav_links': {
-        'xrootdfs@GitHub': 'http://github.com/inveniosoftware/xrootdfs/',
-        'xrootdfs@PyPI': 'http://pypi.python.org/pypi/xrootdfs/',
+        'xrootdpyfs@GitHub': 'http://github.com/inveniosoftware/xrootdpyfs/',
+        'xrootdpyfs@PyPI': 'http://pypi.python.org/pypi/xrootdpyfs/',
     }
 }
 
@@ -226,7 +226,7 @@ html_static_path = ['_static']
 #html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'XRootDFSdoc'
+htmlhelp_basename = 'XRootDPyFSdoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -248,7 +248,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'XRootDFS.tex', u'XRootDFS Documentation',
+  (master_doc, 'XRootDPyFS.tex', u'XRootDPyFS Documentation',
    u'Invenio Collaboration', 'manual'),
 ]
 
@@ -278,7 +278,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'xrootdfs', u'XRootDFS Documentation',
+    (master_doc, 'xrootdpyfs', u'XRootDPyFS Documentation',
      [author], 1)
 ]
 
@@ -292,8 +292,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  (master_doc, 'XRootDFS', u'XRootDFS Documentation',
-   author, 'XRootDFS', 'One line description of project.',
+  (master_doc, 'XRootDPyFS', u'XRootDPyFS Documentation',
+   author, 'XRootDPyFS', 'One line description of project.',
    'Miscellaneous'),
 ]
 

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of xrootdfs
+# This file is part of xrootdpyfs
 # Copyright (C) 2015 CERN.
 #
-# xrootdfs is free software; you can redistribute it and/or modify it under the
-# terms of the Revised BSD License; see LICENSE file for more details.
+# xrootdpyfs is free software; you can redistribute it and/or modify it under
+# the terms of the Revised BSD License; see LICENSE file for more details.
 
 """Test of environment variables."""
 
@@ -12,7 +12,7 @@ from __future__ import absolute_import, print_function
 
 import os
 
-from xrootdfs.env import set_connectionretry, set_connectionwindow, \
+from xrootdpyfs.env import set_connectionretry, set_connectionwindow, \
     set_timeout, set_timeoutresolution
 
 

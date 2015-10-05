@@ -1,15 +1,15 @@
 ==========
- XRootDFS
+ XRootDPyFS
 ==========
 
-.. image:: https://travis-ci.org/inveniosoftware/xrootdfs.svg?branch=master
-    :target: https://travis-ci.org/inveniosoftware/xrootdfs
-.. image:: https://coveralls.io/repos/inveniosoftware/xrootdfs/badge.svg?branch=master
-    :target: https://coveralls.io/r/inveniosoftware/xrootdfs
-.. image:: https://pypip.in/v/xrootdfs/badge.svg
-   :target: https://crate.io/packages/xrootdfs/
+.. image:: https://travis-ci.org/inveniosoftware/xrootdpyfs.svg?branch=master
+    :target: https://travis-ci.org/inveniosoftware/xrootdpyfs
+.. image:: https://coveralls.io/repos/inveniosoftware/xrootdpyfs/badge.svg?branch=master
+    :target: https://coveralls.io/r/inveniosoftware/xrootdpyfs
+.. image:: https://pypip.in/v/xrootdpyfs/badge.svg
+   :target: https://crate.io/packages/xrootdpyfs/
 
-XRootDFS is a PyFilesystem interface to XRootD.
+XRootDPyFS is a PyFilesystem interface to XRootD.
 
 Getting started
 ===============
@@ -19,14 +19,14 @@ If you just want to try out the library, the easiest is to use Docker.
 .. code-block:: console
 
    $ docker build -t xrootd .
-   $ docker run -h xrootdfs -it xrootd bash
+   $ docker run -h xrootdpyfs -it xrootd bash
 
 Next, start a XRootD server in the container and fire up an ipython shell:
 
 .. code-block:: console
 
-   [xrootdfs@xrootdfs code]$ xrootd -b -l /dev/null
-   [xrootdfs@xrootdfs code]$ ipython
+   [xrootdpyfs@xrootdpyfs code]$ xrootd -b -l /dev/null
+   [xrootdpyfs@xrootdpyfs code]$ ipython
 
 
 Quick examples
@@ -35,46 +35,46 @@ Quick examples
 Here is a quick example of a file listing with the xrootd PyFilesystem
 integration:
 
-    >>> from xrootdfs import XRootDFS
-    >>> fs = XRootDFS("root://localhost//tmp/")
-    >>> fs.listdir("xrootdfs")
+    >>> from xrootdpyfs import XRootDPyFS
+    >>> fs = XRootDPyFS("root://localhost//tmp/")
+    >>> fs.listdir("xrootdpyfs")
     ['test.txt']
 
 Or, alternatively using the PyFilesystem opener (note the first
-``import xrootdfs`` is required to ensure the XRootDFS opener is registered):
+``import xrootdpyfs`` is required to ensure the XRootDPyFS opener is registered):
 
-    >>> import xrootdfs
+    >>> import xrootdpyfs
     >>> from fs.opener import opener
     >>> fs, path = opener.parse("root://localhost//tmp/")
-    >>> fs.listdir("xrootdfs")
+    >>> fs.listdir("xrootdpyfs")
     [u'test.txt']
 
 Reading files:
 
-    >>> f = fs.open("xrootdfs/test.txt")
+    >>> f = fs.open("xrootdpyfs/test.txt")
     >>> f.read()
-    'Welcome to xrootdfs!'
+    'Welcome to xrootdpyfs!'
     >>> f.close()
 
 Reading files using the ``getcontents()`` method:
 
-    >>> fs.getcontents("xrootdfs/test.txt")
-    'Welcome to xrootdfs!'
+    >>> fs.getcontents("xrootdpyfs/test.txt")
+    'Welcome to xrootdpyfs!'
 
 Writing files:
 
-    >>> f = fs.open("xrootdfs/hello.txt", "w+")
+    >>> f = fs.open("xrootdpyfs/hello.txt", "w+")
     >>> f.write("World")
     >>> f.close()
 
 Writing files using the ``setcontents()`` method:
 
-    >>> fs.setcontents("xrootdfs/test.txt", "World")
+    >>> fs.setcontents("xrootdpyfs/test.txt", "World")
 
 
 Documentation
 =============
-Documentation is available at <http://pythonhosted.org/xrootdfs/> or can be
+Documentation is available at <http://pythonhosted.org/xrootdpyfs/> or can be
 build using Sphinx::
 
     pip install Sphinx
@@ -86,4 +86,4 @@ Running the tests are most easily done using docker:
 
 .. code-block:: console
 
-    $ docker build -t xrootd . && docker run -h xrootdfs -it xrootd
+    $ docker build -t xrootd . && docker run -h xrootdpyfs -it xrootd

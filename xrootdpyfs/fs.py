@@ -1,21 +1,21 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of xrootdfs
+# This file is part of xrootdpyfs
 # Copyright (C) 2015 CERN.
 #
-# xrootdfs is free software; you can redistribute it and/or modify it under the
-# terms of the Revised BSD License; see LICENSE file for more details.
+# xrootdpyfs is free software; you can redistribute it and/or modify it under
+# the terms of the Revised BSD License; see LICENSE file for more details.
 
 """PyFilesystem implementation of XRootD protocol.
 
-:py:class:`XRootDFS` is a subclass of PyFilesystem FS class and thus implements
-the entire PyFilesystem
+:py:class:`XRootDPyFS` is a subclass of PyFilesystem FS class and thus
+implements the entire PyFilesystem
 `Filesystem interface <http://docs.pyfilesystem.org/en/latest/interface.html>`_
 .
 
 .. note::
-   All methods prefixed with ``xrd`` in :py:class:`XRootDFS` are specific to
-   XRootDFS and not supported by other PyFilesystem implementations.
+   All methods prefixed with ``xrd`` in :py:class:`XRootDPyFS` are specific to
+   XRootDPyFS and not supported by other PyFilesystem implementations.
 """
 
 from __future__ import absolute_import, print_function
@@ -37,10 +37,10 @@ from XRootD.client.flags import AccessMode, DirListFlags, MkDirFlags, \
     QueryCode, StatInfoFlags
 
 from .utils import is_valid_path, is_valid_url, spliturl
-from .xrdfile import XRootDFile
+from .xrdfile import XRootDPyFile
 
 
-class XRootDFS(FS):
+class XRootDPyFS(FS):
 
     """XRootD PyFilesystem interface.
 
@@ -49,7 +49,7 @@ class XRootDFS(FS):
 
     .. code-block:: python
 
-        fs = XRootDFS(
+        fs = XRootDPyFS(
             "root://localhost?&xrd.wantprot=krb5&xrd.k5ccname=/tmp/krb_filexxx"
         )
 
@@ -57,7 +57,7 @@ class XRootDFS(FS):
 
     .. code-block:: python
 
-        fs = XRootDFS(
+        fs = XRootDPyFS(
             "root://localhost",
             {"xrd.wantprot": "krb5", "xrd.k5ccname": "/tmp/krb_filexxx"}
         )
@@ -122,7 +122,7 @@ class XRootDFS(FS):
         self.base_path = base_path
         self.queryargs = queryargs
         self._client = FileSystem(self.xrd_get_rooturl())
-        super(XRootDFS, self).__init__(thread_synchronize=False)
+        super(XRootDPyFS, self).__init__(thread_synchronize=False)
 
     def _p(self, path, encoding='utf-8'):
         """Join path to base path."""
@@ -190,7 +190,7 @@ class XRootDFS(FS):
             is an file.
         :raises `fs.errors.ResourceNotFoundError`: If the path is not found.
         """
-        return XRootDFile(
+        return XRootDPyFile(
             self.getpathurl(path, with_querystring=True),
             mode=mode,
             buffering=buffering,
@@ -338,7 +338,7 @@ class XRootDFS(FS):
 
         :param path: Path of the directory to remove.
         :type path: string
-        :param recursive: Unsupported by XRootDFS implementation.
+        :param recursive: Unsupported by XRootDPyFS implementation.
         :type recursive: bool
         :param force: If True, any directory contents will be removed
             (recursively). Note that this can be very expensive as the xrootd
@@ -569,8 +569,8 @@ class XRootDFS(FS):
     def _move(self, src, dst, overwrite=False):
         """Move source to destination with support for overwriting destination.
 
-        Used by ``XRootDFS.move()``, ``XRootDFS.movedir()`` and
-        ``XRootDFS.rename()``.
+        Used by ``XRootDPyFS.move()``, ``XRootDPyFS.movedir()`` and
+        ``XRootDPyFS.rename()``.
 
         .. warning::
 
@@ -692,14 +692,14 @@ class XRootDFS(FS):
     def xrd_client(self):
         """Pyxrootd filesystem client.
 
-        Specific to ``XRootDFS``.
+        Specific to ``XRootDPyFS``.
         """
         return self._client
 
     def xrd_get_rooturl(self):
         """Get the URL with query string for this FS.
 
-        Specific to ``XRootDFS``.
+        Specific to ``XRootDPyFS``.
         """
         if self.queryargs:
             return "{0}{1}".format(self.root_url, urlencode(self.queryargs))
@@ -709,7 +709,7 @@ class XRootDFS(FS):
     def xrd_checksum(self, path, _statobj=None):
         """Get checksum of file from server.
 
-        Specific to ``XRootdFS``. Note not all XRootD servers support the
+        Specific to ``XRootDPyFS``. Note not all XRootD servers support the
         checksum operation (in particular the default local xrootd server).
 
         :param src: File to calculate checksum for.
@@ -731,7 +731,7 @@ class XRootDFS(FS):
     def xrd_ping(self):
         """Ping xrootd server.
 
-        Specific to ``XRootdFS``.
+        Specific to ``XRootDPyFS``.
         """
         status, dummy = self._client.ping()
 

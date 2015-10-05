@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of xrootdfs
+# This file is part of xrootdpyfs
 # Copyright (C) 2015 CERN.
 #
-# xrootdfs is free software; you can redistribute it and/or modify it under the
-# terms of the Revised BSD License; see LICENSE file for more details.
+# xrootdpyfs is free software; you can redistribute it and/or modify it under
+# the terms of the Revised BSD License; see LICENSE file for more details.
 
 
-"""Version information for xrootdfs.
+"""Version information for xrootdpyfs.
 
-This file is imported by ``xrootdfs.__init__``, and parsed by
+This file is imported by ``xrootdpyfs.__init__``, and parsed by
 ``setup.py`` as well as ``docs/conf.py``.
 """
 

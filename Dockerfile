@@ -1,13 +1,13 @@
-# This file is part of xrootdfs
+# This file is part of xrootdpyfs
 # Copyright (C) 2015 CERN.
 #
-# xrootdfs is free software; you can redistribute it and/or modify it under the
-# terms of the Revised BSD License; see LICENSE file for more details.
+# xrootdpyfs is free software; you can redistribute it and/or modify it under
+# the terms of the Revised BSD License; see LICENSE file for more details.
 #
-# Dockerfile for running XRootDFS tests.
+# Dockerfile for running XRootDPyFS tests.
 #
 # Usage:
-#   docker build -t xrootd . && docker run -h xrootdfs -it xrootd
+#   docker build -t xrootd . && docker run -h xrootdpyfs -it xrootd
 
 FROM centos:7
 
@@ -18,7 +18,7 @@ RUN yum install -y xrootd xrootd-server xrootd-client xrootd-client-devel xrootd
 
 RUN yum install -y python-pip
 
-RUN adduser --uid 1001 xrootdfs
+RUN adduser --uid 1001 xrootdpyfs
 
 # Install some prerequisites ahead of `setup.py` in order to profit
 # from the docker build cache:
@@ -40,11 +40,11 @@ COPY . /code
 
 RUN pip install -e .
 
-RUN chown -R xrootdfs:xrootdfs /code && chmod a+x /code/run-docker.sh && chmod a+x /code/run-tests.sh
+RUN chown -R xrootdpyfs:xrootdpyfs /code && chmod a+x /code/run-docker.sh && chmod a+x /code/run-tests.sh
 
-USER xrootdfs
+USER xrootdpyfs
 
-RUN mkdir /tmp/xrootdfs && echo "Hello XRootD!" >> /tmp/xrootdfs/test.txt
+RUN mkdir /tmp/xrootdpyfs && echo "Hello XRootD!" >> /tmp/xrootdpyfs/test.txt
 
 # Print xrootd version
 RUN xrootd -v

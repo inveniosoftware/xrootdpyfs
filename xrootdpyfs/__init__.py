@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 #
-# This file is part of xrootdfs
+# This file is part of xrootdpyfs
 # Copyright (C) 2015 CERN.
 #
-# xrootdfs is free software; you can redistribute it and/or modify it under the
-# terms of the Revised BSD License; see LICENSE file for more details.
+# xrootdpyfs is free software; you can redistribute it and/or modify it under
+# the terms of the Revised BSD License; see LICENSE file for more details.
 
-r"""XRootDFS is a PyFilesystem interface for XRootD.
+r"""XRootDPyFS is a PyFilesystem interface for XRootD.
 
 XRootD protocol aims at giving high performance, scalable fault tolerant access
-to data repositories of many kinds. The XRootDFS adds a high-level interface
+to data repositories of many kinds. The XRootDPyFS adds a high-level interface
 on top of the existing Python interface (pyxrootd) and makes it easy to e.g.
 copy a directory in parallel or recursively remove a directory.
 
@@ -20,16 +20,16 @@ copy a directory in parallel or recursively remove a directory.
    import shutil
    import tempfile
 
-   if exists("/tmp/xrootdfs"):
-       shutil.rmtree("/tmp/xrootdfs")
-   os.makedirs("/tmp/xrootdfs")
-   f = open("/tmp/xrootdfs/test.txt", "w")
-   f.write("Welcome to xrootdfs!")
+   if exists("/tmp/xrootdpyfs"):
+       shutil.rmtree("/tmp/xrootdpyfs")
+   os.makedirs("/tmp/xrootdpyfs")
+   f = open("/tmp/xrootdpyfs/test.txt", "w")
+   f.write("Welcome to xrootdpyfs!")
    f.close()
 
 .. testcleanup::
 
-   shutil.rmtree("/tmp/xrootdfs")
+   shutil.rmtree("/tmp/xrootdpyfs")
 
 .. _install:
 
@@ -39,10 +39,10 @@ Installation
 If you just want to try out the library, the easiest is to use Docker. See
 :ref:`getting-started` below for details.
 
-XRootDFS depends on `PyFilesystem <http://docs.pyfilesystem.org>`_ and
+XRootDPyFS depends on `PyFilesystem <http://docs.pyfilesystem.org>`_ and
 `XRootD Python bindings <http://xrootd.org/doc/python/xrootd-python-0.1.0/>`_.
 
-XRootDFS is not Python 3 compatible due to the underlying Python bindings not
+XRootDPyFS is not Python 3 compatible due to the underlying Python bindings not
 being Python 3 compatible.
 
 XRootD Python bindings
@@ -101,14 +101,14 @@ Note, you might want to activate a virtualenv prior to running the last
 ``python setup.py install``. Also, in case you do not have ``cmake`` installed,
 you can get it easily via ``brew install cmake``.
 
-XRootDFS
---------
-Once the XRootD Python bindings have been installed, xrootdfs itself is on PyPI
-so all you need is:
+XRootDPyFS
+----------
+Once the XRootD Python bindings have been installed, xrootdpyfs itself is on
+PyPI so all you need is:
 
 .. code-block:: console
 
-    $ pip install xrootdfs
+    $ pip install xrootdpyfs
 
 .. _getting-started:
 
@@ -122,14 +122,14 @@ libraries installed:
 .. code-block:: console
 
    $ docker build -t xrootd .
-   $ docker run -h xrootdfs -it xrootd bash
+   $ docker run -h xrootdpyfs -it xrootd bash
 
 Next, start a XRootD server in the container and fire up an ipython shell:
 
 .. code-block:: console
 
-   [xrootdfs@xrootdfs code]$ xrootd -b -l /dev/null
-   [xrootdfs@xrootdfs code]$ ipython
+   [xrootdpyfs@xrootdpyfs code]$ xrootd -b -l /dev/null
+   [xrootdpyfs@xrootdpyfs code]$ ipython
 
 Quick examples
 --------------
@@ -137,50 +137,51 @@ Quick examples
 Here is a quick example of a file listing with the xrootd PyFilesystem
 integration:
 
-    >>> from xrootdfs import XRootDFS
-    >>> fs = XRootDFS("root://localhost//tmp/")
-    >>> fs.listdir("xrootdfs")
+    >>> from xrootdpyfs import XRootDPyFS
+    >>> fs = XRootDPyFS("root://localhost//tmp/")
+    >>> fs.listdir("xrootdpyfs")
     ['test.txt']
 
 Or, alternatively using the PyFilesystem opener (note the first
-``import xrootdfs`` is required to ensure the XRootDFS opener is registered):
+``import xrootdpyfs`` is required to ensure the XRootDPyFS
+opener is registered):
 
-    >>> import xrootdfs
+    >>> import xrootdpyfs
     >>> from fs.opener import opener
     >>> fs, path = opener.parse("root://localhost//tmp/")
-    >>> fs.listdir("xrootdfs")
+    >>> fs.listdir("xrootdpyfs")
     [u'test.txt']
 
 Reading files:
 
-    >>> f = fs.open("xrootdfs/test.txt")
+    >>> f = fs.open("xrootdpyfs/test.txt")
     >>> f.read()
-    'Welcome to xrootdfs!'
+    'Welcome to xrootdpyfs!'
     >>> f.close()
 
 Reading files using the ``getcontents()`` method:
 
-    >>> fs.getcontents("xrootdfs/test.txt")
-    'Welcome to xrootdfs!'
+    >>> fs.getcontents("xrootdpyfs/test.txt")
+    'Welcome to xrootdpyfs!'
 
 Writing files:
 
-    >>> f = fs.open("xrootdfs/hello.txt", "w+")
+    >>> f = fs.open("xrootdpyfs/hello.txt", "w+")
     >>> f.write("World")
     >>> f.close()
 
 Writing files using the ``setcontents()`` method (returns the number of bytes
 written):
 
-    >>> fs.setcontents("xrootdfs/test.txt", "World")
+    >>> fs.setcontents("xrootdpyfs/test.txt", "World")
     5
 """
 
 from __future__ import absolute_import, print_function
 
-from .fs import XRootDFS
-from .opener import XRootDOpener
-from .xrdfile import XRootDFile
+from .fs import XRootDPyFS
+from .opener import XRootDPyOpener
+from .xrdfile import XRootDPyFile
 from .version import __version__
 
-__all__ = ('__version__', 'XRootDFS', 'XRootDOpener', 'XRootDFile')
+__all__ = ('__version__', 'XRootDPyFS', 'XRootDPyOpener', 'XRootDPyFile')

@@ -1,8 +1,8 @@
-=================
- XRootDPyFS v0.1.0
-=================
+===================
+ XRootDPyFS v0.1.1
+===================
 
-XRootDPyFS v0.1.0 was released on 2015-09-29.
+XRootDPyFS v0.1.1 was released on 2015-10-09.
 
 About
 -----

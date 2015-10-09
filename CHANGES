@@ -1,6 +1,11 @@
 Changes
 =======
 
+Version 0.1.1 (released 2015-10-09)
+
+- Changed package name from xrootdfs to xrootdpyfs due to naming conflict
+  with XRootD FUSE.
+
 Version 0.1.0 (released 2015-09-29)
 
 - Initial public release.

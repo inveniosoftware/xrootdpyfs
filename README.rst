@@ -1,6 +1,6 @@
-==========
+============
  XRootDPyFS
-==========
+============
 
 .. image:: https://travis-ci.org/inveniosoftware/xrootdpyfs.svg?branch=master
     :target: https://travis-ci.org/inveniosoftware/xrootdpyfs

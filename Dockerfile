@@ -24,7 +24,7 @@ RUN adduser --uid 1001 xrootdpyfs
 # from the docker build cache:
 RUN pip install --upgrade pip setuptools
 RUN pip install ipython \
-                pep257 \
+                pydocstyle \
                 coverage \
                 pytest \
                 pytest-pep8 \

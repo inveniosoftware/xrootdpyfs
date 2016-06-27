@@ -23,7 +23,7 @@ cache:
 install:
   - "docker build -t xrootd ."
   - "docker run -h xrootdpyfs -t -u root xrootd pip install -r requirements.${REQUIREMENTS}.txt"
-  - "travis_retry pip install coveralls pep257 Sphinx twine wheel"
+  - "travis_retry pip install coveralls pydocstyle Sphinx twine wheel"
 
 script:
   - "docker run -h xrootdpyfs -t xrootd"

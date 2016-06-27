@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of xrootdpyfs
-# Copyright (C) 2015 CERN.
+# Copyright (C) 2015, 2016 CERN.
 #
 # xrootdpyfs is free software; you can redistribute it and/or modify it under
 # the terms of the Revised BSD License; see LICENSE file for more details.
@@ -24,7 +24,6 @@ from .utils import is_valid_path, is_valid_url, spliturl, \
 
 
 class XRootDPyFile(object):
-
     r"""File-like interface for working with files over XRootD protocol.
 
     This class understands and will accept the following mode strings,
@@ -73,7 +72,7 @@ class XRootDPyFile(object):
     def __init__(self, path, mode='r', buffering=-1, encoding=None,
                  errors=None, newline=None, line_buffering=False,
                  buffer_size=None, **kwargs):
-        """XRootDPyFile constructor.
+        """The XRootDPyFile constructor.
 
         Raises PathError if the given path isn't a valid XRootD URL,
         and InvalidPathError if it isn't a valid XRootD file path.

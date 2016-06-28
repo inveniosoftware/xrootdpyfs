@@ -68,7 +68,7 @@ setup(
     url='http://github.com/inveniosoftware/xrootdpyfs/',
     license='BSD',
     author='Invenio Collaboration',
-    author_email='info@invenio-software.org',
+    author_email='info@inveniosoftware.org',
     long_description=open('README.rst').read(),
     packages=['xrootdpyfs', ],
     zip_safe=False,

@@ -27,7 +27,7 @@ Homepage
 Happy hacking and thanks for flying XRootDPyFS.
 
 | Invenio Development Team
-|   Email: info@invenio-software.org
+|   Email: info@inveniosoftware.org
 |   Twitter: http://twitter.com/inveniosoftware
 |   GitHub: http://github.com/inveniosoftware
-|   URL: http://invenio-software.org
+|   URL: http://inveniosoftware.org

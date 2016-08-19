@@ -106,7 +106,7 @@ class XRootDPyFile(object):
         self.path = path
         self.encoding = encoding or sys.getdefaultencoding()
         self.errors = errors or 'strict'
-        self.buffer_size = buffer_size or 64*1024
+        self.buffer_size = buffer_size or 64 * 1024
         self.buffering = buffering
         self._file = File()
         self._ipp = 0
@@ -136,7 +136,7 @@ class XRootDPyFile(object):
         else:
             if source:
                 errstr = "XRootD error {0}file: {1}".format(
-                         source+' ', status.message)
+                         source + ' ', status.message)
             raise IOError(errstr)
 
     def __del__(self):

@@ -701,7 +701,7 @@ class XRootDPyFS(FS):
         Specific to ``XRootDPyFS``.
         """
         if self.queryargs:
-            return "{0}{1}".format(self.root_url, urlencode(self.queryargs))
+            return "{0}/?{1}".format(self.root_url, urlencode(self.queryargs))
         else:
             return self.root_url
 

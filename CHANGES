@@ -1,6 +1,10 @@
 Changes
 =======
 
+Version 0.1.2 (released 2016-08-19)
+
+- Fixes issue with generated root url when query string was present.
+
 Version 0.1.1 (released 2015-10-09)
 
 - Changed package name from xrootdfs to xrootdpyfs due to naming conflict

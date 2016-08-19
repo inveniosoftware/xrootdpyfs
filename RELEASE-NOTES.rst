@@ -1,8 +1,8 @@
 ===================
- XRootDPyFS v0.1.1
+ XRootDPyFS v0.1.2
 ===================
 
-XRootDPyFS v0.1.1 was released on 2015-10-09.
+XRootDPyFS v0.1.2 was released on 2016-08-19.
 
 About
 -----
@@ -13,6 +13,12 @@ XRootD protocol aims at giving high performance, scalable fault tolerant access
 to data repositories of many kinds. The XRootDPyFS adds a high-level interface
 on top of the existing Python interface (pyxrootd) and makes it easy to e.g.
 copy a directory in parallel or recursively remove a directory.
+
+
+What's new
+----------
+
+- Fixes issue with generated root url when query string was present.
 
 Documentation
 -------------

@@ -308,7 +308,9 @@ class XRootDPyFile(object):
         # the decimal point
         offset = int(offset)
 
-        if offset < 0:
+        # If not in binary mode and seeking from the end, forbid negative
+        # offsets
+        if not ('b' in self.mode and whence == SEEK_END) and offset < 0:
             raise IOError("Invalid argument.")
 
         if whence == SEEK_SET:

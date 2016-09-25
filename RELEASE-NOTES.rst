@@ -23,7 +23,7 @@ What's new
 Documentation
 -------------
 
-   https://pythonhosted.org/xrootdpyfs/
+   https://xrootdpyfs.readthedocs.io/
 
 Homepage
 --------

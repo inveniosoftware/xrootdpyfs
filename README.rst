@@ -74,7 +74,7 @@ Writing files using the ``setcontents()`` method:
 
 Documentation
 =============
-Documentation is available at <http://pythonhosted.org/xrootdpyfs/> or can be
+Documentation is available at <http://xrootdpyfs.readthedocs.io/> or can be
 build using Sphinx::
 
     pip install Sphinx

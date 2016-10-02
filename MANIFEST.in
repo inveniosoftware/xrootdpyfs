@@ -4,7 +4,9 @@
 # xrootdpyfs is free software; you can redistribute it and/or modify it under the
 # terms of the Revised BSD License; see LICENSE file for more details.
 
-include LICENSE AUTHORS CHANGES README.rst
+include .lgtm
+include LICENSE
+include MAINTAINERS AUTHORS CHANGES README.rst
 include .coveragerc run-tests.sh
 include docs/*.rst docs/*.py docs/Makefile docs/requirements.txt
 include tests/*.py

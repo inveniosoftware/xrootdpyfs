@@ -1,8 +1,8 @@
 ===================
- XRootDPyFS v0.1.3
+ XRootDPyFS v0.1.4
 ===================
 
-XRootDPyFS v0.1.3 was released on 2016-09-12.
+XRootDPyFS v0.1.4 was released on 2017-05-04.
 
 About
 -----
@@ -18,7 +18,7 @@ copy a directory in parallel or recursively remove a directory.
 What's new
 ----------
 
-- Fixes issue with generated root url when query string was present.
+- Pins PyFilesystem dependency as v2+ is incompatible with XRootDPyFS.
 
 Documentation
 -------------

@@ -14,9 +14,8 @@ FROM centos:7
 # Install xrootd
 RUN rpm -Uvh http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 
-RUN yum install -y xrootd xrootd-server xrootd-client xrootd-client-devel xrootd-python git
-
-RUN yum install -y python-pip
+RUN yum group install -y "Development Tools"
+RUN yum install -y xrootd xrootd-server xrootd-client xrootd-client-devel xrootd-python git python-pip python-devel
 
 RUN adduser --uid 1001 xrootdpyfs
 
@@ -32,7 +31,7 @@ RUN pip install ipython \
                 isort \
                 mock \
                 Sphinx
-RUN pip install fs
+RUN pip install "fs<2.0"
 
 # Add sources to `code` and work there:
 WORKDIR /code

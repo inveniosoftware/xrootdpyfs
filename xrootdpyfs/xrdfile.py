@@ -350,7 +350,7 @@ class XRootDPyFile(object):
         The file may not be accessed further once it is closed.
         """
         if not self.closed:
-            self._file.close()
+            statmsg = self._file.close()[0]
 
             if not statmsg.ok:
                 self._raise_status(self.path, statmsg, "closing")

@@ -1,1 +1,1 @@
-xrootd -b -l /dev/null && ./run-tests.sh
+xrootd -b && ./run-tests.sh

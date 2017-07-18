@@ -1,6 +1,13 @@
 Changes
 =======
 
+Version 0.1.5 (released 2017-07-18)
+
+- Fixes an issue where the xrootd response was not checked when closing
+  a file. This could ultimately result in masking very important errors
+  that could lead to silent data loss (such as not reporting that the
+  server had a problem replicating the file and thus deleted the file).
+
 Version 0.1.4 (released 2017-05-04)
 
 - Pins PyFilesystem dependency as v2+ is incompatible with XRootDPyFS.

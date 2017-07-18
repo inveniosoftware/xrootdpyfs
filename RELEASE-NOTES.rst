@@ -1,8 +1,8 @@
 ===================
- XRootDPyFS v0.1.4
+ XRootDPyFS v0.1.5
 ===================
 
-XRootDPyFS v0.1.4 was released on 2017-05-04.
+XRootDPyFS v0.1.5 was released on 2017-07-18.
 
 About
 -----
@@ -18,7 +18,11 @@ copy a directory in parallel or recursively remove a directory.
 What's new
 ----------
 
-- Pins PyFilesystem dependency as v2+ is incompatible with XRootDPyFS.
+- Fixes an issue where the xrootd response was not checked when closing
+  a file. This could ultimately result in masking very important errors
+  that could lead to silent data loss (such as not reporting that the
+  server had a problem replicating the file and thus deleted the file).
+
 
 Documentation
 -------------

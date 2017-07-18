@@ -352,6 +352,9 @@ class XRootDPyFile(object):
         if not self.closed:
             self._file.close()
 
+            if not statmsg.ok:
+                self._raise_status(self.path, statmsg, "closing")
+
     def flush(self):
         """Flush write buffers."""
         if not self.closed:

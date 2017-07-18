@@ -135,6 +135,27 @@ def test_open_close(tmppath):
     assert not xfile.closed
     xfile.close()
     assert xfile.closed
+    # Multiple calls to closed do nothing.
+    xfile.close()
+
+
+def test_close_error(tmppath):
+    """Test error on close()."""
+    xfile = XRootDPyFile(mkurl(get_tsta_file(tmppath)['full_path']))
+    # Mock error response on close.
+    fake_status = {
+        "status": 1,
+        "code": 3,
+        "ok": False,
+        "errno": 0,
+        "error": True,
+        "message": '[ERROR] Invalid operation',
+        "fatal": False,
+        "shellcode": 50
+    }
+    xfile._file.close = Mock(return_value=(XRootDStatus(fake_status), None))
+    # Ensure error is raised.
+    pytest.raises(IOError, xfile.close)
 
 
 def test_read_existing(tmppath):

@@ -178,7 +178,7 @@ class XRootDPyFile(object):
         If no ``sizehint`` is provided the entire file is read! Multiple calls
         to this method after EOF as been reached, will return an empty string.
 
-        :oaram sizehint: Number of bytes to read from file object.
+        :param sizehint: Number of bytes to read from file object.
         """
         if self.closed:
             raise ValueError("I/O operation on closed file.")

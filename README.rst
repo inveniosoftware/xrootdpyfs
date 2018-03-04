@@ -6,7 +6,7 @@
     :target: https://travis-ci.org/inveniosoftware/xrootdpyfs
 .. image:: https://coveralls.io/repos/inveniosoftware/xrootdpyfs/badge.svg?branch=master
     :target: https://coveralls.io/r/inveniosoftware/xrootdpyfs
-.. image:: https://pypip.in/v/xrootdpyfs/badge.svg
+.. image:: https://img.shields.io/pypi/v/xrootdpyfs.svg
    :target: https://crate.io/packages/xrootdpyfs/
 
 XRootDPyFS is a PyFilesystem interface to XRootD.

@@ -12,6 +12,7 @@ from __future__ import absolute_import, print_function
 
 import errno
 import math
+import os
 import sys
 from os.path import join
 
@@ -1195,3 +1196,74 @@ def test_iterator_buffering(tmppath):
     assert len(list(iter(xfile))) == len(open(join(tmppath, f)).readlines())
     xfile = XRootDPyFile(mkurl(join(tmppath, f)), 'r', buffering=10)
     assert len(list(iter(xfile))) == int(math.ceil(xfile.size / 10.0))
+
+
+def remove_file(tmppath, file):
+    from XRootD import client
+    myclient = client.FileSystem(tmppath)
+    myclient.rm(file)
+
+
+def create_big_file(
+    tmppath,
+    filename,
+    size=2 * 1024 * 1024 * 1024,
+    frontfile_content=None,
+    endfile_content=None
+):
+    xfile = XRootDPyFile(mkurl(join(tmppath, filename)), 'w')
+    if endfile_content:
+        endfile_length = len(endfile_content)
+    else:
+        endfile_content = '\0'
+        endfile_length = 1
+    # Prepare big file for testing
+    if frontfile_content:
+        xfile.write(frontfile_content)
+    xfile.seek(size - endfile_length)
+    xfile.write(endfile_content)
+    xfile.close()
+
+
+def test_reading_end_of_big_file(tmppath):
+    """Tests reading end of big file."""
+    f = "data/big_file.txt"
+    create_big_file(tmppath, f, endfile_content="test\0")
+
+    xfile = XRootDPyFile(mkurl(join(tmppath, f)), 'r')
+
+    xfile.seek(xfile.size-10)
+    data = xfile.read()
+    assert xfile.size == 2 * 1024 * 1024 * 1024
+    assert len(data) == 10
+    assert data[-5:-1] == "test"
+    xfile.close()
+
+    remove_file(tmppath, f)
+
+
+def test_reading_whole_big_file(tmppath):
+    """Tests reading end of big file."""
+    f = "data/big_file.txt"
+    create_big_file(tmppath, f)
+
+    xfile = XRootDPyFile(mkurl(join(tmppath, f)), 'r')
+
+    pytest.raises(IOError, xfile.read)
+    xfile.close()
+
+    remove_file(tmppath, f)
+
+
+def test_reading_begining_of_big_file(tmppath):
+    """Tests reading end of big file."""
+    f = "data/big_file.txt"
+    create_big_file(tmppath, f, frontfile_content="test")
+
+    xfile = XRootDPyFile(mkurl(join(tmppath, f)), 'r')
+
+    data = xfile.read(4)
+    assert data == "test"
+    xfile.close()
+
+    remove_file(tmppath, f)

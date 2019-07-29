@@ -15,8 +15,8 @@ FROM centos:7
 RUN rpm -Uvh http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 
 RUN yum group install -y "Development Tools"
-RUN yum install -y xrootd xrootd-server xrootd-client xrootd-client-devel xrootd-python git python-pip python-devel
-
+RUN yum-config-manager --add-repo http://xrootd.org/binaries/xrootd-stable-slc7.repo
+RUN yum --setopt=obsoletes=0  install -y xrootd-4.7.1 xrootd-client-4.7.1 xrootd-python-4.7.1 git  python-pip python-devel wget
 RUN adduser --uid 1001 xrootdpyfs
 
 # Install some prerequisites ahead of `setup.py` in order to profit

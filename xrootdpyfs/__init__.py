@@ -181,7 +181,7 @@ from __future__ import absolute_import, print_function
 
 from .fs import XRootDPyFS
 from .opener import XRootDPyOpener
-from .xrdfile import XRootDPyFile
 from .version import __version__
+from .xrdfile import XRootDPyFile
 
 __all__ = ('__version__', 'XRootDPyFS', 'XRootDPyOpener', 'XRootDPyFile')

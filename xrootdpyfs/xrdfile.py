@@ -185,7 +185,15 @@ class XRootDPyFile(object):
 
         self._assert_mode("r-")
 
-        chunksize = sizehint if sizehint > 0 else self.size
+        chunksize = sizehint if sizehint > 0 else self.size - self._ipp
+
+        if chunksize >= 2147483648:  # 2GB in bytes
+                raise IOError(
+                    "Chunksize is set to %s which is more than 2GB."
+                    "This is not supported!" % chunksize
+                )
+        elif chunksize < 0:
+            chunksize = 1
 
         # Read data
         statmsg, res = self._file.read(

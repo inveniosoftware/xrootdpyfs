@@ -76,7 +76,7 @@ setup(
     tests_require=tests_require,
     install_requires=[
         'fs>=0.4.0,<2.0',
-        'pyxrootd',
+        'xrootd',
     ],
     cmdclass={'test': PyTest},
     classifiers=[

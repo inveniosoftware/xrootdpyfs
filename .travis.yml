@@ -1,13 +1,11 @@
 # This file is part of xrootdpyfs
-# Copyright (C) 2015 CERN.
+# Copyright (C) 2015-2020 CERN.
 #
 # xrootdpyfs is free software; you can redistribute it and/or modify it under
 # the terms of the Revised BSD License; see LICENSE file for more details.
 
-
-sudo: required
-
-language: python
+python:
+ - "2.7"
 
 services:
   - docker
@@ -23,7 +21,7 @@ cache:
 install:
   - "docker build -t xrootd ."
   - "docker run -h xrootdpyfs -t -u root xrootd pip install -r requirements.${REQUIREMENTS}.txt"
-  - "travis_retry pip install coveralls pydocstyle Sphinx twine wheel"
+  - "travis_retry pip install --user coveralls pydocstyle Sphinx twine wheel"
 
 script:
   - "docker run -h xrootdpyfs -t xrootd"

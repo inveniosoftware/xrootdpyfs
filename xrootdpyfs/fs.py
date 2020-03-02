@@ -23,16 +23,14 @@ from __future__ import absolute_import, print_function
 import re
 from datetime import datetime
 from glob import fnmatch
-from six import PY3
-from six.moves.urllib.parse import urlencode
-from six.moves.urllib.parse import parse_qs
 
 from fs.base import FS
 from fs.errors import DestinationExistsError, DirectoryNotEmptyError, \
     FSError, InvalidPathError, RemoteConnectionError, ResourceError, \
     ResourceInvalidError, ResourceNotFoundError, UnsupportedError
 from fs.path import dirname, frombase, normpath, pathcombine, pathjoin
-from six import binary_type
+from six import PY2, PY3, binary_type
+from six.moves.urllib.parse import parse_qs, urlencode
 from XRootD.client import CopyProcess, FileSystem
 from XRootD.client.flags import AccessMode, DirListFlags, MkDirFlags, \
     QueryCode, StatInfoFlags
@@ -101,7 +99,7 @@ class XRootDPyFS(FS):
             # Convert query string in URL into a dictionary. Assumes there's no
             # duplication of fields names in query string (such as e.g.
             # '?f1=a&f1=b').
-            queryargs = {k: v[0] for (k,v) in parse_qs(queryargs).items()}
+            queryargs = {k: v[0] for (k, v) in parse_qs(queryargs).items()}
 
             # Merge values from kwarg query into the dictionary. Conflicting
             # keys raises an exception.
@@ -125,15 +123,7 @@ class XRootDPyFS(FS):
         """Join path to base path."""
         # fs.path.pathjoin() omits the first '/' in self.base_path.
         # It is resolved by adding on an additional '/' to its return value.
-        if PY3:
-            return '/' + pathjoin(self.base_path, path)
-
-        if isinstance(path, binary_type):
-            path = path.decode(encoding)
-        # pathjoin always returns unicode
-        return (
-            u'/' + pathjoin(self.base_path.decode('utf-8'), path)
-        ).encode(encoding)
+        return '/' + pathjoin(self.base_path, path)
 
     def _raise_status(self, path, status):
         """Raise error based on status."""
@@ -142,7 +132,7 @@ class XRootDPyFS(FS):
         elif status.errno == 3005:
             # Unfortunately only way to determine if the error is due to a
             # directory not being empty, or that a resource is not a directory:
-            if status.message.endswith("not a directory\n"):
+            if status.message.strip().endswith("not a directory"):
                 raise ResourceInvalidError(path=path, details=status)
             else:
                 raise DirectoryNotEmptyError(path=path, details=status)
@@ -167,10 +157,10 @@ class XRootDPyFS(FS):
         r"""Open the given path and return a file-like object.
 
         :param path: Path to file that should be opened.
-        :type path: string
+        :type path: str
         :param mode: Mode of file to open, identical to the mode string used
             in 'file' and 'open' builtins.
-        :type mode: string
+        :type mode: str
         :param buffering: An optional integer used to set the buffering policy.
             Pass 0 to switch buffering off (only allowed in binary mode),
             1 to select line buffering (only usable in text mode), and
@@ -184,11 +174,11 @@ class XRootDPyFS(FS):
         :param line_buffering: Unsupported. Anything by False will raise and
             error.
 
-        :rtype: A file-like object.
+        :returns: A file-like object.
 
-        :raises `fs.errors.ResourceInvalidError`: If an intermediate directory
+        :raises: `fs.errors.ResourceInvalidError` if an intermediate directory
             is an file.
-        :raises `fs.errors.ResourceNotFoundError`: If the path is not found.
+        :raises: `fs.errors.ResourceNotFoundError` if the path is not found.
         """
         return XRootDPyFile(
             self.getpathurl(path, with_querystring=True),
@@ -213,10 +203,11 @@ class XRootDPyFS(FS):
         The directory contents are returned as a list of unicode paths.
 
         :param path: Path to list.
-        :type path: string
-        :param wildcard: Return only paths that matches the wildcard
-        :type wildcard: string containing a unix filename pattern, or a
-            callable that accepts a path and returns a boolean
+        :type path: str
+        :param wildcard: Return only paths that matches the wildcard. It can
+            contain a unix filename pattern or a callable that accepts a path
+            and returns a boolean
+        :type wildcard: str
         :param full: Return full paths (relative to the base path).
         :type full: bool
         :param absolute: Return absolute paths (paths beginning with /)
@@ -226,11 +217,11 @@ class XRootDPyFS(FS):
         :param files_only: If True, return only files.
         :type files_only: bool
 
-        :rtype: Iterable of paths.
+        :returns: Iterable of paths.
 
-        :raises `fs.errors.ResourceInvalidError`: If the path exists, but is
+        :raises: `fs.errors.ResourceInvalidError` if the path exists, but is
             not a directory.
-        :raises `fs.errors.ResourceNotFoundError`: If the path is not found.
+        :raises: `fs.errors.ResourceNotFoundError` if the path is not found.
         """
         return list(self.ilistdir(
             path=path, wildcard=wildcard, full=full, absolute=absolute,
@@ -249,7 +240,7 @@ class XRootDPyFS(FS):
         """Check if a path references a directory.
 
         :param path: a path in the filesystem
-        :type path: string
+        :type path: str
 
         :rtype: bool
 
@@ -265,7 +256,7 @@ class XRootDPyFS(FS):
         """Check if a path references a file.
 
         :param path: a path in the filesystem
-        :type path: string
+        :type path: str
 
         :rtype: bool
 
@@ -282,8 +273,8 @@ class XRootDPyFS(FS):
         """Check if a path references a valid resource.
 
         :param path: A path in the filesystem.
-        :type path: `string`
-        :rtype: `bool`
+        :type path: str
+        :rtype: bool
         """
         status, stat = self._client.stat(self._p(path))
         return status.ok
@@ -292,7 +283,7 @@ class XRootDPyFS(FS):
         """Make a directory on the filesystem.
 
         :param path: Path of directory.
-        :type path: string
+        :type path: str
         :param recursive: If True, any intermediate directories will also be
             created.
         :type recursive: `bool`
@@ -300,9 +291,9 @@ class XRootDPyFS(FS):
             error.
         :type allow_create: `bool`
 
-        :raises `fs.errors.DestinationExistsError`: If the path is already
+        :raises: `fs.errors.DestinationExistsError` if the path is already
             existing, and allow_recreate is False.
-        :raises `fs.errors.ResourceInvalidError`: If a containing
+        :raises: `fs.errors.ResourceInvalidError` if a containing
             directory is missing and recursive is False or if a path is an
             existing file.
         """
@@ -321,10 +312,10 @@ class XRootDPyFS(FS):
         """Remove a file from the filesystem.
 
         :param path: Path of the resource to remove.
-        :type path: string
+        :type path: str
 
-        :raises `fs.errors.ResourceInvalidError`: If the path is a directory.
-        :raises `fs.errors.DirectoryNotEmptyError`: If the directory is not
+        :raises: `fs.errors.ResourceInvalidError` if the path is a directory.
+        :raises: `fs.errors.DirectoryNotEmptyError` if the directory is not
             empty.
         """
         status, res = self._client.rm(self._p(path))
@@ -337,7 +328,7 @@ class XRootDPyFS(FS):
         """Remove a directory from the filesystem.
 
         :param path: Path of the directory to remove.
-        :type path: string
+        :type path: str
         :param recursive: Unsupported by XRootDPyFS implementation.
         :type recursive: bool
         :param force: If True, any directory contents will be removed
@@ -347,11 +338,11 @@ class XRootDPyFS(FS):
             network request per file/directory.
         :type force: bool
 
-        :raises `fs.errors.DirectoryNotEmptyError`: If the directory is not
+        :raises: `fs.errors.DirectoryNotEmptyError` if the directory is not
             empty and force is `False`.
-        :raises `fs.errors.ResourceInvalidError`: If the path is not a
+        :raises: `fs.errors.ResourceInvalidError` if the path is not a
             directory.
-        :raises `fs.errors.ResourceNotFoundError`: If the path does not exist.
+        :raises: `fs.errors.ResourceNotFoundError` if the path does not exist.
         """
         if recursive:
             raise UnsupportedError("recursive parameter is not supported.")
@@ -379,12 +370,13 @@ class XRootDPyFS(FS):
         """Rename a file or directory.
 
         :param src: path to rename.
-        :type src: string
+        :type src: str
         :param dst: new name.
-        :type dst: string
+        :type dst: str
 
-        :raises DestinationExistsError: if destination already exists.
-        :raises ResourceNotFoundError: if source does not exists.
+        :raises: `fs.errors.DestinationExistsError` if destination already
+            exists.
+        :raises: `fs.errors.ResourceNotFoundError` if source does not exists.
         """
         src = self._p(src)
         dst = self._p(pathjoin(dirname(src), dst))
@@ -436,9 +428,10 @@ class XRootDPyFS(FS):
         info['executable'] = bool(stat.flags & StatInfoFlags.X_BIT_SET)
 
         res = self._query(QueryCode.XATTR, fullpath)
-        ct = res.get('oss.ct', [None])[0]
-        mt = res.get('oss.mt', [None])[0]
-        at = res.get('oss.at', [None])[0]
+
+        ct = res.get(b'oss.ct', [None])[0]
+        mt = res.get(b'oss.mt', [None])[0]
+        at = res.get(b'oss.at', [None])[0]
 
         if ct:
             info['created_time'] = datetime.fromtimestamp(int(ct))
@@ -457,7 +450,7 @@ class XRootDPyFS(FS):
                  files_only=False):
         """Generator yielding the files and directories under a given path.
 
-        This method behaves identically to :py:meth:`fs.base:FS.listdir` but
+        This method behaves identically to `fs.base:FS.listdir` but
         returns an generator instead of a list.
         """
         flag = DirListFlags.STAT if dirs_only or files_only else \
@@ -520,50 +513,55 @@ class XRootDPyFS(FS):
         """Move a file from one location to another.
 
         :param src: Source path.
-        :type src: string
+        :type src: str
         :param dst: Destination path.
-        :type dst: string
+        :type dst: str
         :param overwrite: When True the destination will be overwritten (if it
             exists), otherwise a DestinationExistsError will be thrown.
         :type overwrite: bool
-        :raise `fs.errors.DestinationExistsError`: If destination exists and
+        :raise: `fs.errors.DestinationExistsError` if destination exists and
             ``overwrite`` is False.
-        :raise `fs.errors.ResourceInvalidError`: If source is not a file.
-        :raise `fs.errors.ResourceNotFoundError`: If source was not found.
+        :raise: `fs.errors.ResourceInvalidError` if source is not a file.
+        :raise: `fs.errors.ResourceNotFoundError` if source was not found.
         """
         src, dst = self._p(src), self._p(dst)
 
         # isdir/isfile throws an error if file/dir doesn't exists
-        if not self.isfile(src):
-            if self.isdir(src):
-                raise ResourceInvalidError(
-                    src, msg="Source is not a file: %(path)s")
+        if not self.exists(src):
             raise ResourceNotFoundError(src)
+
+        if not self.isfile(src):
+            raise ResourceInvalidError(
+                src, msg="Source is not a file: %(path)s")
+
         return self._move(src, dst, overwrite=overwrite)
 
     def movedir(self, src, dst, overwrite=False, **kwargs):
         """Move a directory from one location to another.
 
         :param src: Source directory path.
-        :type src: string
+        :type src: str
         :param dst: Destination directory path.
-        :type dst: string
+        :type dst: str
         :param overwrite: When True the destination will be overwritten (if it
             exists), otherwise a DestinationExistsError will be thrown.
         :type overwrite: bool
-        :raise `fs.errors.DestinationExistsError`: If destination exists and
+        :raise: `fs.errors.DestinationExistsError` if destination exists and
             `overwrite` is `False`.
-        :raise `fs.errors.ResourceInvalidError`: If source is not a directory.
-        :raise `fs.errors.ResourceNotFoundError`: If source was not found.
+        :raise: `fs.errors.ResourceInvalidError` if source is not a directory.
+        :raise: `fs.errors.ResourceInvalidError` if source is a directory and
+            destination is a file.
+        :raise: `fs.errors.ResourceNotFoundError` if source was not found.
         """
         src, dst = self._p(src), self._p(dst)
 
-        # isdir/isfile throws an error if file/dir doesn't exists
-        if not self.isdir(src):
-            if self.isfile(src):
-                raise ResourceInvalidError(
-                    src, msg="Source is not a directory: %(path)s")
+        if not self.exists(src):
             raise ResourceNotFoundError(src)
+
+        if not self.isdir(src):
+            raise ResourceInvalidError(
+                src, msg="Source is not a directory: %(path)s")
+
         return self._move(src, dst, overwrite=overwrite)
 
     def _move(self, src, dst, overwrite=False):
@@ -582,7 +580,10 @@ class XRootDPyFS(FS):
            source. Hence, if the source doesn't exists, it will remove the
            destination and then fail.
         """
-        if overwrite and self.exists(dst):
+        if self.exists(dst):
+            if not overwrite:
+                raise DestinationExistsError(dst)
+
             if self.isfile(dst):
                 self.remove(dst)
             elif self.isdir(dst):
@@ -599,9 +600,9 @@ class XRootDPyFS(FS):
         """Copy a file from source to destination.
 
         :param src: Source path.
-        :type src: string
+        :type src: str
         :param dst: Destination path.
-        :type dst: string
+        :type dst: str
         :param overwrite: If True, then an existing file at the destination may
             be overwritten; If False then ``DestinationExistsError``
             will be raised.
@@ -635,9 +636,9 @@ class XRootDPyFS(FS):
         source to destination.
 
         :param src: Source directory path.
-        :type src: string
+        :type src: str
         :param dst: Destination directory path.
-        :type dst: string
+        :type dst: str
         :param overwrite: If True then any existing files in the destination
             directory will be overwritten.
         :type overwrite: bool
@@ -713,10 +714,10 @@ class XRootDPyFS(FS):
         checksum operation (in particular the default local xrootd server).
 
         :param src: File to calculate checksum for.
-        :type src: string
-        :raise `fs.errors.UnsupportedError`: If server does not support
+        :type src: str
+        :raise: `fs.errors.UnsupportedError` if server does not support
             checksum calculation.
-        :raise `fs.errors.FSError`: If you try to get the checksum of e.g. a
+        :raise: `fs.errors.FSError` if you try to get the checksum of e.g. a
             directory.
         """
         if not self.isfile(path, _statobj=_statobj):

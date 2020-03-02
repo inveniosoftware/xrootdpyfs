@@ -1,37 +1,41 @@
+# -*- coding: utf-8 -*-
+#
 # This file is part of xrootdpyfs
 # Copyright (C) 2015-2020 CERN.
 #
 # xrootdpyfs is free software; you can redistribute it and/or modify it under
 # the terms of the Revised BSD License; see LICENSE file for more details.
 
-python:
- - "2.7"
+notifications:
+  email: false
+
+language: python
 
 python:
-  - "2.7"
   - "3.6"
 
 services:
   - docker
 
+matrix:
+  fast_finish: true
+  allow_failures:
+    - env: XROOTD_VERSION=''
+
 env:
-  - REQUIREMENTS=devel
-  - REQUIREMENTS=latest
-  - REQUIREMENTS=lowest
+  - XROOTD_VERSION=4.8.5
+  - XROOTD_VERSION=4.9.1
+  - XROOTD_VERSION=4.11.2
+  - XROOTD_VERSION=''
 
 cache:
   - docker
 
 install:
-  - "docker build -t xrootd ."
-  - "docker run -h xrootdpyfs -t -u root xrootd pip install -r requirements.${REQUIREMENTS}.txt"
-  - "travis_retry pip install --user coveralls pydocstyle Sphinx twine wheel"
+  - "docker build -t xrootd --build-arg xrootd_version=${XROOTD_VERSION} ."
 
 script:
   - "docker run -h xrootdpyfs -t xrootd"
 
 after_success:
   - coveralls
-
-notifications:
-  email: false

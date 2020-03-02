@@ -58,7 +58,7 @@ tests_require = [
     'mock>=1.3.0',
     'pytest-cov>=2.0.0',
     'pytest-pep8>=1.0.6',
-    'pytest>=2.8.0',
+    'pytest>=4.0.0,<5.0.0',
 ]
 
 setup(
@@ -75,13 +75,11 @@ setup(
     platforms='any',
     tests_require=tests_require,
     install_requires=[
-        'fs>=0.4.0,<2.0',
+        'fs>=0.5.4,<2.0',  # latest release is 0.5.4
         'xrootd',
     ],
     cmdclass={'test': PyTest},
     classifiers=[
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',

@@ -12,10 +12,9 @@ from __future__ import absolute_import, print_function
 
 from os.path import join
 
+from conftest import mkurl
 from XRootD import client as xclient
 from XRootD.client.flags import OpenFlags
-
-from conftest import mkurl
 
 
 # If "test" is in its name then pytest picks it up.
@@ -36,7 +35,7 @@ def test_READ(tmppath):
 
     # Can we read?
     statmsg, content = xf.read()
-    assert content == fconts
+    assert content == fconts.encode()
     assert statmsg.ok
 
     # Can we write?
@@ -62,7 +61,7 @@ def test_APPEND(tmppath):
 
     # Can we read?
     statmsg, content = xf.read()
-    assert content == fconts
+    assert content == fconts.encode()
     assert statmsg.ok
 
     # Can we write?
@@ -82,7 +81,7 @@ def test_UPDATE(tmppath):
 
     # Can we read?
     statmsg, content = xf.read()
-    assert content == fconts
+    assert content == fconts.encode()
     assert statmsg.ok
 
     # Can we write?
@@ -98,7 +97,8 @@ def test_UPDATE(tmppath):
     print((statmsg, res))
     assert statmsg.ok
     assert not statmsg.error
-    assert xf.read()[1] == ""
+    value = xf.read()[1]
+    assert value == b""
 
     # what if the file doesn't exist?
     ffpath = join(tmppath, "newfile")
@@ -126,7 +126,7 @@ def test_DELETE(tmppath):
     print((statmsg, res))
     assert statmsg.ok
     assert not statmsg.error
-    assert res == ""
+    assert res == b""
 
     # Can we write now?
     newc = "whaat"
@@ -134,5 +134,5 @@ def test_DELETE(tmppath):
     print((statmsg, res))
     assert statmsg.ok
     assert not statmsg.error
-    assert xf.read()[1] == newc
+    assert xf.read()[1] == newc.encode()
     print(xf.read())

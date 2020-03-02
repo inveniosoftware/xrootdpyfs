@@ -18,16 +18,19 @@ from os.path import join
 
 import fs.path
 import pytest
+from conftest import mkurl
 from fs import SEEK_CUR, SEEK_END, SEEK_SET
 from fs.errors import InvalidPathError, PathError, ResourceNotFoundError, \
     UnsupportedError
 from fs.opener import fsopendir, opener
 from mock import Mock
 from XRootD.client.responses import XRootDStatus
-
-from conftest import mkurl
 from xrootdpyfs import XRootDPyFile
 from xrootdpyfs.utils import is_valid_path, is_valid_url
+
+
+def _list_str_encode(_list):
+    return [el.encode() for el in _list]
 
 
 def test_init_basic(tmppath):
@@ -45,7 +48,7 @@ def test_init_basic(tmppath):
 
     # Verify that underlying/wrapped file can be read.
     statmsg, res = xfile._file.read()
-    assert res == fcontents
+    assert res == fcontents.encode()
 
 
 def test_init_writemode_basic(tmppath):
@@ -54,14 +57,14 @@ def test_init_writemode_basic(tmppath):
     full_path = join(tmppath, fp, fn)
     xfile = XRootDPyFile(mkurl(full_path), mode='w+')
     assert xfile
-    assert xfile.read() == fc
+    assert xfile.read() == fc.encode()
 
     # Existing file is truncated
     fd = get_tsta_file(tmppath)
     full_path = fd['full_path']
     xfile = XRootDPyFile(mkurl(full_path), mode='w+')
     assert xfile
-    assert xfile.read() == ''
+    assert xfile.read() == b''
     assert xfile.size == 0
     assert xfile.tell() == 0
 
@@ -79,7 +82,7 @@ def test_init_readmode_basic(tmppath):
     full_path, fc = fd['full_path'], fd['contents']
     xfile = XRootDPyFile(mkurl(full_path), mode='r')
     assert xfile
-    assert xfile.read() == fc
+    assert xfile.read() == fc.encode()
 
 
 def get_tsta_file(tmppath):
@@ -166,17 +169,17 @@ def test_read_existing(tmppath):
     xfile = XRootDPyFile(mkurl(full_path))
 
     res = xfile.read()
-    assert res == fc
+    assert res == fc.encode()
     # After having read the entire file, the file pointer is at the
     # end of the file and consecutive reads return the empty string.
-    assert xfile.read() == ''
+    assert xfile.read() == b''
 
     # reset ipp to start
     xfile.seek(0)
-    assert xfile.read(1) == fc[0]
-    assert xfile.read(2) == fc[1:3]
+    assert xfile.read(1) == fc[0].encode()
+    assert xfile.read(2) == fc[1:3].encode()
     overflow_read = xfile.read(len(fc))
-    assert overflow_read == fc[3:]
+    assert overflow_read == fc[3:].encode()
 
     # Mock an error, yayy!
     fake_status = {
@@ -252,12 +255,12 @@ def test_seek_and_tell(tmppath):
     # Read file, then check the internal position pointer.
     conts = xfile.read()
     assert xfile.tell() == len(fc)
-    assert conts == fc
+    assert conts == fc.encode()
 
     # Seek to beginning, then verify ipp.
     xfile.seek(0)
     assert xfile.tell() == 0
-    assert xfile.read() == fc
+    assert xfile.read() == fc.encode()
 
     newpos = len(fc)//2
     xfile.seek(newpos)
@@ -276,7 +279,7 @@ def test_seek_and_tell(tmppath):
     assert xfile.tell() == newpos
     nconts = xfile.read()
     assert xfile.tell() == len(fc)
-    assert nconts == fc[newpos:]
+    assert nconts == fc[newpos:].encode()
 
     # Negative offsets raise an error
     pytest.raises(IOError, xfile.seek, -1)
@@ -295,7 +298,7 @@ def test_seek_args(tmppath):
     full_path, fc = fd['full_path'], fd['contents']
 
     xfile = XRootDPyFile(mkurl(full_path), 'r+')
-    pfile = open(fb['full_path'], 'r+')
+    pfile = open(fb['full_path'], 'rb+')
 
     xfile.truncate(3), pfile.truncate(3)
     xfile.seek(2, SEEK_END), pfile.seek(2, SEEK_END)
@@ -359,7 +362,7 @@ def test_truncate1(tmppath):
     full_path, fc = fd['full_path'], fd['contents']
     xfile = XRootDPyFile(mkurl(full_path), 'r+')
     # r+ opens for r/w, and won't truncate the file automatically.
-    assert xfile.read() == fc
+    assert xfile.read() == fc.encode()
     assert xfile.tell() == len(fc)
     xfile.seek(0)  # Reset ipp.
     assert xfile.tell() == 0
@@ -368,37 +371,37 @@ def test_truncate1(tmppath):
     xfile.truncate(0)
     assert xfile.size == 0
     assert xfile.tell() == 0
-    assert xfile.read() == ''
+    assert xfile.read() == b''
     assert xfile.tell() == 0
     xfile.close()
 
     # Re-open same file.
     xfile = XRootDPyFile(mkurl(full_path), 'r+')
     assert xfile.size == 0
-    assert xfile.read() == ''
+    assert xfile.read() == b''
 
     # Truncate it again!
     xfile.truncate(0)
     assert xfile.size == 0
-    assert xfile.read() == ''
+    assert xfile.read() == b''
 
     # Truncate it twice.
     xfile.truncate(0)
     assert xfile.size == 0
-    assert xfile.read() == ''
+    assert xfile.read() == b''
 
     # Truncate to 1.
     xfile.truncate(1)
     assert xfile.tell() == 0
     assert xfile.size == 1
     xfile.seek(0)
-    assert xfile.read() == '\x00'
+    assert xfile.read() == b'\x00'
     assert xfile.tell() == 1
     xfile.close()
 
     xfile = XRootDPyFile(mkurl(full_path), 'r+')
     assert xfile.size == 1
-    assert xfile.read() == '\x00'
+    assert xfile.read() == b'\x00'
 
     # Mock it.
     fake_status = {
@@ -421,7 +424,7 @@ def test_truncate2(tmppath):
     full_path, fc = fd['full_path'], fd['contents']
     xfile = XRootDPyFile(mkurl(full_path), 'r+')
     conts = xfile.read()
-    assert conts == fc
+    assert conts == fc.encode()
 
     newsize = xfile.size
     xfile.truncate(newsize)
@@ -443,7 +446,7 @@ def test_truncate3(tmppath):
     xfile.truncate(newsiz)
     assert xfile.tell() == initcp
     xfile.seek(0)  # reset the internal pointer before reading
-    assert xfile.read() == fc[:newsiz]
+    assert xfile.read() == fc[:newsiz].encode()
 
 
 def test_truncate4(tmppath):
@@ -480,12 +483,12 @@ def test_truncate5(tmppath):
     assert xfa.size == xfb.size
     assert xfa.tell() == xtell
     assert xfb.tell() == xtell
-    assert xfb.read() == u''
-    assert xfa.read() == u''
+    assert xfb.read() == b''
+    assert xfa.read() == b''
 
     xfa.seek(0), xfb.seek(0)
     are = xfa.read()
-    assert are == fc
+    assert are == fc.encode()
     assert are == xfb.read()
 
 
@@ -504,16 +507,16 @@ def test_truncate_read_write(tmppath):
 
     xfile.truncate(sp), pfile.truncate(sp)
     assert xfile.tell() == pfile.tell()
-    assert xfile.read() == pfile.read()
+    assert xfile.read() == pfile.read().encode()
     assert xfile.tell() == pfile.tell()
 
     xfile.write(wstr), pfile.write(wstr)
     assert xfile.tell() == pfile.tell()
-    assert xfile.read() == pfile.read()
+    assert xfile.read() == pfile.read().encode()
 
     xfile.seek(0), pfile.seek(0)
     assert xfile.tell() == pfile.tell()
-    assert xfile.read() == pfile.read()
+    assert xfile.read() == pfile.read().encode()
 
 
 def test_truncate_read_write2(tmppath):
@@ -532,19 +535,19 @@ def test_truncate_read_write2(tmppath):
 
     xfile.truncate(sp), pfile.truncate(sp)
     assert xfile.tell() == pfile.tell()
-    assert xfile.read() == pfile.read()
+    assert xfile.read() == pfile.read().encode()
     assert xfile.tell() == pfile.tell()
 
     xfile.seek(0), pfile.seek(0)
     assert xfile.tell() == pfile.tell()
-    assert xfile.read() == pfile.read()
+    assert xfile.read() == pfile.read().encode()
     xfile.seek(0), pfile.seek(0)
 
     xfile.write(wstr), pfile.write(wstr)
     assert xfile.tell() == pfile.tell()
-    assert xfile.read() == pfile.read()
+    assert xfile.read() == pfile.read().encode()
     xfile.seek(0), pfile.seek(0)
-    assert xfile.read() == pfile.read()
+    assert xfile.read() == pfile.read().encode()
 
 
 def test_write(tmppath):
@@ -561,13 +564,13 @@ def test_write(tmppath):
     assert not xfile.closed
     xfile.seek(0)
     assert xfile.size == len(nconts)
-    assert xfile.read() == nconts
+    assert xfile.read() == nconts.encode()
     xfile.close()
 
     # Verify persistence after closing.
     xfile = XRootDPyFile(mkurl(join(tmppath, 'data/nuts')), 'r+')
     assert xfile.size == len(nconts)
-    assert xfile.read() == nconts
+    assert xfile.read() == nconts.encode()
 
     # Seek(x>0) followed by a write
     nc2 = 'hello'
@@ -576,19 +579,20 @@ def test_write(tmppath):
     xfile.write(nc2)
     assert xfile.tell() == len(nc2) + cntr
     xfile.seek(0)
-    assert xfile.read() == nconts[:cntr] + nc2
+    expected = nconts[:cntr] + nc2
+    assert xfile.read() == expected.encode()
     xfile.close()
 
     # Seek(x>0) followed by a write of len < size-x
     fd = get_tsta_file(tmppath)
     fp, fc = fd['full_path'], fd['contents']
     xfile = XRootDPyFile(mkurl(fp), 'r+')
-    assert xfile.read() == fc
+    assert xfile.read() == fc.encode()
     xfile.seek(2)
     nc = 'yo'
     xfile.write(nc)
     assert xfile.tell() == len(nc) + 2
-    assert xfile.read() == fc[2+len(nc):]
+    assert xfile.read() == fc[2+len(nc):].encode()
 
     # run w/ flushing == true
     xfile.write('', True)
@@ -608,15 +612,8 @@ def test_write(tmppath):
     pytest.raises(IOError, xfile.write, '')
 
 
-def test_readwrite_unicode(tmppath):
-    """Test read/write unicode."""
-    if sys.getdefaultencoding() != 'ascii':
-        # Python 2 only problem
-        raise AssertionError(
-            "Default system encoding is not ascii. This is likely due to some"
-            " imported module changing it using sys.setdefaultencoding."
-        )
-
+def test_readwrite_diffrent_encodings_fails(tmppath):
+    """Test read/write a unicode str in non unicode files."""
     fd = get_tsta_file(tmppath)
     fb = get_copy_file(fd)
     fp, dummy = fd['full_path'], fd['contents']
@@ -624,20 +621,30 @@ def test_readwrite_unicode(tmppath):
 
     unicodestr = u"æøå"
 
-    pfile = open(fp2, 'w')
-    xfile = XRootDPyFile(mkurl(fp), 'w')
+    pfile = open(fp2, 'w')  # default encoding is ANSI
     pytest.raises(UnicodeEncodeError, pfile.write, unicodestr)
+    xfile = XRootDPyFile(mkurl(fp), 'w', encoding='ascii')
     pytest.raises(UnicodeEncodeError, xfile.write, unicodestr)
     xfile.close()
 
-    xfile = XRootDPyFile(mkurl(fp), 'w+', encoding='utf-8')
+
+def test_readwrite_unicode(tmppath):
+    """Test read/write a unicode str in unicode files."""
+    fd = get_tsta_file(tmppath)
+    fb = get_copy_file(fd)
+    fp, dummy = fd['full_path'], fd['contents']
+    fp2 = fb['full_path']
+
+    unicodestr = u"æøå"
+
+    xfile = XRootDPyFile(mkurl(fp), 'w+')  # default encoding is UTF-8
     xfile.write(unicodestr)
     xfile.flush()
     xfile.seek(0)
     assert unicodestr.encode('utf8') == xfile.read()
     xfile.close()
 
-    xfile = XRootDPyFile(mkurl(fp), 'w+', errors='ignore')
+    xfile = XRootDPyFile(mkurl(fp), 'w+', encoding='ascii', errors='ignore')
     xfile.write(unicodestr)
     xfile.flush()
     xfile.seek(0)
@@ -675,7 +682,8 @@ def test_init_append(tmppath):
     # Can't read in this mode.
     xfile.close()
     xfile = XRootDPyFile(mkurl(fp), 'r')
-    assert xfile.read() == fc + newcont
+    expected = fc + newcont
+    assert xfile.read() == expected.encode()
 
     xfile.close()
     xfile = XRootDPyFile(mkurl(fp), 'a')
@@ -691,7 +699,7 @@ def test_init_appendread(tmppath):
     xfile = XRootDPyFile(mkurl(fp), 'a+')
     assert xfile.mode == 'a+'
     assert xfile.tell() == len(fc)
-    assert xfile.read() == u''
+    assert xfile.read() == b''
 
     # Seeking is allowed, but writes still go on the end.
     xfile.seek(0)
@@ -700,10 +708,12 @@ def test_init_appendread(tmppath):
     xfile.write(newcont)
     assert xfile.tell() == len(fc) + len(newcont)
     xfile.seek(0)
-    assert xfile.read() == fc + newcont
+    expected = fc + newcont
+    assert xfile.read() == expected.encode()
     xfile.write(fc)
     xfile.seek(0)
-    xfile.read() == fc + newcont + fc
+    expected = fc + newcont + fc
+    xfile.read() == expected.encode()
 
 
 def test_init_writemode(tmppath):
@@ -721,7 +731,8 @@ def test_init_writemode(tmppath):
     xfile.close()
     xfile = XRootDPyFile(mkurl(fp), 'r')
     fc = xfile.read()
-    assert fc == '\x00'+conts
+    expected = '\x00'+conts
+    assert fc == expected.encode()
     assert not fc == conts
 
 
@@ -732,7 +743,7 @@ def test_init_streammodes(tmppath):
     pytest.raises(IOError, xfile.seek, 3)
     assert xfile.size == len(fc)
     assert xfile.tell() == 0
-    assert xfile.read() == fc
+    assert xfile.read() == fc.encode()
     assert xfile.tell() == len(fc)
 
     xfile.close()
@@ -746,7 +757,7 @@ def test_init_streammodes(tmppath):
     assert xfile.tell() == len(conts)
     xfile.close()
     xfile = XRootDPyFile(mkurl(fp), 'r')
-    assert xfile.read() == conts
+    assert xfile.read() == conts.encode()
 
 
 def test_init_newline(tmppath):
@@ -755,7 +766,7 @@ def test_init_newline(tmppath):
     fp, fc = fd['full_path'], fd['contents']
 
     xfile = XRootDPyFile(mkurl(fp))
-    assert xfile._newline == '\n'
+    assert xfile._newline == b'\n'
     xfile.close()
 
     xfile = XRootDPyFile(mkurl(fp), newline='\n')
@@ -800,18 +811,18 @@ def test_read_and_write(tmppath):
     xfile = XRootDPyFile(mkurl(fp), 'r+')
 
     assert xfile.tell() == pfile.tell()
-    assert xfile.read() == pfile.read()
+    assert xfile.read() == pfile.read().encode()
     assert xfile.tell() == pfile.tell()
 
     xfile.seek(seekpoint), pfile.seek(seekpoint)
     assert xfile.tell() == pfile.tell()
     xfile.write(writestr), pfile.write(writestr)
     assert xfile.tell() == pfile.tell()
-    assert xfile.read() == pfile.read()
+    assert xfile.read() == pfile.read().encode()
 
     xfile.seek(0), pfile.seek(0)
     assert xfile.tell() == pfile.tell()
-    assert xfile.read() == pfile.read()
+    assert xfile.read() == pfile.read().encode()
 
 
 def test_write_and_read(tmppath):
@@ -829,19 +840,19 @@ def test_write_and_read(tmppath):
     xfile = XRootDPyFile(mkurl(fp), 'w+')
 
     assert xfile.tell() == pfile.tell()
-    assert xfile.read() == pfile.read()
+    assert xfile.read() == pfile.read().encode()
     assert xfile.tell() == pfile.tell()
 
     xfile.write(writestr), pfile.write(writestr)
     assert xfile.tell() == pfile.tell()
-    assert xfile.read() == pfile.read()
+    assert xfile.read() == pfile.read().encode()
     xfile.seek(0), pfile.seek(0)
-    assert xfile.read() == pfile.read()
+    assert xfile.read() == pfile.read().encode()
     assert xfile.tell() == pfile.tell()
 
     xfile.seek(seekpoint), pfile.seek(seekpoint)
     assert xfile.tell() == pfile.tell()
-    assert xfile.read() == pfile.read()
+    assert xfile.read() == pfile.read().encode()
     assert xfile.tell() == pfile.tell()
 
 
@@ -861,18 +872,19 @@ def test_seek_past_eof_rw(tmppath):
 
     xfile.seek(skpnt), pfile.seek(skpnt)
     assert xfile.tell() == pfile.tell()
-    assert xfile.read() == pfile.read()
+    assert xfile.read() == pfile.read().encode()
     assert xfile.tell() == pfile.tell()
     assert xfile.tell() == skpnt
 
     xfile.write(wstr), pfile.write(wstr)
     assert xfile.tell() == pfile.tell()
     xfile.seek(eof), pfile.seek(eof)
-    assert xfile.read() == pfile.read() == '\x00'*(skpnt-eof) + wstr
+    expected = '\x00'*(skpnt-eof) + wstr
+    assert xfile.read() == pfile.read().encode() == expected.encode()
     assert xfile.tell() == pfile.tell()
 
     xfile.seek(0), pfile.seek(0)
-    assert xfile.read() == pfile.read()
+    assert xfile.read() == pfile.read().encode()
 
     xfile.truncate(skpnt), pfile.truncate(skpnt)
     assert xfile.tell() == pfile.tell() == skpnt + len(wstr)
@@ -880,7 +892,7 @@ def test_seek_past_eof_rw(tmppath):
     xfile.write(wstr), pfile.write(wstr)
     expected = fc + '\x00'*(skpnt-eof+len(wstr)) + wstr
     xfile.seek(0), pfile.seek(0)
-    assert xfile.read() == pfile.read() == expected
+    assert xfile.read() == pfile.read().encode() == expected.encode()
 
 
 def test_seek_past_eof_wr(tmppath):
@@ -899,18 +911,19 @@ def test_seek_past_eof_wr(tmppath):
 
     xfile.seek(skpnt), pfile.seek(skpnt)
     assert xfile.tell() == pfile.tell()
-    assert xfile.read() == pfile.read()
+    assert xfile.read() == pfile.read().encode()
     assert xfile.tell() == pfile.tell()
     assert xfile.tell() == skpnt
 
     xfile.write(wstr), pfile.write(wstr)
     assert xfile.tell() == pfile.tell()
     xfile.seek(eof), pfile.seek(eof)
-    assert xfile.read() == pfile.read() == '\x00'*(skpnt-eof) + wstr
+    expected = '\x00'*(skpnt-eof) + wstr
+    assert xfile.read() == pfile.read().encode() == expected.encode()
     assert xfile.tell() == pfile.tell()
 
     xfile.seek(0), pfile.seek(0)
-    assert xfile.read() == pfile.read()
+    assert xfile.read() == pfile.read().encode()
 
     xfile.truncate(skpnt), pfile.truncate(skpnt)
     assert xfile.tell() == pfile.tell() == skpnt + len(wstr)
@@ -918,7 +931,7 @@ def test_seek_past_eof_wr(tmppath):
     xfile.write(wstr), pfile.write(wstr)
     expected = fc + '\x00'*(skpnt-eof+len(wstr)) + wstr
     xfile.seek(0), pfile.seek(0)
-    assert xfile.read() == pfile.read() == expected
+    assert xfile.read() == pfile.read().encode() == expected.encode()
 
 
 def test_read_binary(tmppath):
@@ -977,15 +990,15 @@ def test_readline(tmppath):
 
     xfile, pfile = XRootDPyFile(mkurl(fp), 'r'), opener.open(fp2, 'r')
 
-    assert xfile.readline() == pfile.readline()
-    assert xfile.readline() == pfile.readline()
-    assert xfile.readline() == pfile.readline()
+    assert xfile.readline() == pfile.readline().encode()
+    assert xfile.readline() == pfile.readline().encode()
+    assert xfile.readline() == pfile.readline().encode()
 
     xfile.close(), pfile.close()
     xfile, pfile = XRootDPyFile(mkurl(fp), 'r'), opener.open(fp2, 'r')
-    assert xfile.readline() == pfile.readline()
+    assert xfile.readline() == pfile.readline().encode()
     xfile.seek(0), pfile.seek(0)
-    assert xfile.readline() == pfile.readline()
+    assert xfile.readline() == pfile.readline().encode()
     assert xfile.tell(), pfile.tell()
 
     xfile.close(), pfile.close()
@@ -996,13 +1009,13 @@ def test_readline(tmppath):
 
     xfile.write(str1+str2)
     xfile.seek(0)
-    assert xfile.readline() == str1
-    assert xfile.readline() == str2
-    assert xfile.readline() == ''
-    assert xfile.readline() == ''
+    assert xfile.readline() == str1.encode()
+    assert xfile.readline() == str2.encode()
+    assert xfile.readline() == b''
+    assert xfile.readline() == b''
 
     xfile.seek(100)
-    assert xfile.readline() == ''
+    assert xfile.readline() == b''
 
     xfile.close()
     xfile = XRootDPyFile(mkurl(fp), 'w+')
@@ -1011,8 +1024,9 @@ def test_readline(tmppath):
     xfile.seek(len(str2)+1)
     xfile.write(str2)
     xfile.seek(0)
-    assert xfile.readline() == str2
-    assert xfile.readline() == u'\x00'+str2
+    _value = u'\x00'+str2
+    assert xfile.readline() == str2.encode()
+    assert xfile.readline() == _value.encode()
 
 
 def test_flush(tmppath):
@@ -1031,7 +1045,7 @@ def test_flush(tmppath):
     xfile.close()
 
     xfile = XRootDPyFile(mkurl(full_path), 'r')
-    assert xfile.read() == writestr
+    assert xfile.read() == writestr.encode()
 
     # Fake/mock an error response
     fake_status = {
@@ -1087,16 +1101,16 @@ def test_readlines(tmppath):
 
     xfile, pfile = XRootDPyFile(mkurl(fp), 'r'), open(fp2, 'r')
 
-    assert xfile.readlines() == pfile.readlines()
-
     xfile.seek(0), pfile.seek(0)
-    assert pfile.readlines() == xfile.readlines()
+    expected = _list_str_encode(pfile.readlines())
+    assert xfile.readlines() == expected
 
     xfile.close(), pfile.close()
 
     xfile, pfile = XRootDPyFile(mkurl(fp), 'w+'), open(fp2, 'w+')
     xfile.seek(0), pfile.seek(0)
-    assert xfile.readlines() == pfile.readlines()
+    expected = _list_str_encode(pfile.readlines())
+    assert xfile.readlines() == expected
 
 
 def test_xreadlines(tmppath):
@@ -1236,7 +1250,7 @@ def test_reading_end_of_big_file(tmppath):
     data = xfile.read()
     assert xfile.size == 2 * 1024 * 1024 * 1024
     assert len(data) == 10
-    assert data[-5:-1] == "test"
+    assert data[-5:-1] == b"test"
     xfile.close()
 
     remove_file(tmppath, f)
@@ -1263,7 +1277,7 @@ def test_reading_begining_of_big_file(tmppath):
     xfile = XRootDPyFile(mkurl(join(tmppath, f)), 'r')
 
     data = xfile.read(4)
-    assert data == "test"
+    assert data == b"test"
     xfile.close()
 
     remove_file(tmppath, f)

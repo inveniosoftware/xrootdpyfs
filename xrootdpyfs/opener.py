@@ -26,7 +26,7 @@ class XRootDPyOpener(Opener):
     @classmethod
     def get_fs(cls, registry, fs_name, fs_name_params, fs_path, writeable,
                create_dir):
-        """Get a :py:class:`XRootDPyFS` object.
+        """Get a :py:class:`xrootdpyfs.fs.XRootDPyFS` object.
 
         :param fs_name: The name of the opener, as extracted from the protocol
             part of the url.

@@ -9,7 +9,15 @@
 .. image:: https://pypip.in/v/xrootdpyfs/badge.svg
    :target: https://crate.io/packages/xrootdpyfs/
 
+
 XRootDPyFS is a PyFilesystem interface to XRootD.
+
+XRootD protocol aims at giving high performance, scalable fault tolerant access
+to data repositories of many kinds. The XRootDPyFS adds a high-level interface
+on top of the existing Python interface (pyxrootd) and makes it easy to e.g.
+copy a directory in parallel or recursively remove a directory.
+
+Further documentation is available on https://xrootdpyfs.readthedocs.io/.
 
 Getting started
 ===============
@@ -71,6 +79,24 @@ Writing files using the ``setcontents()`` method:
 
     >>> fs.setcontents("xrootdpyfs/test.txt", "World")
 
+Development
+===========
+
+The easiest way to develop is to build the Docker image and mount
+the source code as a volume to test any code modification with a
+running XRootD server:
+
+.. code-block:: console
+
+   $ docker build -t xrootd .
+   $ docker run -h xrootdpyfs -it -v <absolute path to this project>:/code xrootd bash
+   [xrootdpyfs@xrootdpyfs code]$ xrootd -b -l /dev/null
+
+If you want to test a specific version of xrootd, run:
+
+.. code-block:: console
+
+   $ docker build --build-arg xrootd_version=4.8.5 -t xrootd .
 
 Documentation
 =============

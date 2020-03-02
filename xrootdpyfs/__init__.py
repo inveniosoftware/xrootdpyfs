@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of xrootdpyfs
-# Copyright (C) 2015 CERN.
+# Copyright (C) 2015-2020 CERN.
 #
 # xrootdpyfs is free software; you can redistribute it and/or modify it under
 # the terms of the Revised BSD License; see LICENSE file for more details.
@@ -47,12 +47,17 @@ being Python 3 compatible.
 
 XRootD Python bindings
 ----------------------
-The XRootD Python bindings can be somewhat tricky to install if this is your
-first experience with XRootD. First you must install XRootD as usual, then the
-Python bindings. The Python bindings are installed using
-``python setup.py install`` and requires access to the xrootd headers and
-library. If these can't be found you need to set the ``XRD_LIBDIR`` and
-``XRD_INCDIR`` environment variables. See the OS X example below.
+In general, to install the XRootD Python bindings you will just
+``pip install xrootd``: this will download, compile and install the module.
+The required dependencies that have to be already pre-installed in your system
+are development tools such as compiler and OpenSSL libs.
+Unfortunately there is no clear documentation at the moment of what is exactly
+needed. You could check the `spec
+<https://github.com/xrootd/xrootd/blob/master/packaging/rhel/xrootd.spec.in>`_
+file if it can be of any help.
+
+To test the Python bindings, you can setup xrootd server in your machine.
+See the OS X example below.
 
 Cent OS 7/YUM based
 ~~~~~~~~~~~~~~~~~~~
@@ -62,12 +67,11 @@ Install XRootD + Python bindings using the official YUM repositories, e.g.:
 .. code-block:: console
 
    $ rpm -Uvh \
-     http://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-   $ yum install -y xrootd xrootd-server xrootd-client xrootd-client-devel \
-     xrootd-python
+     https://xrootd.slac.stanford.edu/binaries/xrootd-stable-slc7.repo
+   $ yum install -y xrootd
 
-See http://xrootd.org/dload.html to get the YUM repository addresses for other
-RedHat based distributions/versions.
+See https://xrootd.slac.stanford.edu/dload.html to get the YUM repository
+addresses for other RedHat based distributions/versions.
 
 Ubuntu
 ~~~~~~

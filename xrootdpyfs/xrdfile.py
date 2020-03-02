@@ -48,10 +48,10 @@ class XRootDPyFile(object):
        non-streamed reading/writing for XRootD.
 
     :param path: Path to file that should be opened.
-    :type path: string
+    :type path: str
     :param mode: Mode of file to open, identical to the mode string used
         in 'file' and 'open' builtins.
-    :type mode: string
+    :type mode: str
     :param buffering: An optional integer used to set the buffering policy.
         Pass 0 to switch buffering off (only allowed in binary mode),
         1 to select line buffering (only usable in text mode), and
@@ -165,8 +165,8 @@ class XRootDPyFile(object):
         """Exit context manager method."""
         self.close()
 
-    def next(self):
-        """Return next item for file iteration."""
+    def __next__(self):
+        """Return next item for file iteration for Python 3."""
         item = self._next_func(*self._next_args[0], **self._next_args[1])
         if not item:
             raise StopIteration

@@ -1,6 +1,10 @@
 Changes
 =======
 
+Version 0.2.0 (released 2020-05-25)
+
+- Adds Python 3 support.
+
 Version 0.1.6 (released 2019-08-01)
 
 - Fixes issue with reading all remaining data the last part of a

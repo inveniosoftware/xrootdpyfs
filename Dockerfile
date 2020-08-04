@@ -61,7 +61,7 @@ RUN XROOTD_V=`rpm --queryformat "%{VERSION}" -q xrootd` && \
 WORKDIR /code
 COPY . /code
 
-RUN pip3 install -e .
+RUN pip3 install -e '.[tests]'
 
 RUN chown -R xrootdpyfs:xrootdpyfs /code && chmod a+x /code/run-docker.sh && chmod a+x /code/run-tests.sh
 

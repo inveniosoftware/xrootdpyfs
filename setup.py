@@ -56,10 +56,15 @@ with open(os.path.join('xrootdpyfs', 'version.py'), 'rt') as f:
 tests_require = [
     'coverage>=4.0',
     'mock>=1.3.0',
+    'isort>=4.2,<5.0',
     'pytest-cov>=2.0.0',
     'pytest-pep8>=1.0.6',
     'pytest>=4.0.0,<5.0.0',
 ]
+
+extras_require = {
+    "tests": tests_require,
+}
 
 setup(
     name='xrootdpyfs',
@@ -73,6 +78,7 @@ setup(
     packages=['xrootdpyfs', ],
     zip_safe=False,
     platforms='any',
+    extras_require=extras_require,
     tests_require=tests_require,
     install_requires=[
         'fs>=0.5.4,<2.0',  # latest release is 0.5.4

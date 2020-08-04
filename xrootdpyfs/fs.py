@@ -724,9 +724,8 @@ class XRootDPyFS(FS):
             raise ResourceInvalidError("Path is not a file: %s" % path)
 
         value = self._query(QueryCode.CHECKSUM, self._p(path), parse=False)
+        value = value.decode('ascii').rstrip('\x00')
         algorithm, value = value.strip().split(" ")
-        if value[-1] == "\x00":
-            value = value[:-1]
         return (algorithm, value)
 
     def xrd_ping(self):

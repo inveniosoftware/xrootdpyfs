@@ -456,7 +456,7 @@ def test_checksum(tmppath):
         "shellcode": 0
     }
     fs.xrd_client.query = Mock(
-        return_value=(XRootDStatus(fake_status), 'adler32 3836a69a\x00'))
+        return_value=(XRootDStatus(fake_status), b'adler32 3836a69a\x00'))
     algo, val = fs.xrd_checksum("data/testa.txt")
     assert algo == 'adler32' and val == "3836a69a"
 

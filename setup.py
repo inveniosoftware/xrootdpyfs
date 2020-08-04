@@ -76,7 +76,7 @@ setup(
     tests_require=tests_require,
     install_requires=[
         'fs>=0.5.4,<2.0',  # latest release is 0.5.4
-        'xrootd',
+        'xrootd<5.0.0',
     ],
     cmdclass={'test': PyTest},
     classifiers=[

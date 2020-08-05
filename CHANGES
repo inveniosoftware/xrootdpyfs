@@ -1,6 +1,11 @@
 Changes
 =======
 
+Version 0.2.1 (released 2020-08-05)
+
+- Fixes a Python 3 compatibility issue in xrd_checksum().
+- Pins XRootD version <5 due to compatibility issues with v5+.
+
 Version 0.2.0 (released 2020-05-25)
 
 - Adds Python 3 support.

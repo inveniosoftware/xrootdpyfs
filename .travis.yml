@@ -20,12 +20,15 @@ services:
 matrix:
   fast_finish: true
   allow_failures:
+    - env: XROOTD_VERSION=4.12.3  # failing because of a pyxrootd bug with pip version
     - env: XROOTD_VERSION=''
 
 env:
   - XROOTD_VERSION=4.8.5
   - XROOTD_VERSION=4.9.1
-  - XROOTD_VERSION=4.11.2
+  - XROOTD_VERSION=4.11.3
+  - XROOTD_VERSION=4.12.2
+  - XROOTD_VERSION=4.12.3
   - XROOTD_VERSION=''
 
 cache:

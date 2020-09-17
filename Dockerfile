@@ -24,7 +24,8 @@ RUN yum --setopt=obsoletes=0 install -y git \
                                         python3-pip \
                                         python3-devel
 
-# Install xrootd server, specific version or latest
+# Install xrootd, specific version or latest and dependencies
+# cmake needed for xrootd<5.x, cmake3 for xrootd>=5.x
 RUN yum-config-manager --add-repo https://xrootd.slac.stanford.edu/binaries/xrootd-stable-slc7.repo
 RUN if [ ! -z "$xrootd_version" ] ; then XROOTD_V="-$xrootd_version" ; else XROOTD_V="" ; fi && \
     echo "Will install xrootd version: $XROOTD_V (latest if empty)" && \

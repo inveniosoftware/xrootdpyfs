@@ -22,14 +22,15 @@ RUN yum --setopt=obsoletes=0 install -y git \
                                         wget \
                                         python3 \
                                         python3-pip \
-                                        python3-devel
+                                        python3-devel \
+                                        which
 
 # Install xrootd, specific version or latest and dependencies
 # cmake needed for xrootd<5.x, cmake3 for xrootd>=5.x
 RUN yum-config-manager --add-repo https://xrootd.slac.stanford.edu/binaries/xrootd-stable-slc7.repo
 RUN if [ ! -z "$xrootd_version" ] ; then XROOTD_V="-$xrootd_version" ; else XROOTD_V="" ; fi && \
     echo "Will install xrootd version: $XROOTD_V (latest if empty)" && \
-    yum --setopt=obsoletes=0 install -y cmake \
+    yum --setopt=obsoletes=0 install -y cmake3 \
                                         gcc-c++ \
                                         zlib-devel \
                                         openssl-devel \
@@ -39,7 +40,7 @@ RUN adduser --uid 1001 xrootdpyfs
 
 # Install some prerequisites ahead of `setup.py` in order to take advantage of
 # the docker build cache:
-RUN pip3 install --upgrade pip setuptools
+RUN pip3 install --upgrade pip setuptools wheel
 RUN pip3 install ipython \
                  pydocstyle \
                  coverage \
@@ -48,7 +49,6 @@ RUN pip3 install ipython \
                  pytest-cov \
                  isort \
                  mock \
-                 wheel \
                  Sphinx
 
 # Install Python xrootd and fs
@@ -56,7 +56,18 @@ RUN pip3 install ipython \
 RUN rpm --queryformat "%{VERSION}" -q xrootd
 RUN XROOTD_V=`rpm --queryformat "%{VERSION}" -q xrootd` && \
     echo "RPM xrootd version installed: $XROOTD_V" && \
-    pip3 install xrootd=="$XROOTD_V" "fs<2.0"
+    pip3 install "fs<2.0"
+
+RUN git clone https://github.com/xrootd/xrootd.git xrootd-latest && \
+    ls . && \
+    cd xrootd-latest && \
+    ls . && \
+    git checkout bb58fd65a && \
+    cp packaging/wheel/* . && \
+    ls . && \
+    ./genversion.sh && \
+    python3 setup.py sdist  && \
+    pip3 install dist/*
 
 # Add sources to `code` and work there:
 WORKDIR /code

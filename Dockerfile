@@ -29,7 +29,7 @@ RUN yum --setopt=obsoletes=0 install -y git \
 RUN yum-config-manager --add-repo https://xrootd.slac.stanford.edu/binaries/xrootd-stable-slc7.repo
 RUN if [ ! -z "$xrootd_version" ] ; then XROOTD_V="-$xrootd_version" ; else XROOTD_V="" ; fi && \
     echo "Will install xrootd version: $XROOTD_V (latest if empty)" && \
-    yum --setopt=obsoletes=0 install -y cmake \
+    yum --setopt=obsoletes=0 install -y cmake3 \
                                         gcc-c++ \
                                         zlib-devel \
                                         openssl-devel \

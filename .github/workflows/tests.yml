@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: master
+  pull_request:
+    branches: master
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    - cron:  '0 3 * * 6'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason'
+        required: false
+        default: 'Manual trigger'
+
+jobs:
+  Tests:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+          xrootd-version: [4.8.5, 4.9.1, 4.11.3, 4.12.2, 4.12.3]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build Docker image
+        run: |
+          docker build -t xrootd --build-arg xrootd_version=${{ matrix.xrootd-version }} .
+
+      - name: Run tests
+        run: |
+          docker run -h xrootdpyfs -t xrootd

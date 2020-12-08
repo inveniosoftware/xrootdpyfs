@@ -54,12 +54,8 @@ with open(os.path.join('xrootdpyfs', 'version.py'), 'rt') as f:
     ).group('version')
 
 tests_require = [
-    'coverage>=4.0',
-    'mock>=1.3.0',
-    'isort>=4.2,<5.0',
-    'pytest-cov>=2.0.0',
-    'pytest-pep8>=1.0.6',
-    'pytest>=4.0.0,<5.0.0',
+    "mock>=1.3.0",
+    "pytest-invenio>=1.4.0"
 ]
 
 extras_require = {

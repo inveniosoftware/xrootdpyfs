@@ -2,8 +2,8 @@
  XRootDPyFS
 ============
 
-.. image:: https://travis-ci.org/inveniosoftware/xrootdpyfs.svg?branch=master
-    :target: https://travis-ci.org/inveniosoftware/xrootdpyfs
+.. image:: https://github.com/inveniosoftware/xrootdpyfs/actions?query=workflow%3ACI.svg?branch=master
+    :target: https://github.com/inveniosoftware/xrootdpyfs/actions?query=workflow%3ACI
 .. image:: https://coveralls.io/repos/inveniosoftware/xrootdpyfs/badge.svg?branch=master
     :target: https://coveralls.io/r/inveniosoftware/xrootdpyfs
 .. image:: https://pypip.in/v/xrootdpyfs/badge.svg

@@ -172,6 +172,10 @@ class XRootDPyFile(object):
             raise StopIteration
         return item
 
+    def __len__(self):
+        """Return length of the file."""
+        return self.size
+
     def read(self, sizehint=-1):
         """Read ``sizehint`` bytes from the file object.
 

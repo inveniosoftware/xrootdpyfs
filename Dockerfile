@@ -39,7 +39,7 @@ RUN adduser --uid 1001 xrootdpyfs
 
 # Install some prerequisites ahead of `setup.py` in order to take advantage of
 # the docker build cache:
-RUN pip3 install --upgrade pip setuptools
+RUN pip3 install --upgrade pip "setuptools<58"
 RUN pip3 install ipython \
                  pydocstyle \
                  coverage \

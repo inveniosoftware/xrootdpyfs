@@ -37,10 +37,16 @@ RUN if [ ! -z "$xrootd_version" ] ; then XROOTD_V="-$xrootd_version" ; else XROO
                                         xrootd"$XROOTD_V"
 RUN adduser --uid 1001 xrootdpyfs
 
+RUN ln -fs /usr/bin/python3 /usr/bin/python
+RUN ln -fs /usr/bin/pip3 /usr/bin/pip
+
+RUN pip --version
+RUN python --version
+
 # Install some prerequisites ahead of `setup.py` in order to take advantage of
 # the docker build cache:
-RUN pip3 install --upgrade pip setuptools
-RUN pip3 install ipython \
+RUN pip install --upgrade pip "setuptools<58"
+RUN pip install ipython \
                  pydocstyle \
                  coverage \
                  pytest \
@@ -62,7 +68,7 @@ RUN XROOTD_V=`rpm --queryformat "%{VERSION}" -q xrootd` && \
 WORKDIR /code
 COPY . /code
 
-RUN pip3 install -e '.[tests]'
+RUN pip install -e '.[tests]'
 
 RUN chown -R xrootdpyfs:xrootdpyfs /code && chmod a+x /code/run-docker.sh && chmod a+x /code/run-tests.sh
 

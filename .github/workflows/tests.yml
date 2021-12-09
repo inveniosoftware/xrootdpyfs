@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-          xrootd-version: [4.8.5, 4.9.1, 4.11.3, 4.12.2, 4.12.3]
+          xrootd-version: [4.8.5, 4.9.1, 4.11.3, 4.12.2]
 
     steps:
       - name: Checkout

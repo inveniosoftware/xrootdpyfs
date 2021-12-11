@@ -24,7 +24,7 @@ copy a directory in parallel or recursively remove a directory.
        shutil.rmtree("/tmp/xrootdpyfs")
    os.makedirs("/tmp/xrootdpyfs")
    f = open("/tmp/xrootdpyfs/test.txt", "w")
-   f.write("Welcome to xrootdpyfs!")
+   f.write("Hello XRootD!\n")
    f.close()
 
 .. testcleanup::
@@ -154,19 +154,19 @@ opener is registered):
     >>> from fs.opener import opener
     >>> fs, path = opener.parse("root://localhost//tmp/")
     >>> fs.listdir("xrootdpyfs")
-    [u'test.txt']
+    ['test.txt']
 
 Reading files:
 
     >>> f = fs.open("xrootdpyfs/test.txt")
     >>> f.read()
-    'Welcome to xrootdpyfs!'
+    b'Hello XRootD!\n'
     >>> f.close()
 
 Reading files using the ``getcontents()`` method:
 
     >>> fs.getcontents("xrootdpyfs/test.txt")
-    'Welcome to xrootdpyfs!'
+    b'Hello XRootD!\n'
 
 Writing files:
 

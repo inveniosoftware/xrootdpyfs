@@ -192,10 +192,10 @@ class XRootDPyFile(object):
         chunksize = sizehint if sizehint > 0 else self.size - self._ipp
 
         if chunksize >= 2147483648:  # 2GB in bytes
-                raise IOError(
-                    "Chunksize is set to %s which is more than 2GB."
-                    "This is not supported!" % chunksize
-                )
+            raise IOError(
+                "Chunksize is set to %s which is more than 2GB."
+                "This is not supported!" % chunksize
+            )
         elif chunksize < 0:
             chunksize = 1
 

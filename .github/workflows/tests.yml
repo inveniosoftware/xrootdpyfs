@@ -20,16 +20,27 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-          xrootd-version: [4.8.5, 4.9.1, 4.11.3, 4.12.2]
+        include:
+          - xrootd-version: 4.8.5
+            cmake: cmake3
+          - xrootd-version: 4.9.1
+            cmake: cmake3
+          - xrootd-version: 4.11.3
+            cmake: cmake
+          - xrootd-version: 4.12.2
+            cmake: cmake
+          - xrootd-version: 4.12.7
+            cmake: cmake3
 
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
       - name: Build Docker image
-        run: |
-          docker build -t xrootd --build-arg xrootd_version=${{ matrix.xrootd-version }} .
+        run: docker build -t xrootd --build-arg xrootd_version=$XROOTD_VERSION --build-arg cmake=$CMAKE --progress=plain .
+        env:
+          XROOTD_VERSION: ${{ matrix.xrootd-version }}
+          CMAKE: ${{ matrix.cmake }}
 
       - name: Run tests
-        run: |
-          docker run -h xrootdpyfs -t xrootd
+        run: docker run -h xrootdpyfs -t xrootd

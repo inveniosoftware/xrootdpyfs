@@ -21,12 +21,13 @@ import pstats
 import shutil
 import tempfile
 import time
-from io import StringIO ## for Python 3
+from io import StringIO
 from os.path import join
+
 from fs.opener import opener
 from XRootD import client
-from xrootdpyfs import XRootDPyOpener  # no-qa
 
+from xrootdpyfs import XRootDPyOpener  # no-qa
 
 
 def teardown(tmppath):
@@ -119,6 +120,7 @@ def main():
         profile_end(pr)
     finally:
         teardown(tmppath)
+
 
 if __name__ == "__main__":
     main()

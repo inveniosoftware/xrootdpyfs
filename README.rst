@@ -55,19 +55,19 @@ Or, alternatively using the PyFilesystem opener (note the first
     >>> from fs.opener import opener
     >>> fs, path = opener.parse("root://localhost//tmp/")
     >>> fs.listdir("xrootdpyfs")
-    [u'test.txt']
+    ['test.txt']
 
 Reading files:
 
     >>> f = fs.open("xrootdpyfs/test.txt")
     >>> f.read()
-    'Welcome to xrootdpyfs!'
+    b'Hello XRootD!\n'
     >>> f.close()
 
 Reading files using the ``getcontents()`` method:
 
     >>> fs.getcontents("xrootdpyfs/test.txt")
-    'Welcome to xrootdpyfs!'
+    b'Hello XRootD!\n'
 
 Writing files:
 
@@ -88,7 +88,7 @@ running XRootD server:
 
 .. code-block:: console
 
-   $ docker build -t xrootd .
+   $ docker build -t xrootd --progress=plain .
    $ docker run -h xrootdpyfs -it -v <absolute path to this project>:/code xrootd bash
    [xrootdpyfs@xrootdpyfs code]$ xrootd -b -l /dev/null
 
@@ -96,7 +96,7 @@ If you want to test a specific version of xrootd, run:
 
 .. code-block:: console
 
-   $ docker build --build-arg xrootd_version=4.8.5 -t xrootd .
+   $ docker build --build-arg xrootd_version=4.8.5 -t xrootd --progress=plain .
 
 Documentation
 =============

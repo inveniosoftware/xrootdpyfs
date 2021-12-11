@@ -24,6 +24,7 @@ from fs.errors import BackReferenceError, DestinationExistsError, \
     UnsupportedError
 from mock import Mock
 from XRootD.client.responses import XRootDStatus
+
 from xrootdpyfs import XRootDPyFile, XRootDPyFS
 from xrootdpyfs.utils import spliturl
 

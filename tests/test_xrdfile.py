@@ -25,6 +25,7 @@ from fs.errors import InvalidPathError, PathError, ResourceNotFoundError, \
 from fs.opener import fsopendir, opener
 from mock import Mock
 from XRootD.client.responses import XRootDStatus
+
 from xrootdpyfs import XRootDPyFile
 from xrootdpyfs.utils import is_valid_path, is_valid_url
 
@@ -56,14 +57,14 @@ def test_init_writemode_basic(tmppath):
     fn, fp, fc = 'nope', 'data/', ''
     full_path = join(tmppath, fp, fn)
     xfile = XRootDPyFile(mkurl(full_path), mode='w+')
-    assert xfile
+    assert xfile is not None
     assert xfile.read() == fc.encode()
 
     # Existing file is truncated
     fd = get_tsta_file(tmppath)
     full_path = fd['full_path']
     xfile = XRootDPyFile(mkurl(full_path), mode='w+')
-    assert xfile
+    assert xfile is not None
     assert xfile.read() == b''
     assert xfile.size == 0
     assert xfile.tell() == 0
@@ -206,23 +207,26 @@ def test__is_open(tmppath):
     assert xfile.closed
 
 
-def test_size(tmppath):
-    """Tests for the size property size."""
+def test_size_len(tmppath):
+    """Tests for the size and len property."""
     fd = get_tsta_file(tmppath)
     full_path, fc = fd['full_path'], fd['contents']
     xfile = XRootDPyFile(mkurl(full_path))
 
     assert xfile.size == len(fc)
+    assert len(xfile) == len(fc)
 
     # Length of empty file
     xfile = XRootDPyFile(mkurl(join(tmppath, fd['dir'], 'whut')), 'w+')
     assert xfile.size == len('')
+    assert len(xfile) == len('')
 
     # Length of multiline file
     fd = get_mltl_file(tmppath)
     fpp, fc = fd['full_path'], fd['contents']
     xfile = XRootDPyFile(mkurl(fpp))
     assert xfile.size == len(fc)
+    assert len(xfile) == len(fc)
 
     # Mock the error
     fake_status = {
@@ -240,6 +244,12 @@ def test_size(tmppath):
     xfile._file.stat = Mock(return_value=(XRootDStatus(fake_status), None))
     try:
         xfile.size
+        assert False
+    except IOError:
+        assert True
+
+    try:
+        len(xfile)
         assert False
     except IOError:
         assert True

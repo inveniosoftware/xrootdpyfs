@@ -12,6 +12,7 @@ from __future__ import absolute_import, print_function
 
 from conftest import mkurl
 from fs.opener import opener
+
 from xrootdpyfs.opener import XRootDPyOpener  # no-qa
 
 

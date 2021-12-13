@@ -1,6 +1,13 @@
 Changes
 =======
 
+Version 0.2.2 (released 2021-12-13)
+
+- Supports `xrootd@4.12.7`
+- Adds GH publish flow
+- Fixes tests with python 3
+- Adds `__len__` method in `XRootDPyFile`
+
 Version 0.2.1 (released 2020-08-05)
 
 - Fixes a Python 3 compatibility issue in xrd_checksum().

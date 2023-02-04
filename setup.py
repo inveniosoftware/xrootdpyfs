@@ -10,41 +10,9 @@
 
 import os
 import re
-import sys
 
 from setuptools import setup
-from setuptools.command.test import test as TestCommand
 
-
-class PyTest(TestCommand):
-
-    """Integration of PyTest with setuptools."""
-
-    user_options = [('pytest-args=', 'a', 'Arguments to pass to py.test')]
-
-    def initialize_options(self):
-        """Initialize options."""
-        TestCommand.initialize_options(self)
-        try:
-            from ConfigParser import ConfigParser
-        except ImportError:
-            from configparser import ConfigParser
-        config = ConfigParser()
-        config.read("pytest.ini")
-        self.pytest_args = config.get("pytest", "addopts").split(" ")
-
-    def finalize_options(self):
-        """Finalize options."""
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        """Run tests."""
-        # import here, cause outside the eggs aren't loaded
-        import pytest
-        errno = pytest.main(self.pytest_args)
-        sys.exit(errno)
 
 # Get the version string.  Cannot be done with import!
 with open(os.path.join('xrootdpyfs', 'version.py'), 'rt') as f:
@@ -78,10 +46,14 @@ setup(
     extras_require=extras_require,
     tests_require=tests_require,
     install_requires=[
-        'fs>=0.5.4,<2.0',  # latest release is 0.5.4
-        'xrootd>=4.8.4, <5.0.0',
+        "fs>=2.0.10,<3.0"
+        'xrootd>=5.0,<6.0',
     ],
-    cmdclass={'test': PyTest},
+    entry_points={
+        'fs.opener': [
+            'xrootd = xrootdpyfs.opener:XRootDPyOpener',
+        ]
+    },
     classifiers=[
         'Programming Language :: Python :: 3',
         'Development Status :: 5 - Production/Stable',

@@ -9,59 +9,45 @@
 # Usage:
 #   docker build -t xrootd . && docker run -h xrootdpyfs -it xrootd
 
-FROM centos:7
+FROM registry.cern.ch/inveniosoftware/almalinux:1
 
 # Argument to install a specifc version of xrootd
 ARG xrootd_version=""
-ARG cmake="cmake3"
 
-RUN yum install -y git wget epel-release
-RUN yum group install -y "Development Tools"
+# Install xrootd dependencies: https://xrootd-howto.readthedocs.io/en/latest/Compile/
+RUN dnf install -y expect policycoreutils selinux-policy
+RUN dnf install -y libcurl-devel libmacaroons libmacaroons-devel json-c json-c-devel uuid libuuid-devel readline-devel
+RUN dnf install -y davix-libs davix-devel voms voms-devel
+RUN dnf install -y cmake3 make gcc gcc-c++
+RUN dnf install -y autoconf automake libtool libasan
 
-# Install and set python3.6 as default
-RUN yum install -y centos-release-scl && \
-    yum install -y rh-python36
-RUN echo '#!/bin/bash' >> /etc/profile.d/enablepython36.sh && \
-    echo '. scl_source enable rh-python36' >> /etc/profile.d/enablepython36.sh
-ENV BASH_ENV=/etc/profile.d/enablepython36.sh
-
-RUN chmod -R g=u /etc/profile.d/enablepython36.sh /opt/rh/rh-python36 && \
-    chgrp -R 0 /etc/profile.d/enablepython36.sh /opt/rh/rh-python36
-SHELL ["/bin/bash", "-c"]
-
-# Install xrootd, specific version or latest and dependencies
-# cmake needed for xrootd<5.x, cmake3 for xrootd>=4.12.7
-RUN yum-config-manager --add-repo https://xrootd.slac.stanford.edu/binaries/xrootd-stable-slc7.repo
+# Install xrootd, specific version or latest
 RUN if [ ! -z "$xrootd_version" ] ; then XROOTD_V="-$xrootd_version" ; else XROOTD_V="" ; fi && \
     echo "Will install xrootd version: $XROOTD_V (latest if empty)" && \
-    yum --setopt=obsoletes=0 install -y "$cmake" \
-                                        gcc-c++ \
-                                        zlib-devel \
-                                        openssl-devel \
-                                        libuuid-devel \
-                                        python3-devel \
-                                        xrootd"$XROOTD_V"
+    dnf install -y xrootd"$XROOTD_V"
+
 RUN adduser --uid 1001 xrootdpyfs
 
-# Install some prerequisites ahead of `setup.py` in order to take advantage of
-# the docker build cache:
-RUN pip install --upgrade pip "setuptools<58" wheel
-
-# Install Python xrootd and fs
+# Install Python xrootd
 # Ensure that installed version of xrootd Python client is the same as the RPM package
 RUN rpm --queryformat "%{VERSION}" -q xrootd
 RUN XROOTD_V=`rpm --queryformat "%{VERSION}" -q xrootd` && \
     echo "RPM xrootd version installed: $XROOTD_V" && \
-    pip install xrootd=="$XROOTD_V" "fs<2.0"
+    pip3 install xrootd=="$XROOTD_V"
 
 # Add sources to `code` and work there:
 WORKDIR /code
 COPY . /code
 
-RUN pip install -e '.[docs,tests]'
-RUN pip freeze
+# FIXME REMOVE ME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+RUN pip3 install ipdb
 
-RUN chown -R xrootdpyfs:xrootdpyfs /code && chmod a+x /code/run-docker.sh && chmod a+x /code/run-tests.sh
+RUN pip3 install -e '.[docs,tests]'
+RUN pip3 freeze
+
+RUN chown -R xrootdpyfs:xrootdpyfs /code && \
+    chmod a+x /code/run-docker.sh && \
+    chmod a+x /code/run-tests.sh
 
 USER xrootdpyfs
 

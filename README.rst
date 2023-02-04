@@ -24,16 +24,26 @@ Getting started
 
 If you just want to try out the library, the easiest is to use Docker.
 
+Build the image:
+
 .. code-block:: console
 
    $ docker build -t xrootd .
-   $ docker run -h xrootdpyfs -it xrootd bash
 
-Next, start a XRootD server in the container and fire up an ipython shell:
+
+Run the container and launch `xrootd`:
+
+   $ docker run -h xrootdpyfs -it xrootd bash
+   [xrootdpyfs@xrootdpyfs code]$ xrootd
+
+
+You will the logs in the stdout. Next, in another shell, connect the container
+and fire up an ipython shell:
 
 .. code-block:: console
 
-   [xrootdpyfs@xrootdpyfs code]$ xrootd -b -l /dev/null
+   $ docker ps  # find the container id
+   $ docker exec -it <container-id> bash
    [xrootdpyfs@xrootdpyfs code]$ ipython
 
 
@@ -52,7 +62,7 @@ Or, alternatively using the PyFilesystem opener (note the first
 ``import xrootdpyfs`` is required to ensure the XRootDPyFS opener is registered):
 
     >>> import xrootdpyfs
-    >>> from fs.opener import opener
+    >>> from fs.opener import registry as opener
     >>> fs, path = opener.parse("root://localhost//tmp/")
     >>> fs.listdir("xrootdpyfs")
     ['test.txt']
@@ -90,7 +100,15 @@ running XRootD server:
 
    $ docker build -t xrootd --progress=plain .
    $ docker run -h xrootdpyfs -it -v <absolute path to this project>:/code xrootd bash
-   [xrootdpyfs@xrootdpyfs code]$ xrootd -b -l /dev/null
+   [xrootdpyfs@xrootdpyfs code]$ xrootd
+
+In another shell:
+
+.. code-block:: console
+
+   $ docker ps  # find the container id
+   $ docker exec -it <container-id> bash
+   [xrootdpyfs@xrootdpyfs code]$ python -m pytest -vvv tests
 
 If you want to test a specific version of xrootd, run:
 

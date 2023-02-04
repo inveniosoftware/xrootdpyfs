@@ -26,8 +26,10 @@ def tmppath(request):
     path = tempfile.mkdtemp()
     shutil.copytree(join(dirname(__file__), "data"), join(path, "data"))
 
-    def cleanup():
-        shutil.rmtree(path)
+    # def cleanup():
+    #     shutil.rmtree(path)
 
-    request.addfinalizer(cleanup)
+    # request.addfinalizer(cleanup)
+    print(100*"*")
+    print(path)
     return path

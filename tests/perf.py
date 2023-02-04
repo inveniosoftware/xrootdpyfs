@@ -24,7 +24,7 @@ import time
 from io import StringIO
 from os.path import join
 
-from fs.opener import opener
+from fs.opener import registry as opener
 from XRootD import client
 
 from xrootdpyfs import XRootDPyOpener  # no-qa

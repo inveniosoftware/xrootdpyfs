@@ -151,7 +151,7 @@ Or, alternatively using the PyFilesystem opener (note the first
 opener is registered):
 
     >>> import xrootdpyfs
-    >>> from fs.opener import opener
+    >>> from fs.opener import registry as opener
     >>> fs, path = opener.parse("root://localhost//tmp/")
     >>> fs.listdir("xrootdpyfs")
     ['test.txt']

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of xrootdpyfs
-# Copyright (C) 2015 CERN.
+# Copyright (C) 2015-2023 CERN.
 #
 # xrootdpyfs is free software; you can redistribute it and/or modify it under
 # the terms of the Revised BSD License; see LICENSE file for more details.
@@ -24,10 +24,8 @@ import time
 from io import StringIO
 from os.path import join
 
-from fs.opener import opener
+from fs.opener import open_fs
 from XRootD import client
-
-from xrootdpyfs import XRootDPyOpener  # no-qa
 
 
 def teardown(tmppath):
@@ -37,26 +35,29 @@ def teardown(tmppath):
 
 def setup():
     """Setup test files for performance test."""
+    filename = "testfile"
     tmppath = tempfile.mkdtemp()
-    filepath = join(tmppath, "testfile")
+    filepath = join(tmppath, filename)
 
     # Create test file with random data
     os.system("dd bs=1024 count={1} </dev/urandom >{0}".format(
         filepath, 1024*10))
 
-    return tmppath, filepath
+    return filename, tmppath, filepath
 
 
 #
 # Test methods
 #
-def read_pyfs_chunks(url, chunksize=2097152, n=100):
+def read_pyfs_chunks(url, filename, mode="rb", chunksize=2097152, n=100):
     """Read a file in chunks."""
     t1 = time.time()
 
+    fs = open_fs(url)
+    assert fs.exists(filename)
     i = 0
     while i < n:
-        fsfile = opener.open(url, 'rb-')
+        fsfile = fs.open(filename, mode)
         while True:
             data = fsfile.read(chunksize)
             if not data:
@@ -96,7 +97,7 @@ def profile_start():
 def profile_end(pr):
     """Write profile output."""
     pr.disable()
-    s = StringIO.StringIO()
+    s = StringIO()
     sortby = 'tottime'
     ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
     ps.print_stats()
@@ -105,18 +106,17 @@ def profile_end(pr):
 
 def main():
     """Main entry point."""
-    tmppath, testfilepath = setup()
+    filename, tmppath, testfilepath = setup()
 
     try:
         n = 10
         rooturl = 'root://localhost/{0}'.format(testfilepath)
-        osurl = testfilepath
 
-        print("osfs:", osurl, read_pyfs_chunks(osurl, n=n))
+        print("osfs:", testfilepath, read_pyfs_chunks(tmppath, filename, n=n))
         print("pyxrootd:", rooturl, read_pyxrootd_chunks(rooturl, n=n))
 
         pr = profile_start()
-        print("xrootdpyfs:", rooturl, read_pyfs_chunks(rooturl, n=n))
+        print("xrootdpyfs:", rooturl, read_pyfs_chunks(rooturl, filename, mode="rb-", n=n))
         profile_end(pr)
     finally:
         teardown(tmppath)

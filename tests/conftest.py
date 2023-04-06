@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of xrootdpyfs
-# Copyright (C) 2015 CERN.
+# Copyright (C) 2015-2023 CERN.
 #
 # xrootdpyfs is free software; you can redistribute it and/or modify it under
 # the terms of the Revised BSD License; see LICENSE file for more details.
@@ -25,9 +25,4 @@ def tmppath(request):
     """Fixture data for XrootDPyFS."""
     path = tempfile.mkdtemp()
     shutil.copytree(join(dirname(__file__), "data"), join(path, "data"))
-
-    def cleanup():
-        shutil.rmtree(path)
-
-    request.addfinalizer(cleanup)
     return path

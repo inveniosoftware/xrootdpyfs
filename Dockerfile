@@ -11,10 +11,6 @@
 
 FROM centos:7
 
-# Argument to install a specifc version of xrootd
-ARG xrootd_version=""
-ARG cmake="cmake3"
-
 RUN yum install -y git wget epel-release
 RUN yum group install -y "Development Tools"
 
@@ -29,8 +25,14 @@ RUN chmod -R g=u /etc/profile.d/enablepython36.sh /opt/rh/rh-python36 && \
     chgrp -R 0 /etc/profile.d/enablepython36.sh /opt/rh/rh-python36
 SHELL ["/bin/bash", "-c"]
 
-# Install xrootd, specific version or latest and dependencies
+RUN yum-config-manager --enable rhel-server-rhscl-7-rpms
+RUN yum install -y devtoolset-7
+RUN scl enable devtoolset-7 bash
+
+# Install xrootd
 # cmake needed for xrootd<5.x, cmake3 for xrootd>=4.12.7
+ARG xrootd_version=""
+ARG cmake="cmake3"
 RUN yum-config-manager --add-repo https://xrootd.slac.stanford.edu/binaries/xrootd-stable-slc7.repo
 RUN if [ ! -z "$xrootd_version" ] ; then XROOTD_V="-$xrootd_version" ; else XROOTD_V="" ; fi && \
     echo "Will install xrootd version: $XROOTD_V (latest if empty)" && \
@@ -38,13 +40,10 @@ RUN if [ ! -z "$xrootd_version" ] ; then XROOTD_V="-$xrootd_version" ; else XROO
                                         gcc-c++ \
                                         zlib-devel \
                                         openssl-devel \
-                                        libuuid-devel \
+                                        libuuid-devel \ \
                                         python3-devel \
                                         xrootd"$XROOTD_V"
-RUN adduser --uid 1001 xrootdpyfs
 
-# Install some prerequisites ahead of `setup.py` in order to take advantage of
-# the docker build cache:
 RUN pip install --upgrade pip "setuptools<58" wheel
 
 # Install Python xrootd and fs
@@ -52,16 +51,18 @@ RUN pip install --upgrade pip "setuptools<58" wheel
 RUN rpm --queryformat "%{VERSION}" -q xrootd
 RUN XROOTD_V=`rpm --queryformat "%{VERSION}" -q xrootd` && \
     echo "RPM xrootd version installed: $XROOTD_V" && \
-    pip install xrootd=="$XROOTD_V" "fs<2.0"
+    pip install xrootd=="$XROOTD_V"
 
-# Add sources to `code` and work there:
 WORKDIR /code
 COPY . /code
 
 RUN pip install -e '.[docs,tests]'
 RUN pip freeze
 
-RUN chown -R xrootdpyfs:xrootdpyfs /code && chmod a+x /code/run-docker.sh && chmod a+x /code/run-tests.sh
+RUN adduser --uid 1001 xrootdpyfs
+RUN chown -R xrootdpyfs:xrootdpyfs /code
+RUN chmod a+x /code/run-docker.sh
+RUN chmod a+x /code/run-tests.sh
 
 USER xrootdpyfs
 

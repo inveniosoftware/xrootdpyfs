@@ -16,12 +16,14 @@ from datetime import datetime
 from functools import wraps
 from os.path import exists, join
 
+from fs import ResourceType
+
 import pytest
 from conftest import mkurl
-from fs.errors import BackReferenceError, DestinationExistsError, \
-    DirectoryNotEmptyError, FSError, InvalidPathError, RemoteConnectionError, \
-    ResourceError, ResourceInvalidError, ResourceNotFoundError, \
-    UnsupportedError
+from fs.errors import IllegalBackReference, DestinationExists, \
+    DirectoryNotEmpty, FSError, InvalidPath, RemoteConnectionError, \
+    ResourceError, ResourceInvalid, ResourceNotFound, \
+    Unsupported
 from mock import Mock
 from XRootD.client.responses import XRootDStatus
 
@@ -39,8 +41,8 @@ def test_init(tmppath):
     XRootDPyFS("root://user:pw@eosuser.cern.ch//")
     XRootDPyFS("root://eosuser.cern.ch//")
     XRootDPyFS("root://eosuser.cern.ch//")
-    pytest.raises(InvalidPathError, XRootDPyFS, "http://localhost")
-    pytest.raises(InvalidPathError, XRootDPyFS,
+    pytest.raises(InvalidPath, XRootDPyFS, "http://localhost")
+    pytest.raises(InvalidPath, XRootDPyFS,
                   "root://eosuser.cern.ch//lhc//")
 
     rooturl = mkurl(tmppath)
@@ -79,11 +81,14 @@ def test_p():
     fs = XRootDPyFS("root://eosuser.cern.ch//eos/user/")
     assert fs._p("./") == "//eos/user"
     assert fs._p("l") == "//eos/user/l"
-    assert fs._p("/eos") == "//eos"
+    assert fs._p("/eos/user") == "//eos/user"
+    assert fs._p("//eos/user") == "//eos/user"
+    assert fs._p("/eos/user/folder") == "//eos/user/folder"
+    assert fs._p("//eos/user/folder") == "//eos/user/folder"
     assert fs._p("../") == "//eos"
     assert fs._p("../project/test") == "//eos/project/test"
     assert fs._p("../project/../test") == "//eos/test"
-    pytest.raises(BackReferenceError, fs._p, "../../../test")
+    pytest.raises(IllegalBackReference, fs._p, "../../../test")
 
 
 def test_query_error(tmppath):
@@ -131,7 +136,7 @@ def test_listdir(tmppath):
         "afolder", absolute=True)
     assert '/' + tmppath + "/data/afolder/afile.txt" in dirs
 
-    # abosolute/full conflicts - full wins.
+    # absolute/full conflicts - full wins.
     dirs = XRootDPyFS(rooturl + "/data").listdir(
         "afolder", absolute=True, full=True)
     assert "afolder/afile.txt" in dirs
@@ -146,7 +151,7 @@ def test_listdir(tmppath):
         "data", files_only=True, dirs_only=True
     )
 
-    pytest.raises(ResourceNotFoundError, XRootDPyFS(rooturl).listdir,
+    pytest.raises(ResourceNotFound, XRootDPyFS(rooturl).listdir,
                   "invalid")
 
 
@@ -185,14 +190,14 @@ def test_makedir(tmppath):
     assert exists(join(tmppath, "somedir"))
 
     # if the path is already a directory, and allow_recreate is False
-    assert pytest.raises(DestinationExistsError, XRootDPyFS(rooturl).makedir,
+    assert pytest.raises(DestinationExists, XRootDPyFS(rooturl).makedir,
                          "data")
 
     # allow_recreate
     assert XRootDPyFS(rooturl).makedir("data", allow_recreate=True)
 
     # if a containing directory is missing and recursive is False
-    assert pytest.raises(ResourceNotFoundError,
+    assert pytest.raises(ResourceNotFound,
                          XRootDPyFS(rooturl).makedir, "aa/bb/cc")
 
     # Recursive
@@ -201,7 +206,7 @@ def test_makedir(tmppath):
     assert XRootDPyFS(rooturl).exists("aa/bb/cc")
 
     # if a path is an existing file
-    assert pytest.raises(DestinationExistsError, XRootDPyFS(rooturl).makedir,
+    assert pytest.raises(DestinationExists, XRootDPyFS(rooturl).makedir,
                          "data/testa.txt")
 
 
@@ -227,11 +232,11 @@ def test_remove(tmppath):
     assert not XRootDPyFS(rooturl).exists("data/testa.txt")
 
     # Does not exists
-    assert pytest.raises(ResourceNotFoundError, XRootDPyFS(rooturl).remove,
+    assert pytest.raises(ResourceNotFound, XRootDPyFS(rooturl).remove,
                          "a/testa.txt")
 
     # Directory not empty
-    assert pytest.raises(DirectoryNotEmptyError, XRootDPyFS(rooturl).remove,
+    assert pytest.raises(DirectoryNotEmpty, XRootDPyFS(rooturl).remove,
                          "data")
 
     # Remove emptydir
@@ -245,15 +250,15 @@ def test_remove_dir(tmppath):
 
     # Remove non-empty directory
     pytest.raises(
-        DirectoryNotEmptyError, fs.removedir, "data/bfolder/")
+        DirectoryNotEmpty, fs.removedir, "data/bfolder/")
 
     # Use of recursive parameter
     pytest.raises(
-        UnsupportedError, fs.removedir, "data/bfolder/", recursive=True)
+        Unsupported, fs.removedir, "data/bfolder/", recursive=True)
 
     # Remove file
     pytest.raises(
-        ResourceInvalidError, fs.removedir, "data/testa.txt")
+        ResourceInvalid, fs.removedir, "data/testa.txt")
 
     # Remove empty directory
     fs.makedir("data/tmp")
@@ -347,17 +352,17 @@ def test_rename(tmppath):
     fs = XRootDPyFS(mkurl(tmppath))
 
     pytest.raises(
-        DestinationExistsError, fs.rename, "data/testa.txt", "multiline.txt")
+        DestinationExists, fs.rename, "data/testa.txt", "multiline.txt")
     pytest.raises(
-        DestinationExistsError, fs.rename, "data/testa.txt",
+        DestinationExists, fs.rename, "data/testa.txt",
         "afolder/afile.txt")
     pytest.raises(
-        DestinationExistsError, fs.rename, "data/afolder", "bfolder")
+        DestinationExists, fs.rename, "data/afolder", "bfolder")
     pytest.raises(
-        DestinationExistsError, fs.rename, "data/afolder", "bfolder/bfile.txt")
+        DestinationExists, fs.rename, "data/afolder", "bfolder/bfile.txt")
 
     pytest.raises(
-        ResourceNotFoundError, fs.rename, "data/invalid.txt",
+        ResourceNotFound, fs.rename, "data/invalid.txt",
         "afolder/afile.txt")
 
     assert fs.exists("data/testa.txt") and not fs.exists("data/testb.txt")
@@ -376,32 +381,51 @@ def test_getinfo(tmppath):
     """Test getinfo."""
     fs = XRootDPyFS(mkurl(tmppath))
 
+    namespaces = [
+        "details",
+        "stat",
+        "lstat",
+        "link",
+        "access",
+        "xrootd"
+    ]
+
     # Info for file
     f = "data/testa.txt"
-    info = fs.getinfo(f)
-    assert info['size'] == os.stat(join(tmppath, f)).st_size
-    assert info['offline'] is False
-    assert info['writable'] is True
-    assert info['readable'] is True
-    assert info['executable'] is False
-    assert isinstance(info['created_time'], datetime)
-    assert isinstance(info['modified_time'], datetime)
-    assert isinstance(info['accessed_time'], datetime)
+    info = fs.getinfo(f, namespaces)
+    assert info.name == "testa.txt"
+    assert info.is_dir is False
+    assert info.size == os.stat(join(tmppath, f)).st_size
+    assert info.type == ResourceType.file
+    assert info.uid == b'*'
+    assert info.gid == b'*'
+    assert info.get('xrootd', 'offline') is False
+    assert info.get('xrootd', 'writable') is True
+    assert info.get('xrootd', 'readable') is True
+    assert info.get('xrootd', 'executable') is False
+    assert isinstance(info.created, datetime)
+    assert isinstance(info.modified, datetime)
+    assert isinstance(info.accessed, datetime)
 
     # Info for directory
     f = "data/"
-    info = fs.getinfo(f)
-    assert info['size'] == os.stat(join(tmppath, f)).st_size
-    assert info['offline'] is False
-    assert info['writable'] is True
-    assert info['readable'] is True
-    assert info['executable'] is True
-    assert isinstance(info['created_time'], datetime)
-    assert isinstance(info['modified_time'], datetime)
-    assert isinstance(info['accessed_time'], datetime)
+    info = fs.getinfo(f, namespaces)
+    assert info.name == ""
+    assert info.is_dir is True
+    assert info.size == os.stat(join(tmppath, f)).st_size
+    assert info.type == ResourceType.directory
+    assert info.uid == b'*'
+    assert info.gid == b'*'
+    assert info.get('xrootd', 'offline') is False
+    assert info.get('xrootd', 'writable') is True
+    assert info.get('xrootd', 'readable') is True
+    assert info.get('xrootd', 'executable') is True
+    assert isinstance(info.created, datetime)
+    assert isinstance(info.modified, datetime)
+    assert isinstance(info.accessed, datetime)
 
     # Non existing path
-    pytest.raises(ResourceNotFoundError, fs.getinfo, "invalidpath/")
+    pytest.raises(ResourceNotFound, fs.getinfo, "invalidpath/")
 
 
 def test_getpathurl(tmppath):
@@ -443,7 +467,7 @@ def test_checksum(tmppath):
     fs = XRootDPyFS(mkurl(tmppath))
 
     # Local xrootd server does not support checksum operation
-    pytest.raises(UnsupportedError, fs.xrd_checksum, "data/testa.txt")
+    pytest.raises(Unsupported, fs.xrd_checksum, "data/testa.txt")
 
     # Let's fake a success response
     fake_status = {
@@ -564,23 +588,23 @@ def test_move_bad(tmppath):
 
     # Destination exists
     pytest.raises(
-        DestinationExistsError, fs.move, src_exists, dst_exists)
+        DestinationExists, fs.move, src_exists, dst_exists)
     pytest.raises(
-        DestinationExistsError, fs.move, src_exists, src_exists)
+        DestinationExists, fs.move, src_exists, src_exists)
     pytest.raises(
-        DestinationExistsError, fs.move, src_exists, dst_folder_exists)
+        DestinationExists, fs.move, src_exists, dst_folder_exists)
 
     # Cannot move dir
     pytest.raises(
-        ResourceInvalidError, fs.move, src_folder_exists, dst_new)
+        ResourceInvalid, fs.move, src_folder_exists, dst_new)
     pytest.raises(
-        ResourceInvalidError, fs.move, src_folder_exists, dst_folder_new)
+        ResourceInvalid, fs.move, src_folder_exists, dst_folder_new)
 
     # Source doesn't exists
-    pytest.raises(ResourceNotFoundError, fs.move, src_new, dst_exists)
-    pytest.raises(ResourceNotFoundError, fs.move, src_new, dst_new)
-    pytest.raises(ResourceNotFoundError, fs.move, src_new, dst_folder_exists)
-    pytest.raises(ResourceNotFoundError, fs.move, src_new, dst_folder_new)
+    pytest.raises(ResourceNotFound, fs.move, src_new, dst_exists)
+    pytest.raises(ResourceNotFound, fs.move, src_new, dst_new)
+    pytest.raises(ResourceNotFound, fs.move, src_new, dst_folder_exists)
+    pytest.raises(ResourceNotFound, fs.move, src_new, dst_folder_new)
 
 
 def test_movedir_bad(tmppath):
@@ -598,36 +622,36 @@ def test_movedir_bad(tmppath):
 
     # Destination exists
     pytest.raises(
-        DestinationExistsError, fs.movedir, src_folder_exists,
+        DestinationExists, fs.movedir, src_folder_exists,
         dst_exists)
     pytest.raises(
-        DestinationExistsError, fs.movedir, src_folder_exists,
+        DestinationExists, fs.movedir, src_folder_exists,
         dst_folder_exists)
 
     # Cannot move file
     pytest.raises(
-        ResourceInvalidError, fs.movedir, src_exists, dst_new)
+        ResourceInvalid, fs.movedir, src_exists, dst_new)
     pytest.raises(
-        ResourceInvalidError, fs.movedir, src_exists, dst_folder_new)
+        ResourceInvalid, fs.movedir, src_exists, dst_folder_new)
 
     # Source doesn't exists
     pytest.raises(
-        ResourceNotFoundError, fs.movedir, src_new, dst_exists)
+        ResourceNotFound, fs.movedir, src_new, dst_exists)
     pytest.raises(
-        ResourceNotFoundError, fs.movedir, src_new, dst_new)
+        ResourceNotFound, fs.movedir, src_new, dst_new)
     pytest.raises(
-        ResourceNotFoundError, fs.movedir, src_new, dst_folder_exists)
+        ResourceNotFound, fs.movedir, src_new, dst_folder_exists)
     pytest.raises(
-        ResourceNotFoundError, fs.movedir, src_new, dst_folder_new)
+        ResourceNotFound, fs.movedir, src_new, dst_folder_new)
 
     pytest.raises(
-        ResourceNotFoundError, fs.movedir, src_folder_new, dst_exists)
+        ResourceNotFound, fs.movedir, src_folder_new, dst_exists)
     pytest.raises(
-        ResourceNotFoundError, fs.movedir, src_folder_new, dst_new)
+        ResourceNotFound, fs.movedir, src_folder_new, dst_new)
     pytest.raises(
-        ResourceNotFoundError, fs.movedir, src_folder_new, dst_folder_exists)
+        ResourceNotFound, fs.movedir, src_folder_new, dst_folder_exists)
     pytest.raises(
-        ResourceNotFoundError, fs.movedir, src_folder_new, dst_folder_new)
+        ResourceNotFound, fs.movedir, src_folder_new, dst_folder_new)
 
 
 def test_copy_good(tmppath):
@@ -675,32 +699,32 @@ def test_copy_bad(tmppath):
 
     # Destination exists
     pytest.raises(
-        DestinationExistsError, fs.copy, src_exists, dst_exists)
+        DestinationExists, fs.copy, src_exists, dst_exists)
     pytest.raises(
-        DestinationExistsError, fs.copy, src_exists, src_exists)
+        DestinationExists, fs.copy, src_exists, src_exists)
     pytest.raises(
-        DestinationExistsError, fs.copy, src_exists, dst_folder_exists)
+        DestinationExists, fs.copy, src_exists, dst_folder_exists)
 
     # Cannot copy dir
     pytest.raises(
-        ResourceInvalidError, fs.copy, src_folder_exists, dst_new)
+        ResourceInvalid, fs.copy, src_folder_exists, dst_new)
     pytest.raises(
-        ResourceInvalidError, fs.copy, src_folder_exists, dst_folder_new)
+        ResourceInvalid, fs.copy, src_folder_exists, dst_folder_new)
 
     # Source doesn't exists
-    pytest.raises(ResourceNotFoundError, fs.copy, src_new, dst_exists)
-    pytest.raises(ResourceNotFoundError, fs.copy, src_new, dst_new)
-    pytest.raises(ResourceNotFoundError, fs.copy, src_new, dst_folder_exists)
-    pytest.raises(ResourceNotFoundError, fs.copy, src_new, dst_folder_new)
+    pytest.raises(ResourceNotFound, fs.copy, src_new, dst_exists)
+    pytest.raises(ResourceNotFound, fs.copy, src_new, dst_new)
+    pytest.raises(ResourceNotFound, fs.copy, src_new, dst_folder_exists)
+    pytest.raises(ResourceNotFound, fs.copy, src_new, dst_folder_new)
 
     pytest.raises(
-        ResourceNotFoundError, fs.copy, src_new, dst_exists)
+        ResourceNotFound, fs.copy, src_new, dst_exists)
     pytest.raises(
-        ResourceNotFoundError, fs.copy, src_new, dst_new)
+        ResourceNotFound, fs.copy, src_new, dst_new)
     pytest.raises(
-        ResourceNotFoundError, fs.copy, src_new, dst_folder_exists)
+        ResourceNotFound, fs.copy, src_new, dst_folder_exists)
     pytest.raises(
-        ResourceNotFoundError, fs.copy, src_new, dst_folder_new)
+        ResourceNotFound, fs.copy, src_new, dst_folder_new)
 
 
 def test_copydir_good(tmppath):
@@ -770,46 +794,56 @@ def copydir_bad(tmppath, parallel):
 
     # Destination exists
     pytest.raises(
-        DestinationExistsError, fs.copydir, src_folder_exists, dst_exists,
+        DestinationExists, fs.copydir, src_folder_exists, dst_exists,
         parallel=parallel)
     pytest.raises(
-        DestinationExistsError, fs.copydir, src_folder_exists,
+        DestinationExists, fs.copydir, src_folder_exists,
         src_folder_exists, parallel=parallel)
     pytest.raises(
-        DestinationExistsError, fs.copydir, src_folder_exists,
+        DestinationExists, fs.copydir, src_folder_exists,
         dst_folder_exists, parallel=parallel)
 
     # Cannot move file
     pytest.raises(
-        ResourceInvalidError, fs.copydir, src_exists, dst_new,
+        ResourceInvalid, fs.copydir, src_exists, dst_new,
         parallel=parallel)
     pytest.raises(
-        ResourceInvalidError, fs.copydir, src_exists, dst_folder_new,
+        ResourceInvalid, fs.copydir, src_exists, dst_folder_new,
         parallel=parallel)
 
     # Source doesn't exists
     pytest.raises(
-        ResourceNotFoundError, fs.copydir, src_new, dst_exists,
+        ResourceNotFound, fs.copydir, src_new, dst_exists,
         parallel=parallel)
     pytest.raises(
-        ResourceNotFoundError, fs.copydir, src_new, dst_new,
+        ResourceNotFound, fs.copydir, src_new, dst_new,
         parallel=parallel)
     pytest.raises(
-        ResourceNotFoundError, fs.copydir, src_new, dst_folder_exists,
+        ResourceNotFound, fs.copydir, src_new, dst_folder_exists,
         parallel=parallel)
     pytest.raises(
-        ResourceNotFoundError, fs.copydir, src_new, dst_folder_new,
+        ResourceNotFound, fs.copydir, src_new, dst_folder_new,
         parallel=parallel)
 
     pytest.raises(
-        ResourceNotFoundError, fs.copydir, src_folder_new, dst_exists,
+        ResourceNotFound, fs.copydir, src_folder_new, dst_exists,
         parallel=parallel)
     pytest.raises(
-        ResourceNotFoundError, fs.copydir, src_folder_new, dst_new,
+        ResourceNotFound, fs.copydir, src_folder_new, dst_new,
         parallel=parallel)
     pytest.raises(
-        ResourceNotFoundError, fs.copydir, src_folder_new, dst_folder_exists,
+        ResourceNotFound, fs.copydir, src_folder_new, dst_folder_exists,
         parallel=parallel)
     pytest.raises(
-        ResourceNotFoundError, fs.copydir, src_folder_new, dst_folder_new,
+        ResourceNotFound, fs.copydir, src_folder_new, dst_folder_new,
         parallel=parallel)
+
+
+def test_openbin():
+    """Test openbin."""
+    pytest.raises(NotImplementedError)
+
+
+def test_setinfo():
+    """Test setinfo."""
+    pytest.raises(NotImplementedError)

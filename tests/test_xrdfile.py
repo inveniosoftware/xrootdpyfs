@@ -12,17 +12,14 @@ from __future__ import absolute_import, print_function
 
 import errno
 import math
-import os
-import sys
 from os.path import join
 
 import fs.path
 import pytest
 from conftest import mkurl
-from fs import SEEK_CUR, SEEK_END, SEEK_SET
-from fs.errors import InvalidPathError, PathError, ResourceNotFoundError, \
-    UnsupportedError
-from fs.opener import fsopendir, opener
+from fs import Seek
+from fs.errors import InvalidPath, PathError, ResourceNotFound, Unsupported
+from fs.opener import open_fs
 from mock import Mock
 from XRootD.client.responses import XRootDStatus
 
@@ -75,7 +72,7 @@ def test_init_readmode_basic(tmppath):
     # Resource not found error.
     fn, fp, fc = 'nope', 'data/', ''
     full_path = join(tmppath, fp, fn)
-    pytest.raises(ResourceNotFoundError, XRootDPyFile, mkurl(full_path),
+    pytest.raises(ResourceNotFound, XRootDPyFile, mkurl(full_path),
                   mode='r')
 
     # Existing file can be read?
@@ -102,15 +99,19 @@ def get_bin_testfile(tmppath):
 
 
 def get_file(fn, fp, tmppath):
-    fpp = join(tmppath, fp, fn)
-    with opener.open(fpp) as f:
+    path = join(tmppath, fp)
+    fpp = join(path, fn)
+    fs = open_fs(path)
+    with fs.open(fn) as f:
         fc = f.read()
     return {'filename': fn, 'dir': fp, 'contents': fc, 'full_path': fpp}
 
 
 def get_file_binary(fn, fp, tmppath):
-    fpp = join(tmppath, fp, fn)
-    with opener.open(fpp, 'rb') as f:
+    path = join(tmppath, fp)
+    fpp = join(path, fn)
+    fs = open_fs(path)
+    with fs.open(fn, 'rb') as f:
         fc = f.read()
     return {'filename': fn, 'dir': fp, 'contents': fc, 'full_path': fpp}
 
@@ -118,7 +119,7 @@ def get_file_binary(fn, fp, tmppath):
 def copy_file(fn, fp, tmppath):
     path = join(tmppath, fp)
     fn_new = fn + '_copy'
-    this_fs = fsopendir(path)
+    this_fs = open_fs(path)
     this_fs.copy(fn, fn_new)
     return fn_new
 
@@ -311,22 +312,22 @@ def test_seek_args(tmppath):
     pfile = open(fb['full_path'], 'rb+')
 
     xfile.truncate(3), pfile.truncate(3)
-    xfile.seek(2, SEEK_END), pfile.seek(2, SEEK_END)
+    xfile.seek(2, Seek.end), pfile.seek(2, Seek.end)
     assert xfile.tell() == pfile.tell()
 
-    xfile.seek(3, SEEK_CUR), pfile.seek(3, SEEK_CUR)
+    xfile.seek(3, Seek.current), pfile.seek(3, Seek.current)
     assert xfile.tell() == pfile.tell()
 
-    xfile.seek(8, SEEK_SET), pfile.seek(8, SEEK_SET)
+    xfile.seek(8, Seek.set), pfile.seek(8, Seek.set)
     assert xfile.tell() == pfile.tell()
 
     xfile.truncate(3), pfile.truncate(3)
     xfile.read(), pfile.read()
     assert xfile.tell() == pfile.tell()
-    xfile.seek(8, SEEK_END), pfile.seek(8, SEEK_END)
+    xfile.seek(8, Seek.end), pfile.seek(8, Seek.end)
     assert xfile.tell() == pfile.tell()
 
-    xfile.seek(4, SEEK_CUR), pfile.seek(4, SEEK_CUR)
+    xfile.seek(4, Seek.current), pfile.seek(4, Seek.current)
     assert xfile.tell() == pfile.tell()
 
     pytest.raises(NotImplementedError, xfile.seek, 0, 8)
@@ -671,7 +672,7 @@ def test_init_paths(tmppath):
 
     path = '//ARGMEGXXX//\\///'
     assert not is_valid_path(path) \
-        and pytest.raises(InvalidPathError, XRootDPyFile, mkurl(path))
+        and pytest.raises(InvalidPath, XRootDPyFile, mkurl(path))
 
 
 def test_init_append(tmppath):
@@ -783,7 +784,7 @@ def test_init_newline(tmppath):
     assert xfile._newline == '\n'
     xfile.close()
 
-    pytest.raises(UnsupportedError, XRootDPyFile, mkurl(fp), mode='r',
+    pytest.raises(Unsupported, XRootDPyFile, mkurl(fp), mode='r',
                   newline='what')
 
 
@@ -793,7 +794,7 @@ def test_init_notimplemented(tmppath):
     fd = get_tsta_file(tmppath)
     fp, fc = fd['full_path'], fd['contents']
 
-    pytest.raises(UnsupportedError, XRootDPyFile, mkurl(fp), 'rb',
+    pytest.raises(Unsupported, XRootDPyFile, mkurl(fp), 'rb',
                   buffering=1)
     pytest.raises(NotImplementedError, XRootDPyFile, mkurl(fp),
                   line_buffering='')
@@ -996,16 +997,16 @@ def test_readline(tmppath):
     fd = get_mltl_file(tmppath)
     fb = get_copy_file(fd)
     fp, fc = fd['full_path'], fd['contents']
-    fp2 = fb['full_path']
 
-    xfile, pfile = XRootDPyFile(mkurl(fp), 'r'), opener.open(fp2, 'r')
+    osfs = open_fs(fs.path.dirname(fd['full_path']))
+    xfile, pfile = XRootDPyFile(mkurl(fp), 'r'), osfs.open(fb['filename'], 'r')
 
     assert xfile.readline() == pfile.readline().encode()
     assert xfile.readline() == pfile.readline().encode()
     assert xfile.readline() == pfile.readline().encode()
 
     xfile.close(), pfile.close()
-    xfile, pfile = XRootDPyFile(mkurl(fp), 'r'), opener.open(fp2, 'r')
+    xfile, pfile = XRootDPyFile(mkurl(fp), 'r'), osfs.open(fb['filename'], 'r')
     assert xfile.readline() == pfile.readline().encode()
     xfile.seek(0), pfile.seek(0)
     assert xfile.readline() == pfile.readline().encode()
@@ -1049,7 +1050,7 @@ def test_flush(tmppath):
     writestr = 'whut'
 
     xfile.flush()
-    xfile.seek(0, SEEK_END)
+    xfile.seek(0, Seek.end)
     xfile.write(writestr)
     xfile.flush()
     xfile.close()
@@ -1107,9 +1108,9 @@ def test_readlines(tmppath):
     fd = get_mltl_file(tmppath)
     fb = get_copy_file(fd)
     fp, fc = fd['full_path'], fd['contents']
-    fp2 = fb['full_path']
 
-    xfile, pfile = XRootDPyFile(mkurl(fp), 'r'), open(fp2, 'r')
+    osfs = open_fs(fs.path.dirname(fb['full_path']))
+    xfile, pfile = XRootDPyFile(mkurl(fp), 'r'), osfs.open(fb['filename'], 'r')
 
     xfile.seek(0), pfile.seek(0)
     expected = _list_str_encode(pfile.readlines())
@@ -1117,7 +1118,7 @@ def test_readlines(tmppath):
 
     xfile.close(), pfile.close()
 
-    xfile, pfile = XRootDPyFile(mkurl(fp), 'w+'), open(fp2, 'w+')
+    xfile, pfile = XRootDPyFile(mkurl(fp), 'w+'), osfs.open(fb['filename'], 'w+')
     xfile.seek(0), pfile.seek(0)
     expected = _list_str_encode(pfile.readlines())
     assert xfile.readlines() == expected

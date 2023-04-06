@@ -12,20 +12,20 @@ from __future__ import absolute_import, print_function
 
 import pytest
 from conftest import mkurl
-from fs.errors import ResourceNotFoundError
+from fs.errors import ResourceNotFound
 
 from xrootdpyfs import XRootDPyFS
 
 
-def test_getcontents(tmppath):
-    """Test getcontents."""
+def test_readtext(tmppath):
+    """Test readtext."""
     fs = XRootDPyFS(mkurl(tmppath))
-    assert fs.getcontents('data/testa.txt') == b"testa.txt\n"
-    pytest.raises(ResourceNotFoundError, fs.getcontents, 'data/invalid.txt')
+    assert fs.readtext('data/testa.txt') == b"testa.txt\n"
+    pytest.raises(ResourceNotFound, fs.readtext, 'data/invalid.txt')
 
 
-def test_setcontents(tmppath):
-    """Test setcontents."""
+def test_writetext(tmppath):
+    """Test writetext."""
     fs = XRootDPyFS(mkurl(tmppath))
-    fs.setcontents('data/testa.txt', "mytest")
-    assert fs.getcontents('data/testa.txt') == b"mytest"
+    fs.writetext('data/testa.txt', "mytest")
+    assert fs.readtext('data/testa.txt') == b"mytest"

@@ -24,16 +24,25 @@ Getting started
 
 If you just want to try out the library, the easiest is to use Docker.
 
-.. code-block:: console
-
-   $ docker build -t xrootd .
-   $ docker run -h xrootdpyfs -it xrootd bash
-
-Next, start a XRootD server in the container and fire up an ipython shell:
+Build the image:
 
 .. code-block:: console
 
-   [xrootdpyfs@xrootdpyfs code]$ xrootd -b -l /dev/null
+   $ docker build --platform linux/amd64 -t xrootd .
+
+Run the container and launch `xrootd`:
+
+.. code-block:: console
+
+   $ docker run --platform linux/amd64 -h xrootdpyfs -it xrootd bash
+
+You will see the logs in the stdout. Next, in another shell, connect the container
+and fire up an ipython shell:
+
+.. code-block:: console
+
+   $ docker ps  # find the container id
+   $ docker exec -it <container-id> bash
    [xrootdpyfs@xrootdpyfs code]$ ipython
 
 
@@ -52,8 +61,8 @@ Or, alternatively using the PyFilesystem opener (note the first
 ``import xrootdpyfs`` is required to ensure the XRootDPyFS opener is registered):
 
     >>> import xrootdpyfs
-    >>> from fs.opener import opener
-    >>> fs, path = opener.parse("root://localhost//tmp/")
+    >>> from fs.opener import open_fs
+    >>> fs = open_fs("root://localhost//tmp/")
     >>> fs.listdir("xrootdpyfs")
     ['test.txt']
 
@@ -88,15 +97,22 @@ running XRootD server:
 
 .. code-block:: console
 
-   $ docker build -t xrootd --progress=plain .
-   $ docker run -h xrootdpyfs -it -v <absolute path to this project>:/code xrootd bash
-   [xrootdpyfs@xrootdpyfs code]$ xrootd -b -l /dev/null
+   $ docker build --platform linux/amd64 -t xrootd --progress=plain .
+   $ docker run --platform linux/amd64 -h xrootdpyfs -it -v <absolute path to this project>:/code xrootd bash
+   [xrootdpyfs@xrootdpyfs code]$ xrootd
+
+In another shell:
+
+.. code-block:: console
+   $ docker ps  # find the container id
+   $ docker exec -it <container-id> bash
+   [xrootdpyfs@xrootdpyfs code]$ python -m pytest -vvv tests
 
 If you want to test a specific version of xrootd, run:
 
 .. code-block:: console
 
-   $ docker build --build-arg xrootd_version=4.8.5 -t xrootd --progress=plain .
+   $ docker build --platform linux/amd64 --build-arg xrootd_version=4.12.7 -t xrootd --progress=plain .
 
 Documentation
 =============
@@ -112,4 +128,4 @@ Running the tests are most easily done using docker:
 
 .. code-block:: console
 
-    $ docker build -t xrootd . && docker run -h xrootdpyfs -it xrootd
+    $ docker build --platform linux/amd64 -t xrootd . && docker run --platform linux/amd64 -h xrootdpyfs -it xrootd

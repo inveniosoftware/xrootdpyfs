@@ -12,9 +12,8 @@ from __future__ import absolute_import, print_function
 
 import sys
 
-from fs import SEEK_CUR, SEEK_END, SEEK_SET
-from fs.errors import InvalidPathError, PathError, ResourceNotFoundError, \
-    UnsupportedError
+from fs import Seek
+from fs.errors import InvalidPath, PathError, ResourceNotFound, Unsupported
 from fs.path import basename
 from six import b, binary_type, text_type
 from XRootD.client import File
@@ -75,7 +74,7 @@ class XRootDPyFile(object):
         """The XRootDPyFile constructor.
 
         Raises PathError if the given path isn't a valid XRootD URL,
-        and InvalidPathError if it isn't a valid XRootD file path.
+        and InvalidPath if it isn't a valid XRootD file path.
         """
         if not is_valid_url(path):
             raise PathError(path)
@@ -83,10 +82,10 @@ class XRootDPyFile(object):
         xpath = spliturl(path)[1]
 
         if not is_valid_path(xpath):
-            raise InvalidPathError(xpath)
+            raise InvalidPath(xpath)
 
         if newline not in [None, '', '\n', '\r', '\r\n']:
-            raise UnsupportedError(
+            raise Unsupported(
                 "Newline character {0} not supported".format(newline))
 
         if line_buffering is not False:
@@ -95,7 +94,7 @@ class XRootDPyFile(object):
 
         buffering = int(buffering)
         if buffering == 1 and 'b' in mode:
-            raise UnsupportedError(
+            raise Unsupported(
                 "Line buffering is not supported for "
                 "binary files.")
 
@@ -127,12 +126,12 @@ class XRootDPyFile(object):
 
         # Deal with the modes
         if 'a' in self.mode:
-            self.seek(self.size, SEEK_SET)
+            self.seek(self.size, Seek.set)
 
     def _raise_status(self, path, status, source=None):
         """Raise error based on status."""
         if status.errno == 3011:
-            raise ResourceNotFoundError(path)
+            raise ResourceNotFound(path)
         else:
             if source:
                 errstr = "XRootD error {0}file: {1}".format(
@@ -276,7 +275,7 @@ class XRootDPyFile(object):
         self._assert_mode("w-")
 
         if 'a' in self.mode:
-            self.seek(0, SEEK_END)
+            self.seek(0, Seek.end)
 
         if not isinstance(data, binary_type):
             if isinstance(data, bytearray):
@@ -299,18 +298,18 @@ class XRootDPyFile(object):
         for s in sequence:
             self.write(s)
 
-    def seek(self, offset, whence=SEEK_SET):
+    def seek(self, offset, whence=Seek.set):
         """Set the file's internal position pointer, approximately.
 
         The possible values of whence and their meaning are defined
         in the Linux man pages for `lseek()`:
         http://man7.org/linux/man-pages/man2/lseek.2.html
 
-        ``SEEK_SET``
+        ``Seek.set``
             The internal position pointer is set to offset bytes.
-        ``SEEK_CUR``
+        ``Seek.current``
             The ipp is set to its current position plus offset bytes.
-        ``SEEK_END``
+        ``Seek.end``
             The ipp is set to the size of the file plus offset bytes.
         """
         if "-" in self.mode:
@@ -322,14 +321,14 @@ class XRootDPyFile(object):
 
         # If not in binary mode and seeking from the end, forbid negative
         # offsets
-        if not ('b' in self.mode and whence == SEEK_END) and offset < 0:
+        if not ('b' in self.mode and whence == Seek.end) and offset < 0:
             raise IOError("Invalid argument.")
 
-        if whence == SEEK_SET:
+        if whence == Seek.set:
             self._ipp = offset
-        elif whence == SEEK_CUR:
+        elif whence == Seek.current:
             self._ipp += offset
-        elif whence == SEEK_END:
+        elif whence == Seek.end:
             self._ipp = self.size + offset
         else:
             raise NotImplementedError(whence)

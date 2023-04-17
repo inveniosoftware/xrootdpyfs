@@ -32,7 +32,7 @@ def set_timeout(value):
 
     Sets the environment variable ``XRD_REQUESTTIMEOUT``.
     """
-    environ['XRD_REQUESTTIMEOUT'] = str(value)
+    environ["XRD_REQUESTTIMEOUT"] = str(value)
 
 
 def set_timeoutresolution(value):
@@ -42,7 +42,7 @@ def set_timeoutresolution(value):
 
     Sets the environment variable ``XRD_TIMEOUTRESOLUTION``.
     """
-    environ['XRD_TIMEOUTRESOLUTION'] = str(value)
+    environ["XRD_TIMEOUTRESOLUTION"] = str(value)
 
 
 def set_connectionwindow(value):
@@ -55,7 +55,7 @@ def set_connectionwindow(value):
 
     Sets the environment variable ```XRD_CONNECTIONWINDOW``.
     """
-    environ['XRD_CONNECTIONWINDOW'] = str(value)
+    environ["XRD_CONNECTIONWINDOW"] = str(value)
 
 
 def set_connectionretry(value):
@@ -66,4 +66,4 @@ def set_connectionretry(value):
 
     Sets the environment variable ``XRD_CONNECTIONRETRY``.
     """
-    environ['XRD_CONNECTIONRETRY'] = str(value)
+    environ["XRD_CONNECTIONRETRY"] = str(value)

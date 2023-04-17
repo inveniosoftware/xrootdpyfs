@@ -188,4 +188,4 @@ from .xrdfile import XRootDPyFile
 
 __version__ = "0.2.2"
 
-__all__ = ('__version__', 'XRootDPyFS', 'XRootDPyOpener', 'XRootDPyFile')
+__all__ = ("__version__", "XRootDPyFS", "XRootDPyOpener", "XRootDPyFile")

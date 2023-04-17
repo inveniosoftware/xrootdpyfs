@@ -40,8 +40,7 @@ def setup():
     filepath = join(tmppath, filename)
 
     # Create test file with random data
-    os.system("dd bs=1024 count={1} </dev/urandom >{0}".format(
-        filepath, 1024*10))
+    os.system("dd bs=1024 count={1} </dev/urandom >{0}".format(filepath, 1024 * 10))
 
     return filename, tmppath, filepath
 
@@ -57,7 +56,7 @@ def read_pyfs_chunks(url, filename, mode="rb", chunksize=2097152, n=100):
     assert fs.exists(filename)
     i = 0
     while i < n:
-        fsfile = fs.open(filename, mode)
+        fsfile = fs.open(filename, "rb")
         while True:
             data = fsfile.read(chunksize)
             if not data:
@@ -65,7 +64,7 @@ def read_pyfs_chunks(url, filename, mode="rb", chunksize=2097152, n=100):
         i += 1
 
     t2 = time.time()
-    return (t2-t1)/n
+    return (t2 - t1) / n
 
 
 def read_pyxrootd_chunks(url, chunksize=2097152, n=100):
@@ -84,7 +83,7 @@ def read_pyxrootd_chunks(url, chunksize=2097152, n=100):
         i += 1
 
     t2 = time.time()
-    return (t2-t1)/n
+    return (t2 - t1) / n
 
 
 def profile_start():
@@ -98,7 +97,7 @@ def profile_end(pr):
     """Write profile output."""
     pr.disable()
     s = StringIO()
-    sortby = 'tottime'
+    sortby = "tottime"
     ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
     ps.print_stats()
     print(s.getvalue())
@@ -110,13 +109,15 @@ def main():
 
     try:
         n = 10
-        rooturl = 'root://localhost/{0}'.format(testfilepath)
+        rooturl = "root://localhost/{0}".format(testfilepath)
 
         print("osfs:", testfilepath, read_pyfs_chunks(tmppath, filename, n=n))
         print("pyxrootd:", rooturl, read_pyxrootd_chunks(rooturl, n=n))
 
         pr = profile_start()
-        print("xrootdpyfs:", rooturl, read_pyfs_chunks(rooturl, filename, mode="rb-", n=n))
+        print(
+            "xrootdpyfs:", rooturl, read_pyfs_chunks(rooturl, filename, mode="rb-", n=n)
+        )
         profile_end(pr)
     finally:
         teardown(tmppath)

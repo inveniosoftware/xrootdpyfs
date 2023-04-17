@@ -65,9 +65,18 @@ class XRootDPyFile(object):
         desired memory usage.
     """
 
-    def __init__(self, path, mode='r', buffering=-1, encoding=None,
-                 errors=None, newline=None, line_buffering=False,
-                 buffer_size=None, **kwargs):
+    def __init__(
+        self,
+        path,
+        mode="r",
+        buffering=-1,
+        encoding=None,
+        errors=None,
+        newline=None,
+        line_buffering=False,
+        buffer_size=None,
+        **kwargs
+    ):
         """The XRootDPyFile constructor.
 
         Raises PathError if the given path isn't a valid XRootD URL,
@@ -81,19 +90,15 @@ class XRootDPyFile(object):
         if not is_valid_path(xpath):
             raise InvalidPath(xpath)
 
-        if newline not in [None, '', '\n', '\r', '\r\n']:
-            raise Unsupported(
-                "Newline character {0} not supported".format(newline))
+        if newline not in [None, "", "\n", "\r", "\r\n"]:
+            raise Unsupported("Newline character {0} not supported".format(newline))
 
         if line_buffering is not False:
-            raise NotImplementedError("Line buffering for writing is not "
-                                      "supported.")
+            raise NotImplementedError("Line buffering for writing is not " "supported.")
 
         buffering = int(buffering)
-        if buffering == 1 and 'b' in mode:
-            raise Unsupported(
-                "Line buffering is not supported for "
-                "binary files.")
+        if buffering == 1 and "b" in mode:
+            raise Unsupported("Line buffering is not supported for " "binary files.")
 
         # PyFS attributes
         self.mode = mode
@@ -101,7 +106,7 @@ class XRootDPyFile(object):
         # XRootD attributes & internals
         self.path = path
         self.encoding = encoding or sys.getdefaultencoding()
-        self.errors = errors or 'strict'
+        self.errors = errors or "strict"
         self.buffer_size = buffer_size or 64 * 1024
         self.buffering = buffering
         self._file = File()
@@ -109,7 +114,7 @@ class XRootDPyFile(object):
         self._size = -1
         self._iterator = None
         self._newline = newline or b("\n")
-        self._buffer = b('')
+        self._buffer = b("")
         self._buffer_pos = 0
 
         # flag translation
@@ -118,11 +123,12 @@ class XRootDPyFile(object):
         statmsg, response = self._file.open(path, flags=self._flags)
 
         if not statmsg.ok:
-            self._raise_status(self.path, statmsg,
-                               "instantiating file ({0})".format(path))
+            self._raise_status(
+                self.path, statmsg, "instantiating file ({0})".format(path)
+            )
 
         # Deal with the modes
-        if 'a' in self.mode:
+        if "a" in self.mode:
             self.seek(self.size, Seek.set)
 
     def _raise_status(self, path, status, source=None):
@@ -132,7 +138,8 @@ class XRootDPyFile(object):
         else:
             if source:
                 errstr = "XRootD error {0}file: {1}".format(
-                         source + ' ', status.message)
+                    source + " ", status.message
+                )
             raise IOError(errstr)
 
     def __del__(self):
@@ -144,8 +151,7 @@ class XRootDPyFile(object):
         self._next_func = self.read
         self._next_args = ([], dict(sizehint=self.buffer_size))
 
-        if self.buffering == 1 or \
-           (self.buffering == -1 and 'b' not in self.mode):
+        if self.buffering == 1 or (self.buffering == -1 and "b" not in self.mode):
             self._next_func = self.readline
             self._next_args = ([], dict())
         elif self.buffering > 1:
@@ -206,8 +212,7 @@ class XRootDPyFile(object):
 
         # Increment internal file pointer.
         self._ipp = min(
-            self._ipp + chunksize,
-            self.size if self.size > self._ipp else self._ipp
+            self._ipp + chunksize, self.size if self.size > self._ipp else self._ipp
         )
 
         return res
@@ -271,7 +276,7 @@ class XRootDPyFile(object):
         """
         self._assert_mode("w-")
 
-        if 'a' in self.mode:
+        if "a" in self.mode:
             self.seek(0, Seek.end)
 
         if not isinstance(data, binary_type):
@@ -318,7 +323,7 @@ class XRootDPyFile(object):
 
         # If not in binary mode and seeking from the end, forbid negative
         # offsets
-        if not ('b' in self.mode and whence == Seek.end) and offset < 0:
+        if not ("b" in self.mode and whence == Seek.end) and offset < 0:
             raise IOError("Invalid argument.")
 
         if whence == Seek.set:
@@ -340,7 +345,7 @@ class XRootDPyFile(object):
         Note that ``size`` will never be None; if it was not specified by the
         user the current file position is used.
         """
-        self._assert_mode('w')
+        self._assert_mode("w")
 
         if size is None:
             size = self.tell()
@@ -372,15 +377,15 @@ class XRootDPyFile(object):
 
     def seekable(self):
         """Check if file is seekable."""
-        return '-' not in self.mode
+        return "-" not in self.mode
 
     def readable(self):
         """Check if file is readable."""
-        return 'r' in self.mode or '+' in self.mode
+        return "r" in self.mode or "+" in self.mode
 
     def writable(self):
         """Check if file is writable."""
-        return 'w' in self.mode or '+' in self.mode or 'a' in self.mode
+        return "w" in self.mode or "+" in self.mode or "a" in self.mode
 
     def isatty(self):
         """Check if file is a TTY (false always).
@@ -422,9 +427,11 @@ class XRootDPyFile(object):
             try:
                 mstr = self.mode
             except AttributeError:
-                raise AttributeError("Mode attribute missing -- "
-                                     "was it deleted? "
-                                     "Close and re-open the file.")
+                raise AttributeError(
+                    "Mode attribute missing -- "
+                    "was it deleted? "
+                    "Close and re-open the file."
+                )
         if "+" in mstr:
             return True
         if "-" in mstr and "-" not in mode:

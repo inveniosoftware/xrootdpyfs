@@ -84,15 +84,15 @@ class XRootDPyFS(FS):
 
     # https://xrootd.slac.stanford.edu/doc/dev52/ofs_config.htm#_Toc53410373
     OSS_TYPE_TO_RESOURCE_TYPE = {
-        b'd': ResourceType.directory,
-        b'f': ResourceType.file,
+        b"d": ResourceType.directory,
+        b"f": ResourceType.file,
     }
 
     _meta = {
-        'case_insensitive': False,
-        'network': True,
-        'read_only': False,
-        'supports_rename': True,
+        "case_insensitive": False,
+        "network": True,
+        "read_only": False,
+        "supports_rename": True,
     }
 
     def __init__(self, url, query=None):
@@ -117,7 +117,8 @@ class XRootDPyFS(FS):
                 if k in queryargs:
                     raise KeyError(
                         "Query string field {0} conflicts with "
-                        "field in URL {1}".format(k, url))
+                        "field in URL {1}".format(k, url)
+                    )
                 queryargs[k] = v
         else:
             # No query string in URL, use kwarg instead.
@@ -137,10 +138,12 @@ class XRootDPyFS(FS):
         if isabs(path):
             no_trailing = self.base_path[:-1]
             one_slash = no_trailing[1:]
-            missing_basepath = not (path.startswith(one_slash) or path.startswith(no_trailing))
+            missing_basepath = not (
+                path.startswith(one_slash) or path.startswith(no_trailing)
+            )
             if missing_basepath:
                 _path = relpath(path)
-        return '/' + join(self.base_path, _path)
+        return "/" + join(self.base_path, _path)
 
     def _raise_status(self, path, status):
         """Raise error based on status."""
@@ -168,8 +171,17 @@ class XRootDPyFS(FS):
             raise FSError(msg=status)
         return parse_qs(res) if parse else res
 
-    def open(self, path, mode='r', buffering=-1, encoding=None, errors=None,
-             newline=None, line_buffering=False, **kwargs):
+    def open(
+        self,
+        path,
+        mode="r",
+        buffering=-1,
+        encoding=None,
+        errors=None,
+        newline=None,
+        line_buffering=False,
+        **kwargs
+    ):
         r"""Open the given path and return a file-like object.
 
         :param path: Path to file that should be opened.
@@ -207,13 +219,15 @@ class XRootDPyFS(FS):
             **kwargs
         )
 
-    def listdir(self,
-                path="./",
-                wildcard=None,
-                full=False,
-                absolute=False,
-                dirs_only=False,
-                files_only=False):
+    def listdir(
+        self,
+        path="./",
+        wildcard=None,
+        full=False,
+        absolute=False,
+        dirs_only=False,
+        files_only=False,
+    ):
         """List the the files and directories under a given path.
 
         The directory contents are returned as a list of unicode paths.
@@ -239,10 +253,16 @@ class XRootDPyFS(FS):
             not a directory.
         :raises: `fs.errors.ResourceNotFound` if the path is not found.
         """
-        return list(self.ilistdir(
-            path=path, wildcard=wildcard, full=full, absolute=absolute,
-            dirs_only=dirs_only, files_only=files_only
-        ))
+        return list(
+            self.ilistdir(
+                path=path,
+                wildcard=wildcard,
+                full=full,
+                absolute=absolute,
+                dirs_only=dirs_only,
+                files_only=files_only,
+            )
+        )
 
     def _stat_flags(self, path):
         """Get status of a path."""
@@ -262,8 +282,7 @@ class XRootDPyFS(FS):
 
         """
         try:
-            flags = self._stat_flags(path) if _statobj is None \
-                else _statobj.flags
+            flags = self._stat_flags(path) if _statobj is None else _statobj.flags
             return bool(flags & StatInfoFlags.IS_DIR)
         except ResourceNotFound:
             return False
@@ -278,10 +297,8 @@ class XRootDPyFS(FS):
 
         """
         try:
-            flags = self._stat_flags(path) if _statobj is None \
-                else _statobj.flags
-            return not bool(
-                flags & (StatInfoFlags.IS_DIR | StatInfoFlags.OTHER))
+            flags = self._stat_flags(path) if _statobj is None else _statobj.flags
+            return not bool(flags & (StatInfoFlags.IS_DIR | StatInfoFlags.OTHER))
         except ResourceNotFound:
             return False
 
@@ -295,8 +312,14 @@ class XRootDPyFS(FS):
         status, stat = self._client.stat(self._p(path))
         return status.ok
 
-    def makedir(self, path, recursive=False, allow_recreate=False, permissions=None,
-                recreate=False):
+    def makedir(
+        self,
+        path,
+        recursive=False,
+        allow_recreate=False,
+        permissions=None,
+        recreate=False,
+    ):
         """Make a directory on the filesystem.
 
         :param path: Path of directory.
@@ -416,7 +439,8 @@ class XRootDPyFS(FS):
         """Get URL that corresponds to the given path."""
         if with_querystring and self.queryargs:
             return "{0}{1}?{2}".format(
-                self.root_url, self._p(path), urlencode(self.queryargs))
+                self.root_url, self._p(path), urlencode(self.queryargs)
+            )
         else:
             return "{0}{1}".format(self.root_url, self._p(path))
 
@@ -461,42 +485,40 @@ class XRootDPyFS(FS):
         }
 
         # `details` namespace
-        details = {
-            "size": statobj.size,
-            "type": ResourceType.unknown
-        }
-        _type = extended_attr.get(b'oss.type', [None])[0]
+        details = {"size": statobj.size, "type": ResourceType.unknown}
+        _type = extended_attr.get(b"oss.type", [None])[0]
         if _type:
-            details['type'] = self.OSS_TYPE_TO_RESOURCE_TYPE.get(_type,
-                                                                 ResourceType.unknown)
+            details["type"] = self.OSS_TYPE_TO_RESOURCE_TYPE.get(
+                _type, ResourceType.unknown
+            )
 
-        ct = extended_attr.get(b'oss.ct', [None])[0]
-        mt = extended_attr.get(b'oss.mt', [None])[0]
-        at = extended_attr.get(b'oss.at', [None])[0]
+        ct = extended_attr.get(b"oss.ct", [None])[0]
+        mt = extended_attr.get(b"oss.mt", [None])[0]
+        at = extended_attr.get(b"oss.at", [None])[0]
         if ct:
-            details['created'] = int(ct)
+            details["created"] = int(ct)
         if mt:
-            details['modified'] = int(mt)
+            details["modified"] = int(mt)
         if at:
-            details['accessed'] = int(at)
+            details["accessed"] = int(at)
 
         # optional `access` namespace
         access = {
-            "permissions": None, # fs.permissions.Permissions
+            "permissions": None,  # fs.permissions.Permissions
         }
-        uid = extended_attr.get(b'oss.u', [None])[0]
-        gid = extended_attr.get(b'oss.u', [None])[0]
+        uid = extended_attr.get(b"oss.u", [None])[0]
+        gid = extended_attr.get(b"oss.u", [None])[0]
         if uid:
-            access['uid'] = uid
+            access["uid"] = uid
         if gid:
-            access['gid'] = gid
+            access["gid"] = gid
 
         # other namespaces
         xrootd = {
             "offline": bool(statobj.flags & StatInfoFlags.OFFLINE),
-            'writable': bool(statobj.flags & StatInfoFlags.IS_WRITABLE),
-            'readable': bool(statobj.flags & StatInfoFlags.IS_READABLE),
-            'executable': bool(statobj.flags & StatInfoFlags.X_BIT_SET),
+            "writable": bool(statobj.flags & StatInfoFlags.IS_WRITABLE),
+            "readable": bool(statobj.flags & StatInfoFlags.IS_READABLE),
+            "executable": bool(statobj.flags & StatInfoFlags.X_BIT_SET),
         }
 
         info = {
@@ -516,20 +538,21 @@ class XRootDPyFS(FS):
             info["xrootd"] = xrootd
         return Info(info)
 
-    def ilistdir(self,
-                 path="./",
-                 wildcard=None,
-                 full=False,
-                 absolute=False,
-                 dirs_only=False,
-                 files_only=False):
+    def ilistdir(
+        self,
+        path="./",
+        wildcard=None,
+        full=False,
+        absolute=False,
+        dirs_only=False,
+        files_only=False,
+    ):
         """Generator yielding the files and directories under a given path.
 
         This method behaves identically to `fs.base:FS.listdir` but
         returns an generator instead of a list.
         """
-        flag = DirListFlags.STAT if dirs_only or files_only else \
-            DirListFlags.NONE
+        flag = DirListFlags.STAT if dirs_only or files_only else DirListFlags.NONE
 
         full_path = self._p(path)
         status, entries = self._client.dirlist(full_path, flag)
@@ -538,12 +561,25 @@ class XRootDPyFS(FS):
             self._raise_status(path, status)
 
         return self._ilistdir_helper(
-            path, entries, wildcard=wildcard, full=full,
-            absolute=absolute, dirs_only=dirs_only, files_only=files_only
+            path,
+            entries,
+            wildcard=wildcard,
+            full=full,
+            absolute=absolute,
+            dirs_only=dirs_only,
+            files_only=files_only,
         )
 
-    def _ilistdir_helper(self, path, entries, wildcard=None, full=False,
-                         absolute=False, dirs_only=False, files_only=False):
+    def _ilistdir_helper(
+        self,
+        path,
+        entries,
+        wildcard=None,
+        full=False,
+        absolute=False,
+        dirs_only=False,
+        files_only=False,
+    ):
         """A helper method called by ilistdir method that applies filtering.
 
         Given the path to a directory and a list of the names of entries within
@@ -566,13 +602,9 @@ class XRootDPyFS(FS):
             entries = (p for p in entries if wildcard(p.name))
 
         if dirs_only:
-            entries = (
-                p for p in entries if self.isdir(p.name, _statobj=p.statinfo)
-            )
+            entries = (p for p in entries if self.isdir(p.name, _statobj=p.statinfo))
         elif files_only:
-            entries = (
-                p for p in entries if self.isfile(p.name, _statobj=p.statinfo)
-            )
+            entries = (p for p in entries if self.isfile(p.name, _statobj=p.statinfo))
 
         if full:
             entries = (combine(path, p.name) for p in entries)
@@ -606,8 +638,7 @@ class XRootDPyFS(FS):
             raise ResourceNotFound(src)
 
         if not self.isfile(src):
-            raise ResourceInvalid(
-                src, msg="Source is not a file: %(path)s")
+            raise ResourceInvalid(src, msg="Source is not a file: %(path)s")
 
         return self._move(src, dst, overwrite=overwrite)
 
@@ -634,8 +665,7 @@ class XRootDPyFS(FS):
             raise ResourceNotFound(src)
 
         if not self.isdir(src):
-            raise ResourceInvalid(
-                src, msg="Source is not a directory: %(path)s")
+            raise ResourceInvalid(src, msg="Source is not a directory: %(path)s")
 
         return self._move(src, dst, overwrite=overwrite)
 
@@ -688,8 +718,7 @@ class XRootDPyFS(FS):
         # isdir/isfile throws an error if file/dir doesn't exists
         if not self.isfile(src):
             if self.isdir(src):
-                raise ResourceInvalid(
-                    src, msg="Source is not a file: %(path)s")
+                raise ResourceInvalid(src, msg="Source is not a file: %(path)s")
             raise ResourceNotFound(src)
 
         if overwrite and self.exists(dst):
@@ -722,8 +751,7 @@ class XRootDPyFS(FS):
         """
         if not self.isdir(src):
             if self.isfile(src):
-                raise ResourceInvalid(
-                    src, msg="Source is not a directory: %(path)s")
+                raise ResourceInvalid(src, msg="Source is not a directory: %(path)s")
             raise ResourceNotFound(src)
 
         if self.exists(dst):
@@ -800,7 +828,7 @@ class XRootDPyFS(FS):
             raise ResourceInvalid("Path is not a file: %s" % path)
 
         value = self._query(QueryCode.CHECKSUM, self._p(path), parse=False)
-        value = value.decode('ascii').rstrip('\x00')
+        value = value.decode("ascii").rstrip("\x00")
         algorithm, value = value.strip().split(" ")
         return (algorithm, value)
 

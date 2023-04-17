@@ -47,15 +47,16 @@ def test_is_valid_path():
 
 def test_translate_file_mode_to_flags():
     """Test mode to xrootd flags translation."""
-    assert translate_file_mode_to_flags('in') == 0
-    assert translate_file_mode_to_flags('r') == OpenFlags.READ
-    assert translate_file_mode_to_flags('r-') == OpenFlags.READ
-    assert bool(translate_file_mode_to_flags('r+') & (
-        OpenFlags.UPDATE | OpenFlags.READ))
+    assert translate_file_mode_to_flags("in") == 0
+    assert translate_file_mode_to_flags("r") == OpenFlags.READ
+    assert translate_file_mode_to_flags("r-") == OpenFlags.READ
+    assert bool(
+        translate_file_mode_to_flags("r+") & (OpenFlags.UPDATE | OpenFlags.READ)
+    )
 
-    assert translate_file_mode_to_flags('a') == OpenFlags.UPDATE
-    assert translate_file_mode_to_flags('a+') == OpenFlags.UPDATE
+    assert translate_file_mode_to_flags("a") == OpenFlags.UPDATE
+    assert translate_file_mode_to_flags("a+") == OpenFlags.UPDATE
 
-    assert translate_file_mode_to_flags('w') == OpenFlags.DELETE
-    assert translate_file_mode_to_flags('w-') == OpenFlags.DELETE
-    assert translate_file_mode_to_flags('w+') == OpenFlags.DELETE
+    assert translate_file_mode_to_flags("w") == OpenFlags.DELETE
+    assert translate_file_mode_to_flags("w-") == OpenFlags.DELETE
+    assert translate_file_mode_to_flags("w+") == OpenFlags.DELETE

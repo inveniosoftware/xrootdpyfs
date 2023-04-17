@@ -17,7 +17,7 @@ from XRootD.client.flags import OpenFlags
 
 # If "test" is in its name then pytest picks it up.
 def tstfile_a(p):
-    fname = 'data/testa.txt'
+    fname = "data/testa.txt"
     with open(join(p, fname)) as f:
         fconts = f.read()
 
@@ -37,15 +37,15 @@ def test_READ(tmppath):
     assert statmsg.ok
 
     # Can we write?
-    statmsg, res = xf.write('chhhh-eck it')
-    print((statmsg, ))  # Print returned status in case the test fails.
+    statmsg, res = xf.write("chhhh-eck it")
+    print((statmsg,))  # Print returned status in case the test fails.
     assert xf.read()[1] == content
     assert not statmsg.ok
     assert statmsg.error
 
     # Can we truncate?
     statmsg, res = xf.truncate(0)
-    print((statmsg, ))
+    print((statmsg,))
     assert not statmsg.ok
     assert statmsg.error
 
@@ -63,9 +63,9 @@ def test_APPEND(tmppath):
     assert statmsg.ok
 
     # Can we write?
-    statmsg, res = xf.write('chhhh-eck it')
+    statmsg, res = xf.write("chhhh-eck it")
     assert xf.read()[1] == content
-    print((statmsg, ))
+    print((statmsg,))
     assert not statmsg.ok
     assert statmsg.error
 
@@ -83,7 +83,7 @@ def test_UPDATE(tmppath):
     assert statmsg.ok
 
     # Can we write?
-    statmsg, res = xf.write('chhhh-eck it')
+    statmsg, res = xf.write("chhhh-eck it")
     # assert xf.read()[1] == content
     # doesn't truncate file
     print((statmsg, res))

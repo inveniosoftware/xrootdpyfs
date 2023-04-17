@@ -18,7 +18,7 @@ from XRootD.client.flags import OpenFlags
 def is_valid_url(fs_url):
     """Check if URL is a valid root URL."""
     scheme, netloc, path, params, query, fragment = urlparse(fs_url)
-    return URL(fs_url).is_valid() and scheme in ['root', 'roots']
+    return URL(fs_url).is_valid() and scheme in ["root", "roots"]
 
 
 def is_valid_path(fs_path):
@@ -28,7 +28,7 @@ def is_valid_path(fs_path):
     and do not contain any other two adjacent slashes.
     """
     if len(fs_path) > 1:
-        if not re.search(r'^//', fs_path) or re.search(r'//', fs_path[1:]):
+        if not re.search(r"^//", fs_path) or re.search(r"//", fs_path[1:]):
             return False
         else:
             return True
@@ -42,21 +42,19 @@ def spliturl(fs_url):
 
     pattern = "{scheme}://{netloc}"
 
-    root_url = pattern.format(
-        scheme=scheme, netloc=netloc
-    )
+    root_url = pattern.format(scheme=scheme, netloc=netloc)
 
     return root_url, path, query
 
 
-def translate_file_mode_to_flags(mode='r'):
+def translate_file_mode_to_flags(mode="r"):
     """Translate a PyFS mode string to a combination of XRootD OpenFlags."""
     flags = 0
-    if 'r+' in mode or 'a' in mode:
+    if "r+" in mode or "a" in mode:
         return OpenFlags.UPDATE
-    if 'w' in mode:
+    if "w" in mode:
         return OpenFlags.DELETE
-    if 'r' in mode:
+    if "r" in mode:
         return OpenFlags.READ
 
     return flags

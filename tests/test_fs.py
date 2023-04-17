@@ -8,8 +8,6 @@
 
 """Test of XRootDPyFS."""
 
-from __future__ import absolute_import, print_function
-
 import os
 import types
 from datetime import datetime

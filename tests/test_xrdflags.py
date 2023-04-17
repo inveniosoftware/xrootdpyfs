@@ -8,8 +8,6 @@
 
 """Test of XRootD File Flags."""
 
-from __future__ import absolute_import, print_function
-
 from os.path import join
 
 from conftest import mkurl

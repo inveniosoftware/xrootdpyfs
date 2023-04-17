@@ -8,8 +8,6 @@
 
 """Test of XRootDPyFS utils."""
 
-from __future__ import absolute_import, print_function
-
 from XRootD.client.flags import OpenFlags
 
 from xrootdpyfs.utils import is_valid_path, spliturl, \

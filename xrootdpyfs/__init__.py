@@ -163,9 +163,9 @@ Reading files:
     b'Hello XRootD!\n'
     >>> f.close()
 
-Reading files using the ``getcontents()`` method:
+Reading files using the ``readtext()`` method:
 
-    >>> fs.getcontents("xrootdpyfs/test.txt")
+    >>> fs.readtext("xrootdpyfs/test.txt")
     b'Hello XRootD!\n'
 
 Writing files:
@@ -174,18 +174,18 @@ Writing files:
     >>> f.write("World")
     >>> f.close()
 
-Writing files using the ``setcontents()`` method (returns the number of bytes
+Writing files using the ``writetext()`` method (returns the number of bytes
 written):
 
-    >>> fs.setcontents("xrootdpyfs/test.txt", "World")
-    5
+    >>> fs.writetext("xrootdpyfs/test.txt", "World")
+    >>> fs.readtext("xrootdpyfs/test.txt")
+    b'World'
 """
-
-from __future__ import absolute_import, print_function
 
 from .fs import XRootDPyFS
 from .opener import XRootDPyOpener
-from .version import __version__
 from .xrdfile import XRootDPyFile
+
+__version__ = "0.2.2"
 
 __all__ = ('__version__', 'XRootDPyFS', 'XRootDPyOpener', 'XRootDPyFile')

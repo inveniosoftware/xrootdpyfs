@@ -10,8 +10,7 @@
 
 from XRootD.client.flags import OpenFlags
 
-from xrootdpyfs.utils import is_valid_path, spliturl, \
-    translate_file_mode_to_flags
+from xrootdpyfs.utils import is_valid_path, spliturl, translate_file_mode_to_flags
 
 
 def test_spliturl():

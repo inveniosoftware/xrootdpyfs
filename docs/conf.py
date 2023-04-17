@@ -12,10 +12,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import os
-import re
-import shlex
-import sys
+from xrootdpyfs import __version__
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -62,12 +59,7 @@ author = u'Invenio Collaboration'
 # built documents.
 #
 # The short X.Y version.
-# Get the version string. Cannot be done with import!
-with open(os.path.join('..', 'xrootdpyfs', 'version.py'), 'rt') as f:
-    version = re.search(
-        '__version__\s*=\s*"(?P<version>.*)"\n',
-        f.read()
-    ).group('version')
+version = __version__
 
 # The full version, including alpha/beta/rc tags.
 release = version

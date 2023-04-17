@@ -16,8 +16,7 @@ from fs.path import basename
 from six import b, binary_type, text_type
 from XRootD.client import File
 
-from .utils import is_valid_path, is_valid_url, spliturl, \
-    translate_file_mode_to_flags
+from .utils import is_valid_path, is_valid_url, spliturl, translate_file_mode_to_flags
 
 
 class XRootDPyFile(object):

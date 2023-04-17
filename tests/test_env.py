@@ -10,8 +10,12 @@
 
 import os
 
-from xrootdpyfs.env import set_connectionretry, set_connectionwindow, \
-    set_timeout, set_timeoutresolution
+from xrootdpyfs.env import (
+    set_connectionretry,
+    set_connectionwindow,
+    set_timeout,
+    set_timeoutresolution,
+)
 
 
 def test_set_timeout():

@@ -14,14 +14,21 @@ from datetime import datetime
 from functools import wraps
 from os.path import exists, join
 
-from fs import ResourceType
-
 import pytest
 from conftest import mkurl
-from fs.errors import IllegalBackReference, DestinationExists, \
-    DirectoryNotEmpty, FSError, InvalidPath, RemoteConnectionError, \
-    ResourceError, ResourceInvalid, ResourceNotFound, \
-    Unsupported
+from fs import ResourceType
+from fs.errors import (
+    DestinationExists,
+    DirectoryNotEmpty,
+    FSError,
+    IllegalBackReference,
+    InvalidPath,
+    RemoteConnectionError,
+    ResourceError,
+    ResourceInvalid,
+    ResourceNotFound,
+    Unsupported,
+)
 from mock import Mock
 from XRootD.client.responses import XRootDStatus
 

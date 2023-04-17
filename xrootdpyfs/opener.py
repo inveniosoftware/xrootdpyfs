@@ -8,8 +8,8 @@
 
 """PyFilesystem opener for XRootD."""
 
-from fs.path import split
 from fs.opener import Opener
+from fs.path import split
 
 from .fs import XRootDPyFS
 from .utils import spliturl
@@ -25,21 +25,16 @@ class XRootDPyOpener(Opener):
 
         Arguments:
             fs_url (str): A filesystem URL.
-            parse_result (~fs.opener.parse.ParseResult): A parsed
-                filesystem URL.
+            parse_result (~fs.opener.parse.ParseResult): A parsed filesystem URL.
             writeable (bool): `True` if the filesystem must be writable.
-            create (bool): `True` if the filesystem should be created
-                if it does not exist.
-            cwd (str): The current working directory (generally only
-                relevant for OS filesystems).
+            create (bool): `True` if the filesystem should be created if it does not exist.
+            cwd (str): The current working directory (generally only relevant for OS filesystems).
 
         Raises:
-            fs.opener.errors.OpenerError: If a filesystem could not
-                be opened for any reason.
+            fs.opener.errors.OpenerError: If a filesystem could not be opened for any reason.
 
         Returns:
             `~fs.base.FS`: A filesystem instance.
-
         """
         root_url, path, query = spliturl(fs_url)
 

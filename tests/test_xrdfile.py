@@ -8,8 +8,6 @@
 
 """Test of XRootDPyFS."""
 
-from __future__ import absolute_import, print_function
-
 import errno
 import math
 from os.path import join

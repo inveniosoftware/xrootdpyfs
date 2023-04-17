@@ -8,8 +8,6 @@
 
 """File-like interface for interacting with files over the XRootD protocol."""
 
-from __future__ import absolute_import, print_function
-
 import sys
 
 from fs import Seek

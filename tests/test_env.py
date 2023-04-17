@@ -8,8 +8,6 @@
 
 """Test of environment variables."""
 
-from __future__ import absolute_import, print_function
-
 import os
 
 from xrootdpyfs.env import set_connectionretry, set_connectionwindow, \

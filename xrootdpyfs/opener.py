@@ -8,8 +8,6 @@
 
 """PyFilesystem opener for XRootD."""
 
-from __future__ import absolute_import, print_function
-
 from fs.path import split
 from fs.opener import Opener
 

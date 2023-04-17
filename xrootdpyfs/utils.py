@@ -8,8 +8,6 @@
 
 """Helper methods for working with root URLs."""
 
-from __future__ import absolute_import, print_function
-
 import re
 
 from six.moves.urllib.parse import urlparse

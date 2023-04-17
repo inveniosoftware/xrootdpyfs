@@ -18,8 +18,6 @@ implements the entire PyFilesystem
    XRootDPyFS and not supported by other PyFilesystem implementations.
 """
 
-from __future__ import absolute_import, print_function
-
 import re
 from glob import fnmatch
 

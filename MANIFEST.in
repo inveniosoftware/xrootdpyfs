@@ -1,16 +1,28 @@
 # This file is part of xrootdpyfs
-# Copyright (C) 2015 CERN.
+# Copyright (C) 2015-2023 CERN.
 #
 # xrootdpyfs is free software; you can redistribute it and/or modify it under the
 # terms of the Revised BSD License; see LICENSE file for more details.
 
-include .lgtm
+exclude .coveragerc
+exclude Dockerfile
+include .dockerignore
+include .editorconfig
+include .tx/config
+include *.rst
+include *.sh
+include *.txt
+include CHANGES
 include LICENSE
-include MAINTAINERS AUTHORS CHANGES README.rst
-include .coveragerc run-tests.sh
-include docs/*.rst docs/*.py docs/Makefile docs/requirements.txt
-include tests/*.py
-include examples/*.py
-recursive-include docs/_themes *.py *.css *.css_t *.conf *.html README
-recursive-include docs/_templates *.html
+prune docs/_build
+recursive-include docs *.bat
+recursive-include docs *.py
+recursive-include docs *.rst
+recursive-include docs *.txt
+recursive-include docs Makefile
+recursive-include tests *.py
+recursive-include tests *.html
+recursive-include tests *.dat
+recursive-include tests *.txt
 recursive-include .github/workflows *.yml
+include .git-blame-ignore-revs

@@ -23,15 +23,28 @@ from glob import fnmatch
 
 from fs import ResourceType
 from fs.base import FS
-from fs.errors import DestinationExists, DirectoryNotEmpty, \
-    FSError, InvalidPath, RemoteConnectionError, ResourceError, \
-    ResourceInvalid, ResourceNotFound, Unsupported
+from fs.errors import (
+    DestinationExists,
+    DirectoryNotEmpty,
+    FSError,
+    InvalidPath,
+    RemoteConnectionError,
+    ResourceError,
+    ResourceInvalid,
+    ResourceNotFound,
+    Unsupported,
+)
 from fs.info import Info
-from fs.path import basename, dirname, frombase, normpath, combine, join, relpath, isabs
+from fs.path import basename, combine, dirname, frombase, isabs, join, normpath, relpath
 from six.moves.urllib.parse import parse_qs, urlencode
 from XRootD.client import CopyProcess, FileSystem
-from XRootD.client.flags import AccessMode, DirListFlags, MkDirFlags, \
-    QueryCode, StatInfoFlags
+from XRootD.client.flags import (
+    AccessMode,
+    DirListFlags,
+    MkDirFlags,
+    QueryCode,
+    StatInfoFlags,
+)
 
 from .utils import is_valid_path, is_valid_url, spliturl
 from .xrdfile import XRootDPyFile

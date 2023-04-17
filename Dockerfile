@@ -40,13 +40,15 @@ RUN if [ ! -z "$xrootd_version" ] ; then XROOTD_V="-$xrootd_version" ; else XROO
                                         gcc-c++ \
                                         zlib-devel \
                                         openssl-devel \
-                                        libuuid-devel \ \
+                                        libuuid-devel \
                                         python3-devel \
                                         xrootd"$XROOTD_V"
 
-RUN pip install --upgrade pip "setuptools<58" wheel
+# Install some prerequisites ahead of `setup.py` in order to take advantage of
+# the docker build cache:
+RUN pip install --upgrade pip setuptools wheel
 
-# Install Python xrootd and fs
+# Install Python xrootd
 # Ensure that installed version of xrootd Python client is the same as the RPM package
 RUN rpm --queryformat "%{VERSION}" -q xrootd
 RUN XROOTD_V=`rpm --queryformat "%{VERSION}" -q xrootd` && \
@@ -56,7 +58,7 @@ RUN XROOTD_V=`rpm --queryformat "%{VERSION}" -q xrootd` && \
 WORKDIR /code
 COPY . /code
 
-RUN pip install -e '.[docs,tests]'
+RUN pip install -e '.[tests]'
 RUN pip freeze
 
 RUN adduser --uid 1001 xrootdpyfs

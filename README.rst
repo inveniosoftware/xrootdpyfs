@@ -104,6 +104,7 @@ running XRootD server:
 In another shell:
 
 .. code-block:: console
+
    $ docker ps  # find the container id
    $ docker exec -it <container-id> bash
    [xrootdpyfs@xrootdpyfs code]$ python -m pytest -vvv tests

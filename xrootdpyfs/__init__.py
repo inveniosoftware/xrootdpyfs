@@ -186,6 +186,6 @@ from .fs import XRootDPyFS
 from .opener import XRootDPyOpener
 from .xrdfile import XRootDPyFile
 
-__version__ = "0.2.2"
+__version__ = "1.0.0a1"
 
 __all__ = ("__version__", "XRootDPyFS", "XRootDPyOpener", "XRootDPyFile")

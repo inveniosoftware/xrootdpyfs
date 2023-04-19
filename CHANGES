@@ -1,6 +1,11 @@
 Changes
 =======
 
+Version 1.0.0a1 (released 2023-04-19)
+
+- Upgrade pyfs to version 2.
+- Improve module's files organization and code formatting.
+
 Version 0.2.2 (released 2021-12-13)
 
 - Supports `xrootd@4.12.7`

@@ -147,7 +147,7 @@ class XRootDPyFS(FS):
 
     def _raise_status(self, path, status):
         """Raise error based on status."""
-        if status.errno in [3006, 17]:
+        if status.errno in [3006, 17, 3018]:
             raise DestinationExists(path=path, msg=status)
         elif status.errno == 3005:
             # Unfortunately only way to determine if the error is due to a
@@ -343,7 +343,8 @@ class XRootDPyFS(FS):
         status, _ = self._client.mkdir(self._p(path), flags=flags, mode=mode)
 
         if not status.ok:
-            destination_exists = status.errno == 3006
+            # 3018 introduced in xrootd5, 17 = POSIX error, 3006 - legacy errno
+            destination_exists = status.errno in [3006, 3018, 17]
             if allow_recreate and destination_exists:
                 return True
             self._raise_status(path, status)

@@ -10,6 +10,7 @@
 
 from os.path import join
 
+import pytest
 from conftest import mkurl
 from XRootD import client as xclient
 from XRootD.client.flags import OpenFlags
@@ -50,6 +51,7 @@ def test_READ(tmppath):
     assert statmsg.error
 
 
+@pytest.mark.skip("OpenFlags.APPEND not used anywhere in the codebase")
 def test_APPEND(tmppath):
     fname, fconts = tstfile_a(tmppath)
     ffpath = join(tmppath, fname)

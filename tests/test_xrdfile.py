@@ -629,7 +629,9 @@ def test_readwrite_diffrent_encodings_fails(tmppath):
     unicodestr = "æøå"
 
     pfile = open(fp2, "w")  # default encoding is ANSI
-    pytest.raises(UnicodeEncodeError, pfile.write, unicodestr)
+    # unicode is handled by default in python 3
+    # pytest.raises(UnicodeEncodeError, pfile.write, unicodestr)
+    pfile.close()
     xfile = XRootDPyFile(mkurl(fp), "w", encoding="ascii")
     pytest.raises(UnicodeEncodeError, xfile.write, unicodestr)
     xfile.close()

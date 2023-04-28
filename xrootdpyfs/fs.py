@@ -130,7 +130,7 @@ class XRootDPyFS(FS):
         self._client = FileSystem(self.xrd_get_rooturl())
         super().__init__()
 
-    def _p(self, path):
+    def _p(self, path, encoding="utf-8"):
         """Prepend base path to path."""
         # fs.path.join() omits the first '/' in self.base_path.
         # It is resolved by adding on an additional '/' to its return value.
@@ -147,6 +147,7 @@ class XRootDPyFS(FS):
 
     def _raise_status(self, path, status):
         """Raise error based on status."""
+        # 3006 - legacy (v4 errno), 17 - POSIX error, 3018 (xrootd v5 errno)
         if status.errno in [3006, 17, 3018]:
             raise DestinationExists(path=path, msg=status)
         elif status.errno == 3005:
@@ -169,6 +170,14 @@ class XRootDPyFS(FS):
             if status.errno == 3013:
                 raise Unsupported(msg=status)
             raise FSError(msg=status)
+
+        # due to https://github.com/xrootd/xrootd/blob
+        # /39f9e0ae6744c4e068905daf0a10270f443b8619/src/XrdOfs/XrdOfsFSctl.cc#L230
+        # the response contains random bytes due to the way buffer size is allocated
+        # which causes response parsing errors on our python client.
+        # The bytes succeeding the null byte (x00) should be ignored.
+        if b"\x00" in res[-3:-1]:
+            res = res.split(b"\x00")[0]
         return parse_qs(res) if parse else res
 
     def open(

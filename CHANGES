@@ -1,6 +1,11 @@
 Changes
 =======
 
+Version 2.0.0a1 (released 2023-05-03)
+
+- upgrade xrootd to version 5.
+- fix testing xrootd responses
+
 Version 1.0.0a1 (released 2023-04-19)
 
 - Upgrade pyfs to version 2.

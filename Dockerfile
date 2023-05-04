@@ -6,6 +6,7 @@
 
 FROM almalinux:9
 
+RUN dnf install -y git-all
 RUN dnf install -y epel-release
 RUN dnf update -y
 # CRB (Code Ready Builder): equivalent repository to well-known CentOS PowerTools

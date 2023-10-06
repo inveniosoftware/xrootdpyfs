@@ -15,7 +15,6 @@ RUN dnf install -y yum-utils
 RUN dnf config-manager --set-enabled crb
 
 RUN dnf config-manager --add-repo https://cern.ch/xrootd/xrootd.repo
-RUN dnf list installed
 
 # Install Python 3.9
 RUN dnf install -y python3-devel

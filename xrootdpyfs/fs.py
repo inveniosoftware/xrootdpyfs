@@ -125,6 +125,8 @@ class XRootDPyFS(FS):
             queryargs = query
 
         self.root_url = root_url
+        # for compatibility with OSFS
+        self.root_path = root_url
         self.base_path = base_path
         self.queryargs = queryargs
         self._client = FileSystem(self.xrd_get_rooturl())

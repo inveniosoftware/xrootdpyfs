@@ -149,8 +149,10 @@ class XRootDPyFS(FS):
         """Raise error based on status."""
         # 3006 - legacy (v4 errno), 17 - POSIX error, 3018 (xrootd v5 errno)
         if status.errno in [3006, 17, 3018]:
+            if status.message.strip().endswith("directory not empty"):
+                raise DirectoryNotEmpty(path=path, msg=status)
             raise DestinationExists(path=path, msg=status)
-        elif status.errno == 3005:
+        elif status.errno in [3005]:
             # Unfortunately only way to determine if the error is due to a
             # directory not being empty, or that a resource is not a directory:
             if status.message.strip().endswith("not a directory"):
@@ -353,7 +355,7 @@ class XRootDPyFS(FS):
 
         if not status.ok:
             # 3018 introduced in xrootd5, 17 = POSIX error, 3006 - legacy errno
-            destination_exists = status.errno in [3006, 3018, 17]
+            destination_exists = status.errno in [3006, 17, 3018]
             if allow_recreate and destination_exists:
                 return True
             self._raise_status(path, status)
@@ -405,7 +407,7 @@ class XRootDPyFS(FS):
         status, _ = self._client.rmdir(self._p(path))
 
         if not status.ok:
-            directory_not_empty_error = status.errno == 3005
+            directory_not_empty_error = status.errno in [3005, 3018]
             if directory_not_empty_error and force:
                 # xrootd does not support recursive removal so do we have to
                 # do it ourselves.

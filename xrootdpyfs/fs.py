@@ -148,7 +148,7 @@ class XRootDPyFS(FS):
     def _raise_status(self, path, status):
         """Raise error based on status."""
         # 3006 - legacy (v4 errno), 17 - POSIX error, 3018 (xrootd v5 errno)
-        if status.errno in [3006, 17, 3018]:
+        if status.errno in [3006, 17]:
             raise DestinationExists(path=path, msg=status)
         elif status.errno == 3005:
             # Unfortunately only way to determine if the error is due to a
@@ -159,6 +159,8 @@ class XRootDPyFS(FS):
                 raise DirectoryNotEmpty(path=path, msg=status)
         elif status.errno == 3011:
             raise ResourceNotFound(path=path, msg=status)
+        elif status.errno == 3018:
+            raise DirectoryNotEmpty(path=path, msg=status)
         else:
             raise ResourceError(path=path, msg=status)
 
@@ -353,7 +355,7 @@ class XRootDPyFS(FS):
 
         if not status.ok:
             # 3018 introduced in xrootd5, 17 = POSIX error, 3006 - legacy errno
-            destination_exists = status.errno in [3006, 3018, 17]
+            destination_exists = status.errno in [3006, 17]
             if allow_recreate and destination_exists:
                 return True
             self._raise_status(path, status)

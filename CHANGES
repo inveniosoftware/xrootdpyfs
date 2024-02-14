@@ -1,6 +1,12 @@
 Changes
 =======
 
+Version 2.0.0 (released 2024-02-14)
+
+- stable release
+- fs: align error code changes (3005, 3018) to comply with
+      https://github.com/xrootd/xrootd/commit/3715a81a5807a2fd2aee5dbbcd2aac1a74d5acc6
+
 Version 2.0.0a1 (released 2023-05-03)
 
 - upgrade xrootd to version 5.

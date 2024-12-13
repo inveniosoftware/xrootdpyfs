@@ -23,9 +23,8 @@ jobs:
         # empty string "" is for latest
         xrootd-version: [
           5.5.5,
-          5.6.1,
-          5.6.2,
           5.6.7,
+          5.7.2,
           ""
         ]
 

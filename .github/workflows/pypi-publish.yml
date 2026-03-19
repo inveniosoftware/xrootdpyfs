@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Invenio.
-# Copyright (C) 2020 CERN.
+# Copyright (C) 2026 CERN.
 #
 # Invenio is free software; you can redistribute it and/or modify it
 # under the terms of the MIT License; see LICENSE file for more details.
@@ -15,15 +15,15 @@ on:
 
 jobs:
   Publish:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-slim
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v6
         with:
-          python-version: 3.9
+          python-version: 3.14
 
       - name: Install dependencies
         run: |
@@ -35,7 +35,7 @@ jobs:
           python setup.py sdist bdist_wheel
 
       - name: Publish on PyPI
-        uses: pypa/gh-action-pypi-publish@v1.3.1
+        uses: pypa/gh-action-pypi-publish@v1.13.0
         with:
           user: __token__
           password: ${{ secrets.pypi_token }}

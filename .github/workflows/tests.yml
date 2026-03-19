@@ -7,35 +7,37 @@ on:
     branches: master
   schedule:
     # * is a special character in YAML so you have to quote this string
-    - cron:  '0 3 * * 6'
+    - cron: "0 3 * * 6"
   workflow_dispatch:
     inputs:
       reason:
-        description: 'Reason'
+        description: "Reason"
         required: false
-        default: 'Manual trigger'
+        default: "Manual trigger"
 
 jobs:
   Tests:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        # empty string "" is for latest
-        xrootd-version: [
-          5.5.5,
-          5.6.7,
-          5.7.3,
-          ""
-        ]
+        python-version: [3.12.9, 3.14.3]
+        # https://xrootd.web.cern.ch/repo/stable/el10/x86_64/
+        xrootd-version: [5.7.2, 5.8.4, 5.9.1]
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: Build Docker image
-        run: docker build -t xrootd --build-arg xrootd_version=$XROOTD_VERSION --progress=plain .
+        run: docker build -t xrootd --build-arg xrootd_version=$XROOTD_VERSION --build-arg python_version=$PYTHON_VERSION --progress=plain .
         env:
           XROOTD_VERSION: ${{ matrix.xrootd-version }}
+          PYTHON_VERSION: ${{ matrix.python-version }}
 
       - name: Run tests
         run: docker run -h xrootdpyfs -t xrootd

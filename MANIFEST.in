@@ -1,5 +1,5 @@
 # This file is part of xrootdpyfs
-# Copyright (C) 2015-2023 CERN.
+# Copyright (C) 2015-2026 CERN.
 #
 # xrootdpyfs is free software; you can redistribute it and/or modify it under the
 # terms of the Revised BSD License; see LICENSE file for more details.
@@ -24,5 +24,7 @@ recursive-include tests *.py
 recursive-include tests *.html
 recursive-include tests *.dat
 recursive-include tests *.txt
+recursive-include tests *.py
 recursive-include .github/workflows *.yml
+recursive-include xrootdpyfs *.py
 include .git-blame-ignore-revs

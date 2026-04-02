@@ -19,13 +19,15 @@ import cProfile
 import os
 import pstats
 import shutil
+import subprocess
 import tempfile
 import time
 from io import StringIO
 from os.path import join
 
-from fs.opener import open_fs
 from XRootD import client
+
+from xrootdpyfs.fs import XRootDPyFS
 
 
 def teardown(tmppath):
@@ -40,7 +42,10 @@ def setup():
     filepath = join(tmppath, filename)
 
     # Create test file with random data
-    os.system("dd bs=1024 count={1} </dev/urandom >{0}".format(filepath, 1024 * 10))
+    subprocess.run(
+        ["dd", "bs=1024", "count=10240", "if=/dev/urandom", f"of={filepath}"],
+        check=True,
+    )
 
     return filename, tmppath, filepath
 
@@ -48,11 +53,10 @@ def setup():
 #
 # Test methods
 #
-def read_pyfs_chunks(url, filename, mode="rb", chunksize=2097152, n=100):
+def read_pyfs_chunks(fs, filename, mode="rb", chunksize=2097152, n=100):
     """Read a file in chunks."""
     t1 = time.time()
 
-    fs = open_fs(url)
     assert fs.exists(filename)
     i = 0
     while i < n:
@@ -111,12 +115,14 @@ def main():
         n = 10
         rooturl = "root://localhost/{0}".format(testfilepath)
 
-        print("osfs:", testfilepath, read_pyfs_chunks(tmppath, filename, n=n))
-        print("pyxrootd:", rooturl, read_pyxrootd_chunks(rooturl, n=n))
+        # print("osfs:", testfilepath, read_pyfs_chunks(tmppath, filename, n=n))
+        print("pyxrootd:", rooturl, read_pyxrootd_chunks(XRootDPyFS(rooturl), n=n))
 
         pr = profile_start()
         print(
-            "xrootdpyfs:", rooturl, read_pyfs_chunks(rooturl, filename, mode="rb-", n=n)
+            "xrootdpyfs:",
+            rooturl,
+            read_pyfs_chunks(XRootDPyFS(rooturl), filename, mode="rb-", n=n),
         )
         profile_end(pr)
     finally:

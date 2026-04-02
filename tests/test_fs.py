@@ -16,8 +16,12 @@ from os.path import exists, join
 
 import pytest
 from conftest import mkurl
-from fs import ResourceType
-from fs.errors import (
+from mock import Mock
+from XRootD.client.responses import XRootDStatus
+
+from xrootdpyfs import XRootDPyFile, XRootDPyFS
+from xrootdpyfs.fs_utils.enums import ResourceType
+from xrootdpyfs.fs_utils.errors import (
     DestinationExists,
     DirectoryNotEmpty,
     FSError,
@@ -29,10 +33,6 @@ from fs.errors import (
     ResourceNotFound,
     Unsupported,
 )
-from mock import Mock
-from XRootD.client.responses import XRootDStatus
-
-from xrootdpyfs import XRootDPyFile, XRootDPyFS
 from xrootdpyfs.utils import spliturl
 
 

@@ -10,12 +10,17 @@
 
 import sys
 
-from fs import Seek
-from fs.errors import InvalidPath, PathError, ResourceNotFound, Unsupported
-from fs.path import basename
-from six import b, binary_type, text_type
 from XRootD.client import File
 
+from xrootdpyfs.fs_utils.enums import Seek
+from xrootdpyfs.fs_utils.errors import (
+    InvalidPath,
+    PathError,
+    ResourceNotFound,
+    Unsupported,
+)
+
+from .fs_utils.path import basename
 from .utils import is_valid_path, is_valid_url, spliturl, translate_file_mode_to_flags
 
 
@@ -113,8 +118,8 @@ class XRootDPyFile(object):
         self._ipp = 0
         self._size = -1
         self._iterator = None
-        self._newline = newline or b("\n")
-        self._buffer = b("")
+        self._newline = newline or b"\n"
+        self._buffer = b""
         self._buffer_pos = 0
 
         # flag translation
@@ -223,7 +228,7 @@ class XRootDPyFile(object):
         A trailing newline character is kept in the string (but may be absent
         when a file ends with an incomplete line).
         """
-        bits = [self._buffer if self._buffer_pos == self.tell() else b("")]
+        bits = [self._buffer if self._buffer_pos == self.tell() else b""]
         indx = bits[-1].find(self._newline)
 
         if indx == -1:
@@ -236,7 +241,7 @@ class XRootDPyFile(object):
                 indx = bit.find(self._newline)
 
         if indx == -1:
-            return b("").join(bits)
+            return b"".join(bits)
 
         indx += len(self._newline)
         extra = bits[-1][indx:]
@@ -245,7 +250,7 @@ class XRootDPyFile(object):
         self._buffer = extra
         self._buffer_pos = self.tell()
 
-        return b("").join(bits)
+        return bytes("").join(bits)
 
     def readlines(self):
         """Read until EOF using readline().
@@ -279,10 +284,10 @@ class XRootDPyFile(object):
         if "a" in self.mode:
             self.seek(0, Seek.end)
 
-        if not isinstance(data, binary_type):
+        if not isinstance(data, bytes):
             if isinstance(data, bytearray):
                 data = bytes(data)
-            elif isinstance(data, text_type):
+            elif isinstance(data, str):
                 data = data.encode(self.encoding, self.errors)
 
         statmsg, res = self._file.write(data, offset=self._ipp)

@@ -20,10 +20,20 @@ implements the entire PyFilesystem
 
 import re
 from glob import fnmatch
+from urllib.parse import parse_qs, urlencode
 
-from fs import ResourceType
-from fs.base import FS
-from fs.errors import (
+from XRootD.client import CopyProcess, FileSystem
+from XRootD.client.flags import (
+    AccessMode,
+    DirListFlags,
+    MkDirFlags,
+    QueryCode,
+    StatInfoFlags,
+)
+
+from .fs_utils.base import FS
+from .fs_utils.enums import ResourceType
+from .fs_utils.errors import (
     DestinationExists,
     DirectoryNotEmpty,
     FSError,
@@ -34,18 +44,17 @@ from fs.errors import (
     ResourceNotFound,
     Unsupported,
 )
-from fs.info import Info
-from fs.path import basename, combine, dirname, frombase, isabs, join, normpath, relpath
-from six.moves.urllib.parse import parse_qs, urlencode
-from XRootD.client import CopyProcess, FileSystem
-from XRootD.client.flags import (
-    AccessMode,
-    DirListFlags,
-    MkDirFlags,
-    QueryCode,
-    StatInfoFlags,
+from .fs_utils.info import Info
+from .fs_utils.path import (
+    basename,
+    combine,
+    dirname,
+    frombase,
+    isabs,
+    join,
+    normpath,
+    relpath,
 )
-
 from .utils import is_valid_path, is_valid_url, spliturl
 from .xrdfile import XRootDPyFile
 

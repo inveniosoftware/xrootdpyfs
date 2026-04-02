@@ -146,16 +146,6 @@ integration:
     >>> fs.listdir("xrootdpyfs")
     ['test.txt']
 
-Or, alternatively using the PyFilesystem opener (note the first
-``import xrootdpyfs`` is required to ensure the XRootDPyFS
-opener is registered):
-
-    >>> import xrootdpyfs
-    >>> from fs.opener import open_fs
-    >>> fs = open_fs("root://localhost//tmp/")
-    >>> fs.listdir("xrootdpyfs")
-    ['test.txt']
-
 Reading files:
 
     >>> f = fs.open("xrootdpyfs/test.txt")
@@ -183,9 +173,8 @@ written):
 """
 
 from .fs import XRootDPyFS
-from .opener import XRootDPyOpener
 from .xrdfile import XRootDPyFile
 
 __version__ = "2.0.0"
 
-__all__ = ("__version__", "XRootDPyFS", "XRootDPyOpener", "XRootDPyFile")
+__all__ = ("__version__", "XRootDPyFS", "XRootDPyFile")

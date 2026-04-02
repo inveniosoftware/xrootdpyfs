@@ -9,8 +9,8 @@
 """Helper methods for working with root URLs."""
 
 import re
+from urllib.parse import urlparse
 
-from six.moves.urllib.parse import urlparse
 from XRootD.client import URL
 from XRootD.client.flags import OpenFlags
 

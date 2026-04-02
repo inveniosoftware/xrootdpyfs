@@ -57,15 +57,6 @@ integration:
     >>> fs.listdir("xrootdpyfs")
     ['test.txt']
 
-Or, alternatively using the PyFilesystem opener (note the first
-``import xrootdpyfs`` is required to ensure the XRootDPyFS opener is registered):
-
-    >>> import xrootdpyfs
-    >>> from fs.opener import open_fs
-    >>> fs = open_fs("root://localhost//tmp/")
-    >>> fs.listdir("xrootdpyfs")
-    ['test.txt']
-
 Reading files:
 
     >>> f = fs.open("xrootdpyfs/test.txt")
@@ -98,7 +89,8 @@ running XRootD server:
 .. code-block:: console
 
    $ docker build --platform linux/amd64 -t xrootd --progress=plain .
-   $ docker run --platform linux/amd64 -h xrootdpyfs -it -v <absolute path to this project>:/code xrootd bash
+   $ docker run --platform linux/amd64 -h xrootdpyfs -it -v <absolute path to this project>:/code xrootd
+   docker run --platform linux/amd64 -h xrootdpyfs -it -v /Users/nico/workspace/cern/invenio/modules/xrootdpyfs:/code xrootd
    [xrootdpyfs@xrootdpyfs code]$ xrootd
 
 In another shell:

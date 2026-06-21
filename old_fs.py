@@ -33,7 +33,7 @@ from XRootD.client.flags import (
 
 from .fs_utils.base import FS
 from .fs_utils.enums import ResourceType
-from .fs_utils.errors import (
+from .errors import (
     DestinationExists,
     DirectoryNotEmpty,
     FSError,

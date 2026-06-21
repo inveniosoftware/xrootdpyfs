@@ -8,20 +8,86 @@
 
 """File-like interface for interacting with files over the XRootD protocol."""
 
-import sys
+import os, sys
+from enum import IntEnum, unique
 
 from XRootD.client import File
 
-from xrootdpyfs.fs_utils.enums import Seek
-from xrootdpyfs.fs_utils.errors import (
+from xrootdpyfs.errors import (
     InvalidPath,
     PathError,
     ResourceNotFound,
     Unsupported,
 )
 
-from .fs_utils.path import basename
 from .utils import is_valid_path, is_valid_url, spliturl, translate_file_mode_to_flags
+
+@unique
+class Seek(IntEnum):
+    """Constants used by `io.IOBase.seek`.
+
+    These match `os.SEEK_CUR`, `os.SEEK_END`, and `os.SEEK_SET`
+    from the standard library.
+
+    """
+
+    #: Seek from the current file position.
+    current = os.SEEK_CUR
+    #: Seek from the end of the file.
+    end = os.SEEK_END
+    #: Seek from the start of the file.
+    set = os.SEEK_SET
+
+
+def split(path):
+    """Split a path into (head, tail) pair.
+
+    This function splits a path into a pair (head, tail) where 'tail' is
+    the last pathname component and 'head' is all preceding components.
+
+    Arguments:
+        path (str): Path to split
+
+    Returns:
+        (str, str): a tuple containing the head and the tail of the path.
+
+    Example:
+        >>> split("foo/bar")
+        ('foo', 'bar')
+        >>> split("foo/bar/baz")
+        ('foo/bar', 'baz')
+        >>> split("/foo/bar/baz")
+        ('/foo/bar', 'baz')
+
+    """
+    if "/" not in path:
+        return ("", path)
+    split = path.rsplit("/", 1)
+    return (split[0] or "/", split[1])
+
+
+def basename(path):
+    """Return the basename of the resource referenced by a path.
+
+    This is always equivalent to the 'tail' component of the value
+    returned by split(path).
+
+    Arguments:
+        path (str): A PyFilesytem path.
+
+    Returns:
+        str: the name of the resource at the given path.
+
+    Example:
+        >>> basename('foo/bar/baz')
+        'baz'
+        >>> basename('foo/bar')
+        'bar'
+        >>> basename('foo/bar/')
+        ''
+
+    """
+    return split(path)[1]
 
 
 class XRootDPyFile(object):

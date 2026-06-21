@@ -1,9 +1,17 @@
-"""Copied from PyFileSystem2, which is licensed under the MIT License."""
+"""FIXME."""
 
 import typing
 
 if typing.TYPE_CHECKING:
     from typing import Optional, Text
+
+
+__all__ = [
+    "InvalidPath",
+    "PathError",
+    "ResourceNotFound",
+    "Unsupported",
+]
 
 
 class MissingInfoNamespace(AttributeError):
@@ -13,7 +21,7 @@ class MissingInfoNamespace(AttributeError):
         # type: (Text) -> None
         self.namespace = namespace
         msg = "namespace '{}' is required for this attribute"
-        super().__init__(msg.format(namespace))
+        super(MissingInfoNamespace, self).__init__(msg.format(namespace))
 
     def __reduce__(self):
         return type(self), (self.namespace,)
@@ -27,7 +35,7 @@ class FSError(Exception):
     def __init__(self, msg=None):  # noqa: D107
         # type: (Optional[Text]) -> None
         self._msg = msg or self.default_message
-        super().__init__()
+        super(FSError, self).__init__()
 
     def __str__(self):
         # type: () -> Text
@@ -41,6 +49,55 @@ class FSError(Exception):
         return "{}({!r})".format(self.__class__.__name__, msg)
 
 
+class PathError(FSError):
+    """Base exception for errors to do with a path string."""
+
+    default_message = "path '{path}' is invalid"
+
+    def __init__(self, path, msg=None, exc=None):  # noqa: D107
+        # type: (Text, Optional[Text], Optional[Exception]) -> None
+        self.path = path
+        self.exc = exc
+        super(PathError, self).__init__(msg=msg)
+
+    def __reduce__(self):
+        return type(self), (self.path, self._msg, self.exc)
+
+
+class InvalidPath(PathError):
+    """Path can't be mapped on to the underlaying filesystem."""
+
+    default_message = "path '{path}' is invalid on this filesystem "
+
+
+class OperationFailed(FSError):
+    """A specific operation failed."""
+
+    default_message = "operation failed, {details}"
+
+    def __init__(
+        self,
+        path=None,  # type: Optional[Text]
+        exc=None,  # type: Optional[Exception]
+        msg=None,  # type: Optional[Text]
+    ):  # noqa: D107
+        # type: (...) -> None
+        self.path = path
+        self.exc = exc
+        self.details = "" if exc is None else text_type(exc)
+        self.errno = getattr(exc, "errno", None)
+        super(OperationFailed, self).__init__(msg=msg)
+
+    def __reduce__(self):
+        return type(self), (self.path, self.exc, self._msg)
+
+
+class Unsupported(OperationFailed):
+    """Operation not supported by the filesystem."""
+
+    default_message = "not supported"
+
+
 class ResourceError(FSError):
     """Base exception class for error associated with a specific resource."""
 
@@ -50,7 +107,7 @@ class ResourceError(FSError):
         # type: (Text, Optional[Exception], Optional[Text]) -> None
         self.path = path
         self.exc = exc
-        super().__init__(msg=msg)
+        super(ResourceError, self).__init__(msg=msg)
 
     def __reduce__(self):
         return type(self), (self.path, self.exc, self._msg)
@@ -60,6 +117,7 @@ class ResourceNotFound(ResourceError):
     """Required resource not found."""
 
     default_message = "resource '{path}' not found"
+
 
 
 class DestinationExists(ResourceError):
@@ -74,31 +132,16 @@ class DirectoryNotEmpty(ResourceError):
     default_message = "directory '{path}' is not empty"
 
 
+class RemoteConnectionError(OperationFailed):
+    """Operations encountered remote connection trouble."""
+
+    default_message = "remote connection error"
+
+
 class ResourceInvalid(ResourceError):
     """Resource has the wrong type."""
 
     default_message = "resource '{path}' is invalid for this operation"
-
-
-class PathError(FSError):
-    """Base exception for errors to do with a path string."""
-
-    default_message = "path '{path}' is invalid"
-
-    def __init__(self, path, msg=None, exc=None):  # noqa: D107
-        # type: (Text, Optional[Text], Optional[Exception]) -> None
-        self.path = path
-        self.exc = exc
-        super().__init__(msg=msg)
-
-    def __reduce__(self):
-        return type(self), (self.path, self._msg, self.exc)
-
-
-class InvalidPath(PathError):
-    """Path can't be mapped on to the underlaying filesystem."""
-
-    default_message = "path '{path}' is invalid on this filesystem "
 
 
 class IllegalBackReference(ValueError):
@@ -120,41 +163,7 @@ class IllegalBackReference(ValueError):
         msg = ("path '{path}' contains back-references outside of filesystem").format(
             path=path
         )
-        super().__init__(msg)
+        super(IllegalBackReference, self).__init__(msg)
 
     def __reduce__(self):
         return type(self), (self.path,)
-
-
-class OperationFailed(FSError):
-    """A specific operation failed."""
-
-    default_message = "operation failed, {details}"
-
-    def __init__(
-        self,
-        path=None,  # type: Optional[Text]
-        exc=None,  # type: Optional[Exception]
-        msg=None,  # type: Optional[Text]
-    ):  # noqa: D107
-        # type: (...) -> None
-        self.path = path
-        self.exc = exc
-        self.details = "" if exc is None else str(exc)
-        self.errno = getattr(exc, "errno", None)
-        super(OperationFailed, self).__init__(msg=msg)
-
-    def __reduce__(self):
-        return type(self), (self.path, self.exc, self._msg)
-
-
-class RemoteConnectionError(OperationFailed):
-    """Operations encountered remote connection trouble."""
-
-    default_message = "remote connection error"
-
-
-class Unsupported(OperationFailed):
-    """Operation not supported by the filesystem."""
-
-    default_message = "not supported"

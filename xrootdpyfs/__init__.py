@@ -172,9 +172,10 @@ written):
     b'World'
 """
 
-from .fs import XRootDPyFS
+# from .fs import XRootDPyFS
 from .xrdfile import XRootDPyFile
+from .xrootd_fs import XRootDPyFS
 
 __version__ = "2.0.0"
 
-__all__ = ("__version__", "XRootDPyFS", "XRootDPyFile")
+__all__ = ("__version__", "XRootDPyFile", "XRootDPyFS")

@@ -121,4 +121,7 @@ Running the tests are most easily done using docker:
 
 .. code-block:: console
 
-    $ docker build --platform linux/amd64 -t xrootd . && docker run --platform linux/amd64 -h xrootdpyfs -it xrootd
+    $ docker build --platform linux/amd64 -t xrootd .
+    $ docker run --platform linux/amd64 -h xrootdpyfs -it -v $(pwd):/code -w /code xrootd bash
+    $ [xrootdpyfs@xrootdpyfs code]$ xrootd -b
+    $ ./run-tests.sh

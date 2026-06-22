@@ -1,37 +1,23 @@
 # SPDX-FileCopyrightText: 2015, 2016 CERN.
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""PyFilesystem implementation of XRootD protocol.
+"""PyFilesystem-like implementation of XRootD protocol.
 
-:py:class:`XRootDPyFS` is a subclass of PyFilesystem FS class and thus
+`XRootDPyFS` is a subclass of PyFilesystem FS class and thus
 implements the entire PyFilesystem
 `Filesystem interface <http://docs.pyfilesystem.org/en/latest/interface.html>`_
 .
 
 .. note::
-   All methods prefixed with ``xrd`` in :py:class:`XRootDPyFS` are specific to
+   All methods prefixed with ``xrd`` in `XRootDPyFS` are specific to
    XRootDPyFS and not supported by other PyFilesystem implementations.
 """
 
+import itertools
 import re
 from glob import fnmatch
+from urllib.parse import parse_qs, urlencode
 
-from fs import ResourceType
-from fs.base import FS
-from fs.errors import (
-    DestinationExists,
-    DirectoryNotEmpty,
-    FSError,
-    InvalidPath,
-    RemoteConnectionError,
-    ResourceError,
-    ResourceInvalid,
-    ResourceNotFound,
-    Unsupported,
-)
-from fs.info import Info
-from fs.path import basename, combine, dirname, frombase, isabs, join, normpath, relpath
-from six.moves.urllib.parse import parse_qs, urlencode
 from XRootD.client import CopyProcess, FileSystem
 from XRootD.client.flags import (
     AccessMode,
@@ -41,6 +27,30 @@ from XRootD.client.flags import (
     StatInfoFlags,
 )
 
+from ._pyfs_compat import (
+    FS,
+    DestinationExists,
+    DirectoryNotEmpty,
+    FSError,
+    Info,
+    InvalidPath,
+    RemoteConnectionError,
+    ResourceError,
+    ResourceInvalid,
+    ResourceNotFound,
+    ResourceType,
+    Unsupported,
+    Walker,
+    abspath,
+    basename,
+    combine,
+    dirname,
+    frombase,
+    isabs,
+    join,
+    normpath,
+    relpath,
+)
 from .utils import is_valid_path, is_valid_url, spliturl
 from .xrdfile import XRootDPyFile
 
@@ -89,6 +99,11 @@ class XRootDPyFS(FS):
         "read_only": False,
         "supports_rename": True,
     }
+
+    @property
+    def walk(self):
+        """`~fs.walk.BoundWalker`: a walker bound to this filesystem."""
+        return Walker.bind(self)
 
     def __init__(self, url, query=None):
         """Initialize file system object."""
@@ -560,7 +575,6 @@ class XRootDPyFS(FS):
         returns an generator instead of a list.
         """
         flag = DirListFlags.STAT if dirs_only or files_only else DirListFlags.NONE
-
         full_path = self._p(path)
         status, entries = self._client.dirlist(full_path, flag)
 
@@ -576,6 +590,41 @@ class XRootDPyFS(FS):
             dirs_only=dirs_only,
             files_only=files_only,
         )
+
+    def scandir(
+        self,
+        path,
+        namespaces=None,
+        page=None,
+    ):
+        """Get an iterator of resource info.
+
+        :param path: A path to a directory on the filesystem.
+        :type path: str
+        :param namespaces: A list of namespaces to include in the resource
+            information, e.g. ``['basic', 'access']``.
+        :type namespaces: list
+        :param page: May be a tuple of ``(<start>, <end>)`` indexes to return
+            an iterator of a subset of the resource info, or ``None`` to
+            iterate over the entire directory. Paging may be necessary for
+            very large directories.
+        :type page: tuple
+
+        :returns: an iterator of ``Info`` objects.
+        :rtype: ~collections.abc.Iterator
+        """
+        namespaces = namespaces or ()
+        _path = abspath(normpath(path))
+
+        info = (
+            self.getinfo(join(_path, name), namespaces=namespaces)
+            for name in self.listdir(path)
+        )
+        iter_info = iter(info)
+        if page is not None:
+            start, end = page
+            iter_info = itertools.islice(iter_info, start, end)
+        return iter_info
 
     def _ilistdir_helper(
         self,
@@ -645,7 +694,7 @@ class XRootDPyFS(FS):
             raise ResourceNotFound(src)
 
         if not self.isfile(src):
-            raise ResourceInvalid(src, msg="Source is not a file: %(path)s")
+            raise ResourceInvalid(path=src, msg="Source is not a file: %(path)s")
 
         return self._move(src, dst, overwrite=overwrite)
 
@@ -672,7 +721,7 @@ class XRootDPyFS(FS):
             raise ResourceNotFound(src)
 
         if not self.isdir(src):
-            raise ResourceInvalid(src, msg="Source is not a directory: %(path)s")
+            raise ResourceInvalid(path=src, msg="Source is not a directory: %(path)s")
 
         return self._move(src, dst, overwrite=overwrite)
 
@@ -725,7 +774,7 @@ class XRootDPyFS(FS):
         # isdir/isfile throws an error if file/dir doesn't exists
         if not self.isfile(src):
             if self.isdir(src):
-                raise ResourceInvalid(src, msg="Source is not a file: %(path)s")
+                raise ResourceInvalid(path=src, msg="Source is not a file: %(path)s")
             raise ResourceNotFound(src)
 
         if overwrite and self.exists(dst):
@@ -758,7 +807,9 @@ class XRootDPyFS(FS):
         """
         if not self.isdir(src):
             if self.isfile(src):
-                raise ResourceInvalid(src, msg="Source is not a directory: %(path)s")
+                raise ResourceInvalid(
+                    path=src, msg="Source is not a directory: %(path)s"
+                )
             raise ResourceNotFound(src)
 
         if self.exists(dst):

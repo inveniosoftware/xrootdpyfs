@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2015-2020 CERN.
 # SPDX-License-Identifier: BSD-3-Clause
 
-r"""XRootDPyFS is a PyFilesystem interface for XRootD.
+r"""XRootDPyFS is a high-level interface for XRootD.
 
 XRootD protocol aims at giving high performance, scalable fault tolerant access
 to data repositories of many kinds. The XRootDPyFS adds a high-level interface
@@ -34,8 +34,7 @@ Installation
 If you just want to try out the library, the easiest is to use Docker. See
 :ref:`getting-started` below for details.
 
-XRootDPyFS depends on `PyFilesystem <http://docs.pyfilesystem.org>`_ and
-`XRootD Python bindings <http://xrootd.org/doc/python/xrootd-python-0.1.0/>`_.
+XRootDPyFS depends on `XRootD Python bindings <http://xrootd.org/doc/python/xrootd-python-0.1.0/>`_.
 
 XRootDPyFS is not Python 3 compatible due to the underlying Python bindings not
 being Python 3 compatible.
@@ -141,16 +140,6 @@ integration:
     >>> fs.listdir("xrootdpyfs")
     ['test.txt']
 
-Or, alternatively using the PyFilesystem opener (note the first
-``import xrootdpyfs`` is required to ensure the XRootDPyFS
-opener is registered):
-
-    >>> import xrootdpyfs
-    >>> from fs.opener import open_fs
-    >>> fs = open_fs("root://localhost//tmp/")
-    >>> fs.listdir("xrootdpyfs")
-    ['test.txt']
-
 Reading files:
 
     >>> f = fs.open("xrootdpyfs/test.txt")
@@ -178,9 +167,8 @@ written):
 """
 
 from .fs import XRootDPyFS
-from .opener import XRootDPyOpener
 from .xrdfile import XRootDPyFile
 
 __version__ = "2.0.0"
 
-__all__ = ("__version__", "XRootDPyFS", "XRootDPyOpener", "XRootDPyFile")
+__all__ = ("__version__", "XRootDPyFS", "XRootDPyFile")

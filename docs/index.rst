@@ -24,11 +24,6 @@ File interface
    :members:
    :undoc-members:
 
-Opener
-------
-.. automodule:: xrootdpyfs.opener
-   :members:
-   :undoc-members:
 
 Environment
 -----------

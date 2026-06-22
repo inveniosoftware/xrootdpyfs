@@ -23,7 +23,7 @@ def set_timeout(value):
     """Default value for the time after which an error is declared.
 
     This value can be overwritten on case-by-case in
-    :py:class:`xrootdpyfs.fs.XRootDPyFS`.
+    `xrootdpyfs.fs.XRootDPyFS`.
 
     Sets the environment variable ``XRD_REQUESTTIMEOUT``.
     """

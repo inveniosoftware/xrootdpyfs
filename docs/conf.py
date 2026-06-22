@@ -119,7 +119,7 @@ html_theme = "alabaster"
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = {
-    "description": "XRootDPyFS is a PyFilesystem interface for XRootD.",
+    "description": "XRootDPyFS is a PyFilesystem-like interface for XRootD.",
     "github_user": "inveniosoftware",
     "github_repo": "xrootdpyfs",
     "github_button": False,

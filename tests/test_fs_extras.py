@@ -5,9 +5,9 @@
 
 import pytest
 from conftest import mkurl
-from fs.errors import ResourceNotFound
 
 from xrootdpyfs import XRootDPyFS
+from xrootdpyfs._pyfs_compat import ResourceNotFound
 
 
 def test_readtext(tmppath):

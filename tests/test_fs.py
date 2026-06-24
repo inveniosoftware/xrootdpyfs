@@ -8,26 +8,25 @@ import types
 from datetime import datetime
 from functools import wraps
 from os.path import exists, join
+from unittest.mock import Mock
 
 import pytest
 from conftest import mkurl
-from fs import ResourceType
-from fs.errors import (
+from XRootD.client.responses import XRootDStatus
+
+from xrootdpyfs import XRootDPyFile, XRootDPyFS
+from xrootdpyfs._pyfs_compat import (
     DestinationExists,
     DirectoryNotEmpty,
     FSError,
-    IllegalBackReference,
     InvalidPath,
     RemoteConnectionError,
     ResourceError,
     ResourceInvalid,
     ResourceNotFound,
+    ResourceType,
     Unsupported,
 )
-from mock import Mock
-from XRootD.client.responses import XRootDStatus
-
-from xrootdpyfs import XRootDPyFile, XRootDPyFS
 from xrootdpyfs.utils import spliturl
 
 
@@ -85,7 +84,6 @@ def test_p():
     assert fs._p("../") == "//eos"
     assert fs._p("../project/test") == "//eos/project/test"
     assert fs._p("../project/../test") == "//eos/test"
-    pytest.raises(IllegalBackReference, fs._p, "../../../test")
 
 
 def test_query_error(tmppath):

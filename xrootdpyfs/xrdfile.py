@@ -70,7 +70,7 @@ class XRootDPyFile(object):
         newline=None,
         line_buffering=False,
         buffer_size=None,
-        **kwargs
+        **kwargs,
     ):
         """The XRootDPyFile constructor.
 

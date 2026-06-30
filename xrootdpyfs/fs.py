@@ -186,7 +186,7 @@ class XRootDPyFS(FS):
         errors=None,
         newline=None,
         line_buffering=False,
-        **kwargs
+        **kwargs,
     ):
         r"""Open the given path and return a file-like object.
 
@@ -222,7 +222,7 @@ class XRootDPyFS(FS):
             errors=errors,
             newline=newline,
             line_buffering=line_buffering,
-            **kwargs
+            **kwargs,
         )
 
     def listdir(

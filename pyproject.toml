@@ -1,0 +1,68 @@
+# SPDX-FileCopyrightText: 2015-2023 CERN.
+# SPDX-FileCopyrightText: 2026 TU Wien.
+# SPDX-License-Identifier: MIT
+
+[project]
+name = "xrootdpyfs"
+description = "XRootDPyFS is a PyFilesystem interface for XRootD."
+readme = "README.rst"
+requires-python = ">=3.7"
+license = "BSD-3-Clause"
+authors = [
+  { name = "CERN", email = "info@inveniosoftware.org" },
+]
+keywords = [
+  "xrootdpyfs",
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: BSD License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Utilities",
+]
+dependencies = [
+  "fs>=2.0.10,<3.0",
+  "xrootd>=5.0.0,<6.0.0",
+]
+dynamic = ["version"]
+
+[project.urls]
+Repository = "https://github.com/inveniosoftware/xrootdpyfs"
+
+[project.entry-points."fs.opener"]
+root = "xrootdpyfs.opener:XRootDPyOpener"
+roots = "xrootdpyfs.opener:XRootDPyOpener"
+
+[project.optional-dependencies]
+tests = [
+  "mock>=4.0.0",
+  "pytest-black>=0.6.0",
+  "pytest-invenio>=4.0.0,<5.0.0",
+  "pytest-mock>=1.6.0",
+  "setuptools<82.0.0",
+  "sphinx>=4.5.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "xrootdpyfs/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/xrootdpyfs",
+]
+
+[tool.isort]
+profile = "black"
+
+[tool.pydocstyle]
+add_ignore = "D401,D403"
+
+[tool.pytest.ini_options]
+addopts = '--black --isort --pydocstyle --doctest-glob="*.rst" --doctest-modules --cov=xrootdpyfs --cov-report=term-missing'
+testpaths = "tests xrootdpyfs"
+live_server_scope = "module"

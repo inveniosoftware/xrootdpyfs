@@ -14,7 +14,6 @@ import cProfile
 import os
 import pstats
 import shutil
-import subprocess
 import tempfile
 import time
 from io import StringIO
@@ -36,18 +35,14 @@ def setup():
     tmppath = tempfile.mkdtemp()
     filepath = join(tmppath, filename)
 
-    # Create test file with random data using subprocess
-    count = 1024 * 10
-    subprocess.check_call(
-        ["dd", "bs=1024", f"count={count}", "if=/dev/urandom", f"of={filepath}"]
-    )
+    # Create test file with random data
+    size = 1024 * 10 * 1024
+    with open(filepath, "wb") as fp:
+        fp.write(os.urandom(size))
 
     return filename, tmppath, filepath
 
 
-#
-# Test methods
-#
 def read_pyfs_chunks(url, filename, mode="rb", chunksize=2097152, n=100):
     """Read a file in chunks."""
     t1 = time.time()

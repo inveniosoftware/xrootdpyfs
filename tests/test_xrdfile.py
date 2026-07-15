@@ -5,7 +5,7 @@
 
 import errno
 import math
-import os
+import shutil
 from os.path import dirname, join
 from unittest.mock import Mock
 
@@ -115,7 +115,6 @@ def copy_file(fn, fp, tmppath):
     fn_new = fn + "_copy"
     src = join(path, fn)
     dst = join(path, fn_new)
-    import shutil
 
     shutil.copy2(src, dst)
     return fn_new

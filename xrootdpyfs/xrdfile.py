@@ -4,14 +4,26 @@
 """File-like interface for interacting with files over the XRootD protocol."""
 
 import sys
+from urllib.parse import urlparse
 
-from fs import Seek
-from fs.errors import InvalidPath, PathError, ResourceNotFound, Unsupported
-from fs.path import basename
-from six import b, binary_type, text_type
 from XRootD.client import File
 
+from ._pyfs_compat import (
+    InvalidPath,
+    PathError,
+    ResourceNotFound,
+    Seek,
+    Unsupported,
+    basename,
+)
 from .utils import is_valid_path, is_valid_url, spliturl, translate_file_mode_to_flags
+
+
+def b(s):
+    """Convert string to bytes."""
+    if isinstance(s, bytes):
+        return s
+    return s.encode("latin-1")
 
 
 class XRootDPyFile(object):
@@ -274,10 +286,10 @@ class XRootDPyFile(object):
         if "a" in self.mode:
             self.seek(0, Seek.end)
 
-        if not isinstance(data, binary_type):
+        if not isinstance(data, bytes):
             if isinstance(data, bytearray):
                 data = bytes(data)
-            elif isinstance(data, text_type):
+            elif isinstance(data, str):
                 data = data.encode(self.encoding, self.errors)
 
         statmsg, res = self._file.write(data, offset=self._ipp)

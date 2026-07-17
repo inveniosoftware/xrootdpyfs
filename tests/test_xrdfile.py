@@ -5,18 +5,22 @@
 
 import errno
 import math
-from os.path import join
+import shutil
+from os.path import dirname, join
+from unittest.mock import Mock
 
-import fs.path
 import pytest
 from conftest import mkurl
-from fs import Seek
-from fs.errors import InvalidPath, PathError, ResourceNotFound, Unsupported
-from fs.opener import open_fs
-from mock import Mock
 from XRootD.client.responses import XRootDStatus
 
 from xrootdpyfs import XRootDPyFile
+from xrootdpyfs._pyfs_compat import (
+    InvalidPath,
+    PathError,
+    ResourceNotFound,
+    Seek,
+    Unsupported,
+)
 from xrootdpyfs.utils import is_valid_path, is_valid_url
 
 
@@ -93,8 +97,7 @@ def get_bin_testfile(tmppath):
 def get_file(fn, fp, tmppath):
     path = join(tmppath, fp)
     fpp = join(path, fn)
-    fs = open_fs(path)
-    with fs.open(fn) as f:
+    with open(fpp, "r") as f:
         fc = f.read()
     return {"filename": fn, "dir": fp, "contents": fc, "full_path": fpp}
 
@@ -102,8 +105,7 @@ def get_file(fn, fp, tmppath):
 def get_file_binary(fn, fp, tmppath):
     path = join(tmppath, fp)
     fpp = join(path, fn)
-    fs = open_fs(path)
-    with fs.open(fn, "rb") as f:
+    with open(fpp, "rb") as f:
         fc = f.read()
     return {"filename": fn, "dir": fp, "contents": fc, "full_path": fpp}
 
@@ -111,14 +113,16 @@ def get_file_binary(fn, fp, tmppath):
 def copy_file(fn, fp, tmppath):
     path = join(tmppath, fp)
     fn_new = fn + "_copy"
-    this_fs = open_fs(path)
-    this_fs.copy(fn, fn_new)
+    src = join(path, fn)
+    dst = join(path, fn_new)
+
+    shutil.copy2(src, dst)
     return fn_new
 
 
 def get_copy_file(arg, binary=False):
     # Would get called with e.g. arg=get_tsta_file(...)
-    fp = fs.path.dirname(arg["full_path"])
+    fp = dirname(arg["full_path"])
     fn_new = copy_file(arg["filename"], "", fp)
     return get_file_binary(fn_new, "", fp) if binary else get_file(fn_new, "", fp)
 
@@ -988,15 +992,16 @@ def test_readline(tmppath):
     fb = get_copy_file(fd)
     fp, fc = fd["full_path"], fd["contents"]
 
-    osfs = open_fs(fs.path.dirname(fd["full_path"]))
-    xfile, pfile = XRootDPyFile(mkurl(fp), "r"), osfs.open(fb["filename"], "r")
+    dir_path = dirname(fd["full_path"])
+    copy_path = join(dir_path, fb["filename"])
+    xfile, pfile = XRootDPyFile(mkurl(fp), "r"), open(copy_path, "r")
 
     assert xfile.readline() == pfile.readline().encode()
     assert xfile.readline() == pfile.readline().encode()
     assert xfile.readline() == pfile.readline().encode()
 
     xfile.close(), pfile.close()
-    xfile, pfile = XRootDPyFile(mkurl(fp), "r"), osfs.open(fb["filename"], "r")
+    xfile, pfile = XRootDPyFile(mkurl(fp), "r"), open(copy_path, "r")
     assert xfile.readline() == pfile.readline().encode()
     xfile.seek(0), pfile.seek(0)
     assert xfile.readline() == pfile.readline().encode()
@@ -1099,8 +1104,9 @@ def test_readlines(tmppath):
     fb = get_copy_file(fd)
     fp, fc = fd["full_path"], fd["contents"]
 
-    osfs = open_fs(fs.path.dirname(fb["full_path"]))
-    xfile, pfile = XRootDPyFile(mkurl(fp), "r"), osfs.open(fb["filename"], "r")
+    dir_path = dirname(fb["full_path"])
+    copy_path = join(dir_path, fb["filename"])
+    xfile, pfile = XRootDPyFile(mkurl(fp), "r"), open(copy_path, "r")
 
     xfile.seek(0), pfile.seek(0)
     expected = _list_str_encode(pfile.readlines())
@@ -1108,7 +1114,7 @@ def test_readlines(tmppath):
 
     xfile.close(), pfile.close()
 
-    xfile, pfile = XRootDPyFile(mkurl(fp), "w+"), osfs.open(fb["filename"], "w+")
+    xfile, pfile = XRootDPyFile(mkurl(fp), "w+"), open(copy_path, "w+")
     xfile.seek(0), pfile.seek(0)
     expected = _list_str_encode(pfile.readlines())
     assert xfile.readlines() == expected

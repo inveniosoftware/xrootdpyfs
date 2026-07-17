@@ -10,12 +10,18 @@
    :target: https://crate.io/packages/xrootdpyfs/
 
 
-XRootDPyFS is a PyFilesystem interface to XRootD.
+XRootDPyFS is a PyFilesystem-like interface to XRootD.
 
 XRootD protocol aims at giving high performance, scalable fault tolerant access
 to data repositories of many kinds. The XRootDPyFS adds a high-level interface
 on top of the existing Python interface (pyxrootd) and makes it easy to e.g.
 copy a directory in parallel or recursively remove a directory.
+
+.. important::
+   Since version 3.0.0, the dependency on PyFilesystem2 `pyfs` has been removed. The
+   `XRootDPyFS` class is now a standalone implementation of the PyFilesystem2.
+   The necessary classes and utilities have been added to this package.
+   The only breaking change is the removal for the support of the Opener.
 
 Further documentation is available on https://xrootdpyfs.readthedocs.io/.
 
@@ -54,15 +60,6 @@ integration:
 
     >>> from xrootdpyfs import XRootDPyFS
     >>> fs = XRootDPyFS("root://localhost//tmp/")
-    >>> fs.listdir("xrootdpyfs")
-    ['test.txt']
-
-Or, alternatively using the PyFilesystem opener (note the first
-``import xrootdpyfs`` is required to ensure the XRootDPyFS opener is registered):
-
-    >>> import xrootdpyfs
-    >>> from fs.opener import open_fs
-    >>> fs = open_fs("root://localhost//tmp/")
     >>> fs.listdir("xrootdpyfs")
     ['test.txt']
 

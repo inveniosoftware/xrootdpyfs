@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2015-2023 CERN.
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Simple performance test of XRootD PyFilesystem wrapper.
+"""Simple performance test of XRootD PyFilesystem-like wrapper.
 
 Tests:
 
@@ -19,8 +19,9 @@ import time
 from io import StringIO
 from os.path import join
 
-from fs.opener import open_fs
 from XRootD import client
+
+from xrootdpyfs import XRootDPyFS
 
 
 def teardown(tmppath):
@@ -35,23 +36,22 @@ def setup():
     filepath = join(tmppath, filename)
 
     # Create test file with random data
-    os.system("dd bs=1024 count={1} </dev/urandom >{0}".format(filepath, 1024 * 10))
+    size = 1024 * 10 * 1024
+    with open(filepath, "wb") as fp:
+        fp.write(os.urandom(size))
 
     return filename, tmppath, filepath
 
 
-#
-# Test methods
-#
 def read_pyfs_chunks(url, filename, mode="rb", chunksize=2097152, n=100):
     """Read a file in chunks."""
     t1 = time.time()
 
-    fs = open_fs(url)
+    fs = XRootDPyFS(url)
     assert fs.exists(filename)
     i = 0
     while i < n:
-        fsfile = fs.open(filename, "rb")
+        fsfile = fs.open(filename, mode="rb")
         while True:
             data = fsfile.read(chunksize)
             if not data:
@@ -104,14 +104,15 @@ def main():
 
     try:
         n = 10
+        dirurl = "root://localhost/{0}".format(tmppath)
         rooturl = "root://localhost/{0}".format(testfilepath)
 
-        print("osfs:", testfilepath, read_pyfs_chunks(tmppath, filename, n=n))
+        print("osfs:", testfilepath, read_pyfs_chunks(dirurl, filename, n=n))
         print("pyxrootd:", rooturl, read_pyxrootd_chunks(rooturl, n=n))
 
         pr = profile_start()
         print(
-            "xrootdpyfs:", rooturl, read_pyfs_chunks(rooturl, filename, mode="rb-", n=n)
+            "xrootdpyfs:", rooturl, read_pyfs_chunks(dirurl, filename, mode="rb-", n=n)
         )
         profile_end(pr)
     finally:

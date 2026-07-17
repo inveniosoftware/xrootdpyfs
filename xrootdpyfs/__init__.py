@@ -169,6 +169,6 @@ written):
 from .fs import XRootDPyFS
 from .xrdfile import XRootDPyFile
 
-__version__ = "2.0.0"
+__version__ = "3.0.0a1"
 
 __all__ = ("__version__", "XRootDPyFS", "XRootDPyFile")

@@ -1,6 +1,14 @@
 Changes
 =======
 
+Version 3.0.0a1 (released 2026-07-17)
+
+- remove the dependency on pyfs Pyfilesystem2, as it has been
+  removed from Invenio packages and it blocks Python upgrade
+- remove the pyfs Opener
+- add pyfs required classes and utilities in the package
+- migrate from setuptools to hatchling
+
 Version 2.0.0 (released 2024-02-14)
 
 - stable release

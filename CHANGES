@@ -1,6 +1,10 @@
 Changes
 =======
 
+Version 3.0.0 (released 2026-09-24)
+
+- feat(ci): upgrade xrootd tested versions
+
 Version 3.0.0a1 (released 2026-07-17)
 
 - remove the dependency on pyfs Pyfilesystem2, as it has been

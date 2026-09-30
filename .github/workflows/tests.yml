@@ -20,10 +20,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.12.9, 3.14.3]
+        python-version: [3.12.14, 3.14.7]
         # https://xrootd.web.cern.ch/repo/stable/el10/x86_64/
         # empty string "" is for latest
-        xrootd-version: [5.9.4, 5.9.6, 6.1.0]
+        xrootd-version: [5.9.8, 6.2.0]
 
     steps:
       - name: Checkout

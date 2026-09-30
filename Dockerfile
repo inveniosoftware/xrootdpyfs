@@ -46,7 +46,7 @@ RUN dnf install -y \
     dnf clean all
 
 # Install Python with specified version
-ARG python_version="3.14.3"
+ARG python_version="3.14.7"
 RUN wget https://www.python.org/ftp/python/${python_version}/Python-${python_version}.tgz
 RUN tar xzf Python-${python_version}.tgz
 RUN cd Python-${python_version} && ./configure --enable-optimizations && make altinstall

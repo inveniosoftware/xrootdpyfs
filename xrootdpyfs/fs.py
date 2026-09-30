@@ -882,8 +882,11 @@ class XRootDPyFS(FS):
         :raise: `fs.errors.FSError` if you try to get the checksum of e.g. a
             directory.
         """
+        if not self.exists(path):
+            raise ResourceNotFound(f"Path not found: {path}")
+
         if not self.isfile(path, _statobj=_statobj):
-            raise ResourceInvalid("Path is not a file: %s" % path)
+            raise ResourceInvalid(f"Path is not a file: {path}")
 
         value = self._query(QueryCode.CHECKSUM, self._p(path), parse=False)
         value = value.decode("ascii").rstrip("\x00")

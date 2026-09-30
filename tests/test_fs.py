@@ -5,6 +5,7 @@
 
 import os
 import types
+import zlib
 from datetime import datetime
 from functools import wraps
 from os.path import exists, join
@@ -442,27 +443,26 @@ def test_checksum(tmppath):
     """Test checksum method."""
     fs = XRootDPyFS(mkurl(tmppath))
 
-    # Local xrootd server does not support checksum operation
-    pytest.raises(Unsupported, fs.xrd_checksum, "data/testa.txt")
+    # Non existing file
+    pytest.raises(ResourceNotFound, fs.xrd_checksum, "data/not_found.txt")
 
-    # Let's fake a success response
-    fake_status = {
-        "status": 0,
-        "code": 0,
-        "ok": True,
-        "errno": 0,
-        "error": False,
-        "message": "[SUCCESS] ",
-        "fatal": False,
-        "shellcode": 0,
-    }
-    fs.xrd_client.query = Mock(
-        return_value=(XRootDStatus(fake_status), b"adler32 3836a69a\x00")
-    )
+    # Directory is not a file
+    pytest.raises(ResourceInvalid, fs.xrd_checksum, "data/")
+
+    # Real response from the local xrootd server: run-docker.sh starts it
+    # with adler32 checksum support enabled, so this hits the actual server
+    # instead of a mocked one.
+    content = open(join(tmppath, "data", "testa.txt"), "rb").read()
     algo, val = fs.xrd_checksum("data/testa.txt")
-    assert algo == "adler32" and val == "3836a69a"
+    assert algo == "adler32"
+    assert val == format(zlib.adler32(content) & 0xFFFFFFFF, "08x")
 
-    # Fake a bad response (e.g. on directory)
+    # Fake the server returning an error status for the checksum query
+    # itself (as opposed to ResourceNotFound/ResourceInvalid, which are
+    # raised locally before the query is even sent, this exercises the
+    # FSError branch in `_query`). Use a real file so the local
+    # exists()/isfile() checks pass and the call actually reaches the
+    # mocked query.
     fake_status = {
         "status": 1,
         "code": 400,
@@ -475,7 +475,7 @@ def test_checksum(tmppath):
         "shellcode": 54,
     }
     fs.xrd_client.query = Mock(return_value=(XRootDStatus(fake_status), None))
-    pytest.raises(FSError, fs.xrd_checksum, "data/")
+    pytest.raises(FSError, fs.xrd_checksum, "data/testa.txt")
 
 
 def test_move_good(tmppath):

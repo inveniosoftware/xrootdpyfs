@@ -71,7 +71,7 @@ class FSError(Exception):
             super().__init__()
 
 
-class ResourceNotFound(FSError):
+class ResourceNotFound(FSError, FileNotFoundError):
     """Resource not found error."""
 
     pass
@@ -83,7 +83,7 @@ class ResourceInvalid(FSError):
     pass
 
 
-class ResourceError(FSError):
+class ResourceError(FSError, OSError):
     """Resource error."""
 
     pass
@@ -107,7 +107,7 @@ class InvalidPath(FSError):
     pass
 
 
-class RemoteConnectionError(FSError):
+class RemoteConnectionError(FSError, OSError):
     """Remote connection error."""
 
     pass

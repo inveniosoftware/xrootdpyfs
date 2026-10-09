@@ -31,6 +31,35 @@ from xrootdpyfs._pyfs_compat import (
 from xrootdpyfs.utils import spliturl
 
 
+@pytest.mark.parametrize(
+    "error_cls, builtin_cls",
+    [
+        (ResourceNotFound, FileNotFoundError),
+        (ResourceError, OSError),
+        (RemoteConnectionError, OSError),
+    ],
+)
+def test_operational_error_builtin_compatibility(error_cls, builtin_cls):
+    """Operational errors support built-in handlers without losing context."""
+    with pytest.raises(builtin_cls) as exc_info:
+        raise error_cls(msg="Server rejected the operation", path="data/upload.bin")
+
+    error = exc_info.value
+    assert isinstance(error, FSError)
+    assert type(error) is error_cls
+    assert error.msg == "Server rejected the operation"
+    assert error.path == "data/upload.bin"
+    assert str(error) == "data/upload.bin: Server rejected the operation"
+    assert error.args == ("data/upload.bin: Server rejected the operation",)
+    assert isinstance(error, FileNotFoundError) == (error_cls is ResourceNotFound)
+
+
+@pytest.mark.parametrize("error_cls", [FSError, InvalidPath, Unsupported])
+def test_non_operational_errors_are_not_os_errors(error_cls):
+    """Invalid usage is not classified as an operational I/O failure."""
+    assert not isinstance(error_cls("Invalid operation"), OSError)
+
+
 def test_init(tmppath):
     """Test initialization."""
     fs = XRootDPyFS("root://127.0.0.1//tmp/")
@@ -221,7 +250,9 @@ def test_remove(tmppath):
     assert not XRootDPyFS(rooturl).exists("data/testa.txt")
 
     # Does not exists
-    assert pytest.raises(ResourceNotFound, XRootDPyFS(rooturl).remove, "a/testa.txt")
+    with pytest.raises(FileNotFoundError) as exc_info:
+        XRootDPyFS(rooturl).remove("a/testa.txt")
+    assert isinstance(exc_info.value, ResourceNotFound)
 
     # Directory not empty
     assert pytest.raises(DirectoryNotEmpty, XRootDPyFS(rooturl).remove, "data")
@@ -270,7 +301,10 @@ def test_remove_dir_mock1(tmppath):
         }
     )
     fs.xrd_client.rm = Mock(return_value=(status, None))
-    pytest.raises(ResourceError, fs.removedir, "data/bfolder/", force=True)
+    with pytest.raises(ResourceError) as exc_info:
+        fs.removedir("data/bfolder/", force=True)
+    assert isinstance(exc_info.value, OSError)
+    assert not isinstance(exc_info.value, FileNotFoundError)
 
 
 def test_remove_dir_mock2(tmppath):
@@ -436,7 +470,10 @@ def test_ping(tmppath):
         "shellcode": 51,
     }
     fs.xrd_client.ping = Mock(return_value=(XRootDStatus(fake_status), None))
-    pytest.raises(RemoteConnectionError, fs.xrd_ping)
+    with pytest.raises(RemoteConnectionError) as exc_info:
+        fs.xrd_ping()
+    assert isinstance(exc_info.value, OSError)
+    assert not isinstance(exc_info.value, FileNotFoundError)
 
 
 def test_checksum(tmppath):

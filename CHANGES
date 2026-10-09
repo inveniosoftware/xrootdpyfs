@@ -1,6 +1,10 @@
 Changes
 =======
 
+Version 3.0.1 (released 2026-10-09)
+
+- fix(checksum): raise the appropriate exception on 404
+
 Version 3.0.0 (released 2026-09-24)
 
 - feat(ci): upgrade xrootd tested versions

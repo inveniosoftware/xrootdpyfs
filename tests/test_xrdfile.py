@@ -69,7 +69,9 @@ def test_init_readmode_basic(tmppath):
     # Resource not found error.
     fn, fp, fc = "nope", "data/", ""
     full_path = join(tmppath, fp, fn)
-    pytest.raises(ResourceNotFound, XRootDPyFile, mkurl(full_path), mode="r")
+    with pytest.raises(ResourceNotFound) as exc_info:
+        XRootDPyFile(mkurl(full_path), mode="r")
+    assert isinstance(exc_info.value, FileNotFoundError)
 
     # Existing file can be read?
     fd = get_tsta_file(tmppath)
